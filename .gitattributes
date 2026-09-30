@@ -1,0 +1,21 @@
+# Normaliza os fins de linha (o grupo trabalha em sistemas diferentes)
+* text=auto
+
+# Ficheiros que precisam de um fim de linha específico
+*.sh    text eol=lf
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+*.ps1   text eol=crlf
+*.sln   text eol=crlf
+
+# Binários — nunca converter
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.pdf   binary
+*.docx  binary
+*.xlsx  binary
+*.zip   binary
+*.jar   binary

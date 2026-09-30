@@ -1,0 +1,74 @@
+# =====================================================================
+# DoseCerta — .gitignore do monorepo
+# Regulamento Interno do Grupo: secções 10.1 e 14.2
+# Regulamento da UC: não versionar bin, obj, .vs, node_modules, caches,
+# resultados de compilação nem conteúdos que possam ser regenerados.
+# =====================================================================
+
+# ---------- Segredos e configuração local (secção 14.2) ----------
+appsettings.Development.json
+appsettings.Local.json
+*.env
+.env
+.env.*
+!.env.example
+secrets.json
+
+# ---------- Backend (.NET 8 / Visual Studio 2022) ----------
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.userprefs
+TestResults/
+coverage/
+coveragereport/
+*.coverage
+coverage.cobertura.xml
+*.nupkg
+*.snupkg
+
+# ---------- Frontend web (Angular 18 / Node 20) ----------
+# package-lock.json É versionado (secção 11.2) — não o ignorar
+node_modules/
+dist/
+.angular/
+out-tsc/
+cypress/videos/
+cypress/screenshots/
+cypress/downloads/
+npm-debug.log*
+yarn-error.log*
+
+# ---------- Frontend mobile (Flutter 3 / Dart 3) ----------
+# pubspec.lock É versionado (secção 11.2) — não o ignorar
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+build/
+**/android/.gradle/
+**/android/local.properties
+**/android/app/debug/
+**/android/app/profile/
+**/android/app/release/
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/flutter_export_environment.sh
+
+# ---------- Editores ----------
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+*.swp
+
+# ---------- Sistema operativo e Office ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+~$*
+*.tmp
