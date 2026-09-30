@@ -1,0 +1,41 @@
+# Pipeline de integração contínua do backend (Regulamento Interno do Grupo, secção 11.6).
+# Versão mínima do Sprint 01: compilação e testes. Os quality gates de análise estática
+# e cobertura obrigatória (QG-04, QG-05) são acrescentados até à milestone m3.
+name: backend-ci
+
+on:
+  pull_request:
+    branches: [main]
+    paths: ['backend/**']
+  push:
+    branches: [main]
+    paths: ['backend/**']
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: build-and-test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Instalar o .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restaurar dependências
+        run: dotnet restore DoseCerta.sln
+
+      - name: Compilar (QG-01)
+        run: dotnet build DoseCerta.sln --no-restore --configuration Release
+
+      - name: Executar os testes (QG-02)
+        run: dotnet test DoseCerta.sln --no-build --configuration Release --verbosity normal
