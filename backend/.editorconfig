@@ -1,0 +1,28 @@
+root = true
+
+[*]
+charset = utf-8
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{json,xml,csproj,props,targets,yml,yaml}]
+indent_size = 2
+
+[*.cs]
+indent_size = 4
+# Os fins de linha são normalizados pelo .gitattributes (text=auto), para funcionar em Windows e na pipeline Linux.
+
+# Convenções de código C# da Microsoft (.NET 8)
+csharp_style_namespace_declarations = file_scoped:warning
+csharp_using_directive_placement = outside_namespace:warning
+dotnet_sort_system_directives_first = true
+csharp_style_var_for_built_in_types = true:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_new_line_before_open_brace = all
+csharp_prefer_braces = true:warning
+
+# Exclusão justificada (Regulamento Interno do Grupo, secção 11.4):
+# a pasta Migrations/ contém código gerado automaticamente pelo EF Core.
+[**/Migrations/*.cs]
+generated_code = true
