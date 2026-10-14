@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Infraestrutura: persistência com EF Core 8 sobre SQL Server 2022 (namespace DoseCerta.Infrastructure.Persistence),
+    relógio, configuração JWT e envio de e-mail.
+  -->
+  <PropertyGroup>
+    <RootNamespace>DoseCerta.Infrastructure</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DoseCerta.Application\DoseCerta.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="DoseCerta.UnitTests" />
+    <InternalsVisibleTo Include="DoseCerta.IntegrationTests" />
+  </ItemGroup>
+
+</Project>

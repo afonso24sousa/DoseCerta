@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Cobertura do backend (Regulamento Interno do Grupo, secção 11.5 e QG-04):
+  inclui todo o código dos projetos DoseCerta.* do backend; exclui Migrations/ e Program.cs
+  e o código marcado como gerado pelo compilador. Os projetos de teste não entram na medição.
+-->
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <Include>[DoseCerta.Api]*,[DoseCerta.Application]*,[DoseCerta.Domain]*,[DoseCerta.Infrastructure]*</Include>
+          <ExcludeByFile>**/Migrations/*.cs,**/Program.cs</ExcludeByFile>
+          <ExcludeByAttribute>GeneratedCodeAttribute,CompilerGeneratedAttribute</ExcludeByAttribute>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>
