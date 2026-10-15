@@ -49,4 +49,14 @@ public class SessaoRevogada
     /// Gets o instante de expiração do token, em UTC.
     /// </summary>
     public DateTime ExpiraEmUtc { get; private set; }
+
+    /// <summary>
+    /// Indica se a credencial já expirou e pode ser eliminada.
+    /// </summary>
+    /// <param name="agoraUtc">Instante atual, em UTC.</param>
+    /// <returns><see langword="true"/> se o token já expirou.</returns>
+    public bool Expirada(DateTime agoraUtc)
+    {
+        return this.ExpiraEmUtc <= agoraUtc;
+    }
 }
