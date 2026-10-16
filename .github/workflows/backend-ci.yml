@@ -1,0 +1,146 @@
+# Pipeline de integração contínua do backend (Regulamento Interno do Grupo, secção 11.6; Issue I031).
+# Implementa os quality gates QG-01 a QG-05. Qualquer gate falhado termina a pipeline sem sucesso e,
+# com a proteção da branch main, bloqueia o merge do Pull Request.
+name: backend-ci
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: 'true'
+  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 'true'
+  CONFIGURACAO: Release
+  COBERTURA_MINIMA: '70'
+
+jobs:
+  qualidade-backend:
+    name: qualidade-backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      # SQL Server 2022 em contentor de serviço, só para os testes de integração (QG-03).
+      # A palavra-passe do contentor vem de um GitHub Secret (Regulamento Interno do Grupo, secção 14.2).
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: 'Y'
+          MSSQL_SA_PASSWORD: ${{ secrets.CI_SQLSERVER_SA_PASSWORD }}
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' -b -o /dev/null"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 12
+          --health-start-period 20s
+
+    steps:
+      - name: Obter o código
+        uses: actions/checkout@v4
+
+      - name: Instalar o .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Instalar o ReportGenerator
+        run: dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.5.11
+
+      - name: Verificar o segredo do SQL Server
+        env:
+          SENHA: ${{ secrets.CI_SQLSERVER_SA_PASSWORD }}
+        run: |
+          if [ -z "$SENHA" ]; then
+            echo "::error::Falta o GitHub Secret CI_SQLSERVER_SA_PASSWORD (ver m3-descricao-pipeline-ci-cd-v01.md)."
+            exit 1
+          fi
+
+      - name: Restaurar dependências
+        run: dotnet restore DoseCerta.sln
+
+      - name: QG-01 Compilação
+        run: |
+          mkdir -p artefactos/logs
+          dotnet build DoseCerta.sln --no-restore --configuration "$CONFIGURACAO" \
+            -p:RunAnalyzers=false -p:TreatWarningsAsErrors=false 2>&1 | tee artefactos/logs/qg01-compilacao.log
+          exit "${PIPESTATUS[0]}"
+
+      - name: QG-05 Análise estática (Roslyn Analyzers + StyleCop, avisos como erros)
+        run: |
+          dotnet build DoseCerta.sln --no-restore --no-incremental --configuration "$CONFIGURACAO" \
+            -warnaserror 2>&1 | tee artefactos/logs/qg05-analise-estatica.log
+          exit "${PIPESTATUS[0]}"
+
+      - name: QG-05 Formatação (dotnet format --verify-no-changes)
+        run: |
+          dotnet format DoseCerta.sln --verify-no-changes --no-restore --verbosity diagnostic \
+            2>&1 | tee artefactos/logs/qg05-formatacao.log
+          exit "${PIPESTATUS[0]}"
+
+      - name: QG-02 Testes unitários
+        run: |
+          dotnet test tests/DoseCerta.UnitTests/DoseCerta.UnitTests.csproj --no-build --configuration "$CONFIGURACAO" \
+            --settings coverage.runsettings --collect "XPlat Code Coverage" \
+            --logger "trx;LogFileName=testes-unitarios.trx" --results-directory artefactos/testes-unitarios
+
+      - name: QG-03 Testes de integração (SQL Server em contentor de serviço)
+        env:
+          SENHA: ${{ secrets.CI_SQLSERVER_SA_PASSWORD }}
+        run: |
+          export DOSECERTA_TESTES_SQLSERVER="Server=localhost,1433;User Id=sa;Password=${SENHA};TrustServerCertificate=true;Encrypt=false"
+          dotnet test tests/DoseCerta.IntegrationTests/DoseCerta.IntegrationTests.csproj --no-build --configuration "$CONFIGURACAO" \
+            --settings coverage.runsettings --collect "XPlat Code Coverage" \
+            --logger "trx;LogFileName=testes-integracao.trx" --results-directory artefactos/testes-integracao
+
+      - name: Relatório de cobertura (unitários + integração)
+        run: |
+          reportgenerator \
+            -reports:"artefactos/testes-*/**/coverage.cobertura.xml" \
+            -targetdir:artefactos/cobertura \
+            -reporttypes:"Html;Cobertura;JsonSummary;MarkdownSummaryGithub" \
+            -title:"DoseCerta backend"
+          cat artefactos/cobertura/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: QG-04 Cobertura de linhas mínima
+        run: |
+          COBERTURA=$(jq -r '.summary.linecoverage' artefactos/cobertura/Summary.json)
+          echo "Cobertura de linhas: ${COBERTURA}% (mínimo ${COBERTURA_MINIMA}%)"
+          if awk -v c="$COBERTURA" -v m="$COBERTURA_MINIMA" 'BEGIN { exit !(c + 0 < m + 0) }'; then
+            echo "::error::QG-04 falhou: cobertura de linhas ${COBERTURA}% inferior a ${COBERTURA_MINIMA}%."
+            exit 1
+          fi
+
+      - name: Publicar relatórios de testes, cobertura e análise
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorios-backend-${{ github.run_number }}
+          path: |
+            backend/artefactos/logs/
+            backend/artefactos/testes-unitarios/**/*.trx
+            backend/artefactos/testes-integracao/**/*.trx
+            backend/artefactos/cobertura/
+          if-no-files-found: warn
+          retention-days: 90
