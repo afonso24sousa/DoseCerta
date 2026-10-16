@@ -16,10 +16,6 @@ public sealed partial class FiltroDeErros : IExceptionHandler
     private static readonly FrozenDictionary<string, int> EstadosPorCodigo = new Dictionary<string, int>
     {
         [CodigosErro.ValidacaoInvalida] = StatusCodes.Status400BadRequest,
-        [CodigosErro.CredenciaisInvalidas] = StatusCodes.Status401Unauthorized,
-        [CodigosErro.NaoAutenticado] = StatusCodes.Status401Unauthorized,
-        [CodigosErro.PalavraPasseAtualIncorreta] = StatusCodes.Status403Forbidden,
-        [CodigosErro.EmailJaRegistado] = StatusCodes.Status409Conflict,
         [CodigosErro.ErroInterno] = StatusCodes.Status500InternalServerError,
     }.ToFrozenDictionary(StringComparer.Ordinal);
 

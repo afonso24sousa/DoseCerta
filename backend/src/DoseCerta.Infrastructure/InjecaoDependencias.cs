@@ -1,10 +1,8 @@
 // Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
 
 using DoseCerta.Application.Abstracoes;
-using DoseCerta.Application.Repositorios;
 using DoseCerta.Infrastructure.Email;
 using DoseCerta.Infrastructure.Persistence;
-using DoseCerta.Infrastructure.Persistence.Repositorios;
 using DoseCerta.Infrastructure.Seguranca;
 using DoseCerta.Infrastructure.Tempo;
 using Microsoft.EntityFrameworkCore;
@@ -45,12 +43,6 @@ public static class InjecaoDependencias
         servicos.AddScoped<IEmailSender, EmailSenderSmtp>();
 
         servicos.Configure<OpcoesJwt>(configuracao.GetSection(OpcoesJwt.Seccao));
-        servicos.AddSingleton<IPasswordHasher, PasswordHasherPbkdf2>();
-        servicos.AddSingleton<ITokenService, JwtTokenService>();
-
-        servicos.AddScoped<IUtilizadorRepositorio, UtilizadorRepositorio>();
-        servicos.AddScoped<ISessaoRevogadaRepositorio, SessaoRevogadaRepositorio>();
-        servicos.AddScoped<IConviteRepositorio, ConviteRepositorio>();
 
         return servicos;
     }
