@@ -1,0 +1,49 @@
+// Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
+
+using DoseCerta.Application.Abstracoes;
+using DoseCerta.Infrastructure.Email;
+using DoseCerta.Infrastructure.Persistence;
+using DoseCerta.Infrastructure.Seguranca;
+using DoseCerta.Infrastructure.Tempo;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace DoseCerta.Infrastructure;
+
+/// <summary>
+/// Regista a infraestrutura na raiz de composição da API.
+/// </summary>
+public static class InjecaoDependencias
+{
+    /// <summary>
+    /// Nome da connection string do SQL Server na configuração.
+    /// </summary>
+    public const string NomeConnectionString = "DoseCerta";
+
+    /// <summary>
+    /// Regista o contexto EF Core, a unidade de trabalho, o relógio, o envio de e-mail e as opções JWT.
+    /// A connection string vem de configuração local não versionada (user-secrets ou variável de ambiente).
+    /// </summary>
+    /// <param name="servicos">Coleção de serviços.</param>
+    /// <param name="configuracao">Configuração da aplicação.</param>
+    /// <returns>A mesma coleção, para encadeamento.</returns>
+    public static IServiceCollection AddInfraestrutura(this IServiceCollection servicos, IConfiguration configuracao)
+    {
+        ArgumentNullException.ThrowIfNull(configuracao);
+
+        servicos.AddDbContext<DoseCertaDbContext>(opcoes =>
+            opcoes.UseSqlServer(configuracao.GetConnectionString(NomeConnectionString)));
+
+        servicos.AddScoped<IUnidadeDeTrabalho, UnidadeDeTrabalho>();
+        servicos.AddSingleton(TimeProvider.System);
+        servicos.AddSingleton<IRelogio, RelogioSistema>();
+
+        servicos.Configure<OpcoesEmail>(configuracao.GetSection(OpcoesEmail.Seccao));
+        servicos.AddScoped<IEmailSender, EmailSenderSmtp>();
+
+        servicos.Configure<OpcoesJwt>(configuracao.GetSection(OpcoesJwt.Seccao));
+
+        return servicos;
+    }
+}

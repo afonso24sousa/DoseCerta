@@ -1,0 +1,14 @@
+{
+  "$schema": "https://raw.githubusercontent.com/DotNetAnalyzers/StyleCopAnalyzers/master/StyleCop.Analyzers/StyleCop.Analyzers/Settings/stylecop.schema.json",
+  "settings": {
+    "documentationRules": {
+      "companyName": "Grupo G07 - DoseCerta",
+      "copyrightText": "Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.",
+      "xmlHeader": false,
+      "documentationCulture": "pt-PT"
+    },
+    "orderingRules": {
+      "usingDirectivesPlacement": "outsideNamespace"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- API REST (camada de apresentação) e raiz de composição. -->
+  <PropertyGroup>
+    <RootNamespace>DoseCerta.Api</RootNamespace>
+    <UserSecretsId>dosecerta-api-g07</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Swashbuckle.AspNetCore" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DoseCerta.Application\DoseCerta.Application.csproj" />
+    <ProjectReference Include="..\DoseCerta.Infrastructure\DoseCerta.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="DoseCerta.UnitTests" />
+    <InternalsVisibleTo Include="DoseCerta.IntegrationTests" />
+  </ItemGroup>
+
+</Project>

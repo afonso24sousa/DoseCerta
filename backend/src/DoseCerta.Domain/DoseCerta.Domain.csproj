@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Camada de domínio: entidades, invariantes e regras de tempo. Não depende de nenhum outro projeto. -->
+  <PropertyGroup>
+    <RootNamespace>DoseCerta.Domain</RootNamespace>
+  </PropertyGroup>
+
+</Project>
