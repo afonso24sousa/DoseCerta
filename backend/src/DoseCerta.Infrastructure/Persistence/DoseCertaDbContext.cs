@@ -1,5 +1,6 @@
 // Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
 
+using DoseCerta.Domain.Entidades;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 
@@ -7,9 +8,8 @@ namespace DoseCerta.Infrastructure.Persistence;
 
 /// <summary>
 /// Contexto do Entity Framework Core 8 (code-first) sobre SQL Server 2022 (AD-04, RNF-053, RNF-057).
-/// Nesta versão não tem entidades: serve para validar a ligação ao SQL Server e a configuração da persistência.
-/// O mapeamento de cada entidade ficará numa classe <c>IEntityTypeConfiguration</c> própria deste assembly,
-/// aplicada automaticamente em <see cref="OnModelCreating"/>.
+/// O mapeamento de cada entidade está numa classe de configuração própria, na pasta Configuracoes, e segue
+/// o script T-SQL da secção 13.2 do modelo de dados (nomes de chaves, restrições, índices e gatilhos).
 /// </summary>
 public class DoseCertaDbContext : DbContext
 {
@@ -21,6 +21,111 @@ public class DoseCertaDbContext : DbContext
         : base(opcoes)
     {
     }
+
+    /// <summary>
+    /// Gets as contas dos Utilizadores.
+    /// </summary>
+    public DbSet<Utilizador> Utilizadores => this.Set<Utilizador>();
+
+    /// <summary>
+    /// Gets as credenciais terminadas.
+    /// </summary>
+    public DbSet<SessaoRevogada> SessoesRevogadas => this.Set<SessaoRevogada>();
+
+    /// <summary>
+    /// Gets a lista fechada de condições de saúde.
+    /// </summary>
+    public DbSet<CondicaoSaude> CondicoesSaude => this.Set<CondicaoSaude>();
+
+    /// <summary>
+    /// Gets a lista fechada de alergias.
+    /// </summary>
+    public DbSet<Alergia> Alergias => this.Set<Alergia>();
+
+    /// <summary>
+    /// Gets a lista fechada de graus de autonomia.
+    /// </summary>
+    public DbSet<GrauAutonomia> GrausAutonomia => this.Set<GrauAutonomia>();
+
+    /// <summary>
+    /// Gets as fichas.
+    /// </summary>
+    public DbSet<Ficha> Fichas => this.Set<Ficha>();
+
+    /// <summary>
+    /// Gets as associações de pessoas às fichas.
+    /// </summary>
+    public DbSet<Associacao> Associacoes => this.Set<Associacao>();
+
+    /// <summary>
+    /// Gets os convites.
+    /// </summary>
+    public DbSet<Convite> Convites => this.Set<Convite>();
+
+    /// <summary>
+    /// Gets os documentos.
+    /// </summary>
+    public DbSet<Documento> Documentos => this.Set<Documento>();
+
+    /// <summary>
+    /// Gets os tratamentos.
+    /// </summary>
+    public DbSet<Tratamento> Tratamentos => this.Set<Tratamento>();
+
+    /// <summary>
+    /// Gets os horários das tomas.
+    /// </summary>
+    public DbSet<HorarioToma> HorariosToma => this.Set<HorarioToma>();
+
+    /// <summary>
+    /// Gets as tomas.
+    /// </summary>
+    public DbSet<Toma> Tomas => this.Set<Toma>();
+
+    /// <summary>
+    /// Gets as tarefas recorrentes.
+    /// </summary>
+    public DbSet<TarefaRecorrente> Tarefas => this.Set<TarefaRecorrente>();
+
+    /// <summary>
+    /// Gets os horários das tarefas.
+    /// </summary>
+    public DbSet<HorarioTarefa> HorariosTarefa => this.Set<HorarioTarefa>();
+
+    /// <summary>
+    /// Gets os dias da semana das tarefas.
+    /// </summary>
+    public DbSet<TarefaDiaSemana> TarefasDiaSemana => this.Set<TarefaDiaSemana>();
+
+    /// <summary>
+    /// Gets as execuções das tarefas.
+    /// </summary>
+    public DbSet<ExecucaoTarefa> ExecucoesTarefa => this.Set<ExecucaoTarefa>();
+
+    /// <summary>
+    /// Gets os compromissos.
+    /// </summary>
+    public DbSet<Compromisso> Compromissos => this.Set<Compromisso>();
+
+    /// <summary>
+    /// Gets as ocorrências.
+    /// </summary>
+    public DbSet<Ocorrencia> Ocorrencias => this.Set<Ocorrencia>();
+
+    /// <summary>
+    /// Gets as notas.
+    /// </summary>
+    public DbSet<Nota> Notas => this.Set<Nota>();
+
+    /// <summary>
+    /// Gets as notificações.
+    /// </summary>
+    public DbSet<Notificacao> Notificacoes => this.Set<Notificacao>();
+
+    /// <summary>
+    /// Gets os envios de e-mail.
+    /// </summary>
+    public DbSet<EnvioEmail> EnviosEmail => this.Set<EnvioEmail>();
 
     /// <inheritdoc/>
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
