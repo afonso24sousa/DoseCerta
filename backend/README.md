@@ -5,7 +5,8 @@ Este ficheiro contém as instruções técnicas para clonar, configurar, compila
 (ambiente individual de desenvolvimento e de defesa, Regulamento Interno do Grupo, secção 18.3).
 
 Esta versão corresponde à configuração da solução (Issue I029): camadas, autenticação JWT, ligação ao SQL Server,
-verificação do estado da aplicação, serviço de e-mail e testes. Ainda não existem entidades, migrações nem endpoints de negócio.
+verificação do estado da aplicação, serviço de e-mail e testes; e ao modelo de dados (Issue I030): entidades, mapeamento
+EF Core, migração inicial e scripts SQL. Ainda não existem endpoints de negócio.
 
 ## 1. Estrutura da solução
 
@@ -17,8 +18,9 @@ apresentação para a persistência.
 |---|---|---|
 | `src/DoseCerta.Api` | API REST e raiz de composição | arranque (`Arranque/`), erros (`Erros/`), `GET /saude` (`Saude/`), validação JWT (`Seguranca/`) |
 | `src/DoseCerta.Application` | Serviços de aplicação | abstrações `IEmailSender`, `IRelogio`, `IUnidadeDeTrabalho` e o registo da camada |
-| `src/DoseCerta.Domain` | Domínio | exceções e códigos de erro (`Comum/`), calendário de Lisboa (`Tempo/`) |
-| `src/DoseCerta.Infrastructure` | Infraestrutura | `DoseCertaDbContext` (sem entidades), unidade de trabalho, e-mail SMTP, opções JWT, relógio |
+| `src/DoseCerta.Domain` | Domínio | entidades do modelo de dados (`Entidades/`), listas de valores (`Enumerados/`), exceções e códigos de erro (`Comum/`), calendário de Lisboa (`Tempo/`) |
+| `src/DoseCerta.Infrastructure` | Infraestrutura | `DoseCertaDbContext` com as 23 tabelas, mapeamento (`Persistence/Configuracoes/`), gatilhos (`Persistence/GatilhosSql.cs`), migrações (`Persistence/Migrations/`), unidade de trabalho, e-mail SMTP, opções JWT, relógio |
+| `scripts-base-dados` | Base de dados | scripts SQL de criação, dados fictícios e reposição (ver secção 9) |
 | `tests/DoseCerta.UnitTests` | Testes unitários (QG-02) | sem base de dados nem rede |
 | `tests/DoseCerta.IntegrationTests` | Testes de integração (QG-03) | API em memória contra um SQL Server real |
 
@@ -81,9 +83,8 @@ e `Email__Servidor`. Os user-secrets só são lidos no ambiente `Development` (o
 | `Email:Porta`, `Email:UsarTls`, `Email:Utilizador`, `Email:PalavraPasse`, `Email:NomeRemetente` | não | Por omissão 587, TLS ativo e nome `DoseCerta`. |
 
 Com `BaseDados:AplicarMigracoesNoArranque` a `true`, a API aplica as migrações do EF Core ao arrancar e cria a base de dados
-`DoseCerta` se ainda não existir. Nesta versão ainda não há migrações: a base de dados é criada vazia, apenas com a tabela
-`__EFMigrationsHistory`; as tabelas virão com as migrações do modelo de dados. O utilizador da connection string precisa de
-permissão para criar bases de dados.
+`DoseCerta` se ainda não existir, com as 23 tabelas, os 4 gatilhos e os valores predefinidos das listas fechadas (secção 8).
+O utilizador da connection string precisa de permissão para criar bases de dados.
 
 ## 5. Compilar e executar
 
@@ -137,10 +138,56 @@ reportgenerator -reports:"artefactos/testes/**/coverage.cobertura.xml" -targetdi
 A compilação falha com qualquer aviso dos Roslyn Analyzers ou do StyleCop, e `dotnet format --verify-no-changes`
 termina sem sucesso se existirem diferenças de formatação. A pasta `artefactos/` não é versionada.
 
-## 8. Resolução de problemas
+## 8. Migrações do EF Core
+
+As migrações ficam em `src/DoseCerta.Infrastructure/Persistence/Migrations` (código gerado, excluído da análise estática e
+da cobertura). A migração inicial (`Inicial`) cria as 23 tabelas, as chaves, as restrições `CHECK`, os índices, os valores
+predefinidos das listas fechadas e, no fim do `Up`, os 4 gatilhos (`migrationBuilder.CriarGatilhosDoseCerta()`; o `Down`
+começa por `migrationBuilder.RemoverGatilhosDoseCerta()`), porque o EF Core não gera gatilhos.
+
+Aplicar as migrações sem arrancar a API (com a variável `ConnectionStrings__DoseCerta` definida):
+
+```bash
+dotnet ef database update --project src/DoseCerta.Infrastructure --startup-project src/DoseCerta.Infrastructure
+```
+
+Gerar uma nova migração depois de alterar o mapeamento:
+
+```bash
+dotnet ef migrations add <Nome> --project src/DoseCerta.Infrastructure --startup-project src/DoseCerta.Infrastructure --output-dir Persistence/Migrations
+```
+
+O mapeamento segue o script `scripts-base-dados/01-criar-base-dados.sql` (modelo de dados, secção 13.2). Uma base de dados
+criada pela migração e outra criada pelo `01` têm o mesmo esquema; as únicas diferenças são formais e estão descritas em
+`scripts-base-dados/README.md`.
+
+## 9. Scripts SQL e dados fictícios
+
+A pasta `scripts-base-dados/` tem o caminho alternativo às migrações e os dados de demonstração (só dados fictícios, RNF-050):
+
+| Script | Finalidade |
+|---|---|
+| `01-criar-base-dados.sql` | Cria o esquema completo numa base de dados vazia |
+| `02-dados-iniciais-ficticios.sql` | Insere contas, fichas, associações e convites fictícios (depois do `01` ou das migrações) |
+| `03-repor-base-dados.sql` | Remove os gatilhos e todas as tabelas, incluindo `__EFMigrationsHistory` |
+| `repor-base-dados.sh` | Executa `03`, `01` e `02` com o `sqlcmd` (bash ou Git Bash) |
+
+```bash
+export SQLCMDPASSWORD='<palavra-passe-local>'   # nunca versionar
+./scripts-base-dados/repor-base-dados.sh localhost,1433 DoseCerta sa
+```
+
+Uma base de dados criada pelos scripts usa-se com `BaseDados:AplicarMigracoesNoArranque` a `false`. Os pormenores estão em
+`scripts-base-dados/README.md`.
+
+## 10. Resolução de problemas
 
 - `/saude` responde 503: confirme que o SQL Server está a correr, que a base de dados da connection string existe
   (ou que `BaseDados:AplicarMigracoesNoArranque` está a `true`) e que o utilizador tem acesso.
 - Erro `A chave JWT (Jwt:Chave) não está configurada`: defina a chave com `dotnet user-secrets` ou `Jwt__Chave`.
 - Testes de integração falham com `Defina a variável de ambiente DOSECERTA_TESTES_SQLSERVER`: defina a variável no terminal
   onde corre `dotnet test` (ou nas variáveis de ambiente do utilizador e reabra o terminal).
+- `sqlcmd` falha com `SET options have incorrect settings: 'QUOTED_IDENTIFIER'`: execute os scripts com `-I` (como faz o
+  `repor-base-dados.sh`); os índices filtrados exigem `QUOTED_IDENTIFIER ON`.
+- Acentos errados nas listas fechadas depois de executar os scripts com o `sqlcmd` no Windows: acrescente `-f 65001`
+  (os scripts estão em UTF-8).
