@@ -49,7 +49,7 @@ public class ConfiguracaoTestes
 
         opcoes.Validar();
 
-        Assert.Equal(OpcoesJwt.TamanhoMinimoChave, opcoes.Chave.Length);
+        Assert.Equal(OpcoesJwt.TamanhoMinimoChave + 1, opcoes.Chave.Length);
     }
 
     /// <summary>
