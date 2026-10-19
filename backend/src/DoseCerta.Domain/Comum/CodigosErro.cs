@@ -13,26 +13,6 @@ public static class CodigosErro
     public const string ValidacaoInvalida = "VALIDACAO_INVALIDA";
 
     /// <summary>
-    /// E-mail inexistente ou palavra-passe errada (401).
-    /// </summary>
-    public const string CredenciaisInvalidas = "CREDENCIAIS_INVALIDAS";
-
-    /// <summary>
-    /// Pedido sem token, com token expirado, alterado ou terminado (401).
-    /// </summary>
-    public const string NaoAutenticado = "NAO_AUTENTICADO";
-
-    /// <summary>
-    /// A palavra-passe atual indicada está errada (403).
-    /// </summary>
-    public const string PalavraPasseAtualIncorreta = "PALAVRA_PASSE_ATUAL_INCORRETA";
-
-    /// <summary>
-    /// Já existe uma conta com o e-mail indicado (409).
-    /// </summary>
-    public const string EmailJaRegistado = "EMAIL_JA_REGISTADO";
-
-    /// <summary>
     /// Erro inesperado do servidor, sem detalhes internos na resposta (500).
     /// </summary>
     public const string ErroInterno = "ERRO_INTERNO";

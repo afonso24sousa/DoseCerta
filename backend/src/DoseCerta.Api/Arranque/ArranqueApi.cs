@@ -44,7 +44,6 @@ public static class ArranqueApi
 
         // Autenticação JWT e exigência de sessão em todos os endpoints, exceto os marcados como públicos (RF-017).
         servicos.ConfigureOptions<ConfiguracaoJwtBearer>();
-        servicos.AddScoped<ValidadorDeCredencial>();
         servicos.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
         servicos.AddAuthorizationBuilder()
             .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());

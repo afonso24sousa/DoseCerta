@@ -42,7 +42,6 @@ public sealed class ConfiguracaoJwtBearer : IConfigureNamedOptions<JwtBearerOpti
         this.opcoesJwt.Validar();
 
         options.MapInboundClaims = false;
-        options.EventsType = typeof(ValidadorDeCredencial);
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,

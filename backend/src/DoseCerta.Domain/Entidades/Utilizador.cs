@@ -55,24 +55,4 @@ public class Utilizador
     /// Gets o instante de criação da conta, em UTC.
     /// </summary>
     public DateTime CriadoEmUtc { get; private set; }
-
-    /// <summary>
-    /// Altera o nome e o e-mail da conta (RF-014). A unicidade do e-mail é verificada pelo serviço de aplicação.
-    /// </summary>
-    /// <param name="nome">Novo nome.</param>
-    /// <param name="email">Novo e-mail.</param>
-    public void AtualizarDados(string nome, string email)
-    {
-        this.Nome = nome;
-        this.Email = email;
-    }
-
-    /// <summary>
-    /// Substitui o hash da palavra-passe (RF-015, RNF-001).
-    /// </summary>
-    /// <param name="novoHash">Hash com salt da nova palavra-passe.</param>
-    public void AlterarPalavraPasse(string novoHash)
-    {
-        this.PalavraPasseHash = novoHash;
-    }
 }
