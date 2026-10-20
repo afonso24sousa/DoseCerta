@@ -72,4 +72,33 @@ public class Associacao
     /// Gets o Utilizador associado, quando carregado.
     /// </summary>
     public Utilizador? Utilizador { get; private set; }
+
+    /// <summary>
+    /// Indica se o papel é Cuidador (incluindo o Cuidador principal).
+    /// </summary>
+    /// <returns><see langword="true"/> se o papel for Cuidador.</returns>
+    public bool EhCuidador()
+    {
+        return this.Papel == Papel.Cuidador;
+    }
+
+    /// <summary>
+    /// Indica se o papel permite escrever na ficha: só o Cuidador (RF-047, RF-048).
+    /// </summary>
+    /// <returns><see langword="true"/> se o Utilizador puder escrever na ficha.</returns>
+    public bool PodeEscrever()
+    {
+        return this.EhCuidador();
+    }
+
+    /// <summary>
+    /// Marca esta associação como a do Cuidador principal, provisório ou não (RF-024, RF-025).
+    /// Só a ficha a usa, para garantir um só Cuidador principal.
+    /// </summary>
+    /// <param name="provisorio">Indica se o Cuidador principal é provisório até à resposta ao convite.</param>
+    internal void MarcarPrincipal(bool provisorio)
+    {
+        this.EPrincipal = true;
+        this.EProvisorio = provisorio;
+    }
 }

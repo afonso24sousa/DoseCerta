@@ -1,6 +1,8 @@
 // Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
 
 using DoseCerta.Application.Contas;
+using DoseCerta.Application.Documentos;
+using DoseCerta.Application.Fichas;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DoseCerta.Application;
@@ -20,6 +22,9 @@ public static class InjecaoDependencias
         ArgumentNullException.ThrowIfNull(servicos);
         servicos.AddScoped<AuthService>();
         servicos.AddScoped<ContaService>();
+        servicos.AddScoped<AutorizacaoFichaService>();
+        servicos.AddScoped<DocumentoService>();
+        servicos.AddScoped<FichaService>();
         return servicos;
     }
 }

@@ -2,6 +2,7 @@
 
 using DoseCerta.Application.Abstracoes;
 using DoseCerta.Application.Repositorios;
+using DoseCerta.Infrastructure.Documentos;
 using DoseCerta.Infrastructure.Email;
 using DoseCerta.Infrastructure.Persistence;
 using DoseCerta.Infrastructure.Persistence.Repositorios;
@@ -51,6 +52,13 @@ public static class InjecaoDependencias
         servicos.AddScoped<IUtilizadorRepositorio, UtilizadorRepositorio>();
         servicos.AddScoped<ISessaoRevogadaRepositorio, SessaoRevogadaRepositorio>();
         servicos.AddScoped<IConviteRepositorio, ConviteRepositorio>();
+        servicos.AddScoped<IFichaRepositorio, FichaRepositorio>();
+        servicos.AddScoped<IDominiosRepositorio, DominiosRepositorio>();
+        servicos.AddScoped<IDocumentoRepositorio, DocumentoRepositorio>();
+        servicos.AddScoped<INotificacaoRepositorio, NotificacaoRepositorio>();
+
+        servicos.Configure<OpcoesDocumentos>(configuracao.GetSection(OpcoesDocumentos.Seccao));
+        servicos.AddSingleton<IArmazenamentoDocumentos, ArmazenamentoSistemaFicheiros>();
 
         return servicos;
     }

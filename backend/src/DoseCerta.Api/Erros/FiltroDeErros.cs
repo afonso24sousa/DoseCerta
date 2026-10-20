@@ -20,6 +20,18 @@ public sealed partial class FiltroDeErros : IExceptionHandler
         [CodigosErro.NaoAutenticado] = StatusCodes.Status401Unauthorized,
         [CodigosErro.PalavraPasseAtualIncorreta] = StatusCodes.Status403Forbidden,
         [CodigosErro.EmailJaRegistado] = StatusCodes.Status409Conflict,
+        [CodigosErro.AcessoProibido] = StatusCodes.Status403Forbidden,
+        [CodigosErro.FichaNaoEncontrada] = StatusCodes.Status404NotFound,
+        [CodigosErro.DocumentoNaoEncontrado] = StatusCodes.Status404NotFound,
+        [CodigosErro.FichaArquivada] = StatusCodes.Status409Conflict,
+        [CodigosErro.FichaJaArquivada] = StatusCodes.Status409Conflict,
+        [CodigosErro.FichaNaoArquivada] = StatusCodes.Status409Conflict,
+        [CodigosErro.FichaComHistorico] = StatusCodes.Status409Conflict,
+        [CodigosErro.FichaPropriaJaExiste] = StatusCodes.Status409Conflict,
+        [CodigosErro.FicheiroDemasiadoGrande] = StatusCodes.Status413PayloadTooLarge,
+        [CodigosErro.FormatoNaoSuportado] = StatusCodes.Status415UnsupportedMediaType,
+        [CodigosErro.DocumentoNaoGuardado] = StatusCodes.Status503ServiceUnavailable,
+        [CodigosErro.DocumentoIndisponivel] = StatusCodes.Status503ServiceUnavailable,
         [CodigosErro.ErroInterno] = StatusCodes.Status500InternalServerError,
     }.ToFrozenDictionary(StringComparer.Ordinal);
 

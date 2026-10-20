@@ -54,6 +54,11 @@ public class FabricaApi : WebApplicationFactory<PontoEntradaApi>, IAsyncLifetime
     public string LigacaoBaseDados { get; }
 
     /// <summary>
+    /// Gets a pasta temporária dos documentos desta execução, eliminada no fim.
+    /// </summary>
+    public string PastaDocumentos { get; } = Path.Combine(Path.GetTempPath(), $"DoseCerta_Testes_{Guid.NewGuid():N}");
+
+    /// <summary>
     /// Cria a base de dados aplicando as migrações.
     /// </summary>
     /// <returns>Uma tarefa que termina quando a base de dados estiver pronta.</returns>
@@ -65,7 +70,7 @@ public class FabricaApi : WebApplicationFactory<PontoEntradaApi>, IAsyncLifetime
     }
 
     /// <summary>
-    /// Elimina a base de dados desta execução.
+    /// Elimina a base de dados e a pasta dos documentos desta execução.
     /// </summary>
     /// <returns>Uma tarefa que termina quando a base de dados estiver eliminada.</returns>
     async Task IAsyncLifetime.DisposeAsync()
@@ -74,6 +79,11 @@ public class FabricaApi : WebApplicationFactory<PontoEntradaApi>, IAsyncLifetime
         {
             var contexto = ambito.ServiceProvider.GetRequiredService<DoseCertaDbContext>();
             await contexto.Database.EnsureDeletedAsync();
+        }
+
+        if (Directory.Exists(this.PastaDocumentos))
+        {
+            Directory.Delete(this.PastaDocumentos, recursive: true);
         }
 
         await this.DisposeAsync();
@@ -103,6 +113,7 @@ public class FabricaApi : WebApplicationFactory<PontoEntradaApi>, IAsyncLifetime
             ["ConnectionStrings:DoseCerta"] = this.LigacaoBaseDados,
             ["BaseDados:AplicarMigracoesNoArranque"] = "false",
             ["Jwt:Chave"] = ChaveJwtTestes,
+            ["Documentos:PastaRaiz"] = this.PastaDocumentos,
         }));
     }
 }

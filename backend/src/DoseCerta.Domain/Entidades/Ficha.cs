@@ -1,5 +1,6 @@
 // Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
 
+using DoseCerta.Domain.Comum;
 using DoseCerta.Domain.Enumerados;
 
 namespace DoseCerta.Domain.Entidades;
@@ -126,4 +127,169 @@ public class Ficha
     /// Gets as alergias registadas.
     /// </summary>
     public IReadOnlyCollection<Alergia> Alergias => this.alergias;
+
+    /// <summary>
+    /// Indica se a ficha pode ser eliminada: só sem medicação, tarefas nem histórico (tomas, execuções, ocorrências e notas) (RF-123).
+    /// </summary>
+    /// <param name="temMedicacao">Indica se a ficha tem medicação registada.</param>
+    /// <param name="temTarefas">Indica se a ficha tem tarefas registadas.</param>
+    /// <param name="temHistorico">Indica se a ficha tem tomas, execuções, ocorrências ou notas.</param>
+    /// <returns><see langword="true"/> se a ficha puder ser eliminada.</returns>
+    public static bool PodeSerEliminada(bool temMedicacao, bool temTarefas, bool temHistorico)
+    {
+        return !temMedicacao && !temTarefas && !temHistorico;
+    }
+
+    /// <summary>
+    /// Indica se é a ficha própria de um Utilizador (F003).
+    /// </summary>
+    /// <returns><see langword="true"/> se for a ficha própria.</returns>
+    public bool EProprio()
+    {
+        return this.Tipo == TipoFicha.Propria;
+    }
+
+    /// <summary>
+    /// Indica se a ficha está ativa.
+    /// </summary>
+    /// <returns><see langword="true"/> se a ficha estiver ativa.</returns>
+    public bool EstaAtiva()
+    {
+        return this.Estado == EstadoFicha.Ativa;
+    }
+
+    /// <summary>
+    /// Recusa as operações de escrita numa ficha arquivada (RF-120).
+    /// </summary>
+    /// <exception cref="DominioException">Com <see cref="CodigosErro.FichaArquivada"/>, se a ficha estiver arquivada.</exception>
+    public void ExigirAtiva()
+    {
+        if (!this.EstaAtiva())
+        {
+            throw new DominioException(
+                CodigosErro.FichaArquivada,
+                "A ficha está arquivada; a operação só é possível depois de a reativar.");
+        }
+    }
+
+    /// <summary>
+    /// Obtém a associação de um Utilizador à ficha.
+    /// </summary>
+    /// <param name="utilizadorId">Identificador do Utilizador.</param>
+    /// <returns>A associação, ou <see langword="null"/> se o Utilizador não estiver associado.</returns>
+    public Associacao? ObterAssociacao(Guid utilizadorId)
+    {
+        return this.associacoes.FirstOrDefault(a => a.UtilizadorId == utilizadorId);
+    }
+
+    /// <summary>
+    /// Atualiza os dados de identificação do utente (RF-029).
+    /// </summary>
+    /// <param name="nomeCompleto">Nome completo.</param>
+    /// <param name="dataNascimento">Data de nascimento.</param>
+    /// <param name="contactoEmergencia">Contacto de emergência.</param>
+    public void AtualizarDados(string nomeCompleto, DateOnly dataNascimento, string contactoEmergencia)
+    {
+        this.NomeCompleto = nomeCompleto;
+        this.DataNascimento = dataNascimento;
+        this.ContactoEmergencia = contactoEmergencia;
+    }
+
+    /// <summary>
+    /// Substitui as necessidades específicas pelos valores das listas fechadas indicados (RF-021).
+    /// </summary>
+    /// <param name="grauAutonomia">Grau de autonomia ou mobilidade, ou <see langword="null"/> para nenhum.</param>
+    /// <param name="condicoes">Condições de saúde.</param>
+    /// <param name="alergiasDaFicha">Alergias.</param>
+    public void DefinirNecessidades(GrauAutonomia? grauAutonomia, IEnumerable<CondicaoSaude> condicoes, IEnumerable<Alergia> alergiasDaFicha)
+    {
+        ArgumentNullException.ThrowIfNull(condicoes);
+        ArgumentNullException.ThrowIfNull(alergiasDaFicha);
+
+        this.GrauAutonomia = grauAutonomia;
+        this.GrauAutonomiaId = grauAutonomia?.Id;
+        this.condicoesSaude.Clear();
+        this.condicoesSaude.AddRange(condicoes.DistinctBy(c => c.Id));
+        this.alergias.Clear();
+        this.alergias.AddRange(alergiasDaFicha.DistinctBy(a => a.Id));
+    }
+
+    /// <summary>
+    /// Arquiva a ficha, preservando todo o histórico (RF-120).
+    /// </summary>
+    /// <param name="agoraUtc">Instante do arquivo, em UTC.</param>
+    /// <exception cref="DominioException">Com <see cref="CodigosErro.FichaJaArquivada"/>, se a ficha já estiver arquivada.</exception>
+    public void Arquivar(DateTime agoraUtc)
+    {
+        if (!this.EstaAtiva())
+        {
+            throw new DominioException(CodigosErro.FichaJaArquivada, "A ficha já está arquivada.");
+        }
+
+        this.Estado = EstadoFicha.Arquivada;
+        this.ArquivadaEmUtc = agoraUtc;
+    }
+
+    /// <summary>
+    /// Reativa a ficha; a geração de eventos retoma a partir deste instante (RF-121, RF-122, DM-19).
+    /// </summary>
+    /// <param name="agoraUtc">Instante da reativação, em UTC.</param>
+    /// <exception cref="DominioException">Com <see cref="CodigosErro.FichaNaoArquivada"/>, se a ficha não estiver arquivada.</exception>
+    public void Reativar(DateTime agoraUtc)
+    {
+        if (this.EstaAtiva())
+        {
+            throw new DominioException(CodigosErro.FichaNaoArquivada, "A ficha não está arquivada.");
+        }
+
+        this.Estado = EstadoFicha.Ativa;
+        this.ArquivadaEmUtc = null;
+        this.AtivaDesdeUtc = agoraUtc;
+    }
+
+    /// <summary>
+    /// Associa um Utilizador como Cuidador principal; provisório enquanto o convite para Cuidador principal estiver pendente (RF-024, RF-025, RF-030).
+    /// </summary>
+    /// <param name="utilizadorId">Identificador do Utilizador.</param>
+    /// <param name="provisorio">Indica se o Cuidador principal é provisório.</param>
+    /// <param name="agoraUtc">Instante da associação, em UTC.</param>
+    /// <returns>A associação criada.</returns>
+    /// <exception cref="InvalidOperationException">Se a ficha já tiver Cuidador principal ou o Utilizador já estiver associado.</exception>
+    public Associacao AssociarCuidadorPrincipal(Guid utilizadorId, bool provisorio, DateTime agoraUtc)
+    {
+        if (this.associacoes.Exists(a => a.EPrincipal || a.UtilizadorId == utilizadorId))
+        {
+            throw new InvalidOperationException("A ficha já tem Cuidador principal ou o Utilizador já está associado.");
+        }
+
+        if (provisorio && this.EProprio())
+        {
+            throw new InvalidOperationException("Na ficha própria o titular é sempre o Cuidador principal, nunca provisório.");
+        }
+
+        var associacao = new Associacao(this.Id, utilizadorId, Papel.Cuidador, agoraUtc);
+        associacao.MarcarPrincipal(provisorio);
+        this.associacoes.Add(associacao);
+        return associacao;
+    }
+
+    /// <summary>
+    /// Associa um Utilizador à ficha com um papel, sem ser Cuidador principal (por exemplo, ao aceitar um convite, RF-045).
+    /// </summary>
+    /// <param name="utilizadorId">Identificador do Utilizador.</param>
+    /// <param name="papel">Papel na ficha.</param>
+    /// <param name="agoraUtc">Instante da associação, em UTC.</param>
+    /// <returns>A associação criada.</returns>
+    /// <exception cref="InvalidOperationException">Se o Utilizador já estiver associado.</exception>
+    public Associacao Associar(Guid utilizadorId, Papel papel, DateTime agoraUtc)
+    {
+        if (this.ObterAssociacao(utilizadorId) is not null)
+        {
+            throw new InvalidOperationException("O Utilizador já está associado à ficha.");
+        }
+
+        var associacao = new Associacao(this.Id, utilizadorId, papel, agoraUtc);
+        this.associacoes.Add(associacao);
+        return associacao;
+    }
 }
