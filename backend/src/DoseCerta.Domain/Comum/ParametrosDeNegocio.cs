@@ -18,6 +18,11 @@ public static class ParametrosDeNegocio
     public const int TamanhoMaximoDocumento = 10 * 1024 * 1024;
 
     /// <summary>
+    /// Dias da janela móvel em que se geram as tomas de um tratamento sem data de fim (RF-060).
+    /// </summary>
+    public const int JanelaMovelDias = 30;
+
+    /// <summary>
     /// Data de nascimento mais antiga aceite numa ficha (<c>CK_Ficha_Nascimento</c>).
     /// </summary>
     public static readonly DateOnly DataNascimentoMinima = new(1900, 1, 1);

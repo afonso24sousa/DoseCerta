@@ -16,16 +16,16 @@ namespace DoseCerta.UnitTests.Infraestrutura;
 public class ModeloEfTestes
 {
     /// <summary>
-    /// O modelo mapeia as 23 tabelas do esquema dbo, incluindo as duas tabelas de junção das necessidades.
+    /// O modelo mapeia as 19 tabelas do esquema dbo (modelo de dados v02, sem a F007), incluindo as duas tabelas de junção das necessidades.
     /// </summary>
     [Fact]
-    public void ModeloMapeiaAsVinteETresTabelas()
+    public void ModeloMapeiaAsDezanoveTabelas()
     {
         var modelo = Modelo();
 
         var tabelas = modelo.GetEntityTypes().Select(e => e.GetTableName()).Distinct().ToList();
 
-        Assert.Equal(23, tabelas.Count);
+        Assert.Equal(19, tabelas.Count);
         Assert.Contains("FichaCondicaoSaude", tabelas);
         Assert.Contains("FichaAlergia", tabelas);
         Assert.All(modelo.GetEntityTypes(), e => Assert.Equal("dbo", e.GetSchema()));
@@ -84,7 +84,7 @@ public class ModeloEfTestes
     }
 
     /// <summary>
-    /// A migração inicial cria os quatro gatilhos no fim do Up e remove-os no início do Down.
+    /// A migração inicial cria os quatro gatilhos no fim do Up, incluindo o da F007, e remove-os no início do Down.
     /// </summary>
     [Fact]
     public void GatilhosSaoCriadosERemovidosPelaMigracao()
@@ -99,7 +99,7 @@ public class ModeloEfTestes
         var removidos = remocao.Operations.Cast<SqlOperation>().Select(o => o.Sql).ToList();
         Assert.Equal(4, criados.Count);
         Assert.Equal(4, removidos.Count);
-        foreach (var nome in GatilhosSql.Nomes())
+        foreach (var nome in GatilhosSql.Nomes().Append(GatilhosSql.NomeGatilhoExecucaoTarefa))
         {
             Assert.Single(criados, sql => sql.Contains($"CREATE TRIGGER dbo.{nome} ", StringComparison.Ordinal));
             Assert.Contains($"DROP TRIGGER IF EXISTS dbo.{nome};", removidos);

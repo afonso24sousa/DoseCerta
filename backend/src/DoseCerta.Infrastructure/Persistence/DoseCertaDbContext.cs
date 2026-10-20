@@ -83,26 +83,6 @@ public class DoseCertaDbContext : DbContext
     public DbSet<Toma> Tomas => this.Set<Toma>();
 
     /// <summary>
-    /// Gets as tarefas recorrentes.
-    /// </summary>
-    public DbSet<TarefaRecorrente> Tarefas => this.Set<TarefaRecorrente>();
-
-    /// <summary>
-    /// Gets os horários das tarefas.
-    /// </summary>
-    public DbSet<HorarioTarefa> HorariosTarefa => this.Set<HorarioTarefa>();
-
-    /// <summary>
-    /// Gets os dias da semana das tarefas.
-    /// </summary>
-    public DbSet<TarefaDiaSemana> TarefasDiaSemana => this.Set<TarefaDiaSemana>();
-
-    /// <summary>
-    /// Gets as execuções das tarefas.
-    /// </summary>
-    public DbSet<ExecucaoTarefa> ExecucoesTarefa => this.Set<ExecucaoTarefa>();
-
-    /// <summary>
     /// Gets os compromissos.
     /// </summary>
     public DbSet<Compromisso> Compromissos => this.Set<Compromisso>();
