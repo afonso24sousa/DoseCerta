@@ -13,6 +13,16 @@ public static class ParametrosDeNegocio
     public const int TamanhoMinimoPalavraPasse = 8;
 
     /// <summary>
+    /// Tamanho máximo de cada documento carregado: 10 MB (RNF-008).
+    /// </summary>
+    public const int TamanhoMaximoDocumento = 10 * 1024 * 1024;
+
+    /// <summary>
+    /// Data de nascimento mais antiga aceite numa ficha (<c>CK_Ficha_Nascimento</c>).
+    /// </summary>
+    public static readonly DateOnly DataNascimentoMinima = new(1900, 1, 1);
+
+    /// <summary>
     /// Validade do token de sessão: 8 horas (RNF-009).
     /// </summary>
     public static readonly TimeSpan ValidadeSessao = TimeSpan.FromHours(8);

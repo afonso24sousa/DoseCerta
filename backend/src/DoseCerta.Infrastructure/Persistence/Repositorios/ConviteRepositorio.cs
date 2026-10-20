@@ -1,6 +1,7 @@
 // Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
 
 using DoseCerta.Application.Repositorios;
+using DoseCerta.Domain.Entidades;
 using DoseCerta.Domain.Enumerados;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,5 +27,11 @@ public sealed class ConviteRepositorio : IConviteRepositorio
     public Task<int> ContarPendentesPorEmailAsync(string email, CancellationToken cancelamento)
     {
         return this.contexto.Convites.CountAsync(c => c.EmailConvidado == email && c.Estado == EstadoConvite.Pendente, cancelamento);
+    }
+
+    /// <inheritdoc/>
+    public void Adicionar(Convite convite)
+    {
+        this.contexto.Convites.Add(convite);
     }
 }

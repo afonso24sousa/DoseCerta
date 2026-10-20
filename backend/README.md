@@ -6,7 +6,8 @@ Este ficheiro contém as instruções técnicas para clonar, configurar, compila
 
 Esta versão corresponde à configuração da solução (Issue I029): camadas, autenticação JWT, ligação ao SQL Server,
 verificação do estado da aplicação, serviço de e-mail e testes; e ao modelo de dados (Issue I030): entidades, mapeamento
-EF Core, migração inicial e scripts SQL. Ainda não existem endpoints de negócio.
+EF Core, migração inicial e scripts SQL; à autenticação e gestão de conta (Issue I032, F001: OP-01 a OP-06); e à criação
+e gestão de fichas de utentes (Issue I033, F002 e ficha própria da F003: OP-07 a OP-17), descritas na secção 5.1.
 
 ## 1. Estrutura da solução
 
@@ -16,10 +17,10 @@ apresentação para a persistência.
 
 | Projeto | Camada | Conteúdo nesta versão |
 |---|---|---|
-| `src/DoseCerta.Api` | API REST e raiz de composição | arranque (`Arranque/`), erros (`Erros/`), `GET /saude` (`Saude/`), validação JWT (`Seguranca/`) |
-| `src/DoseCerta.Application` | Serviços de aplicação | abstrações `IEmailSender`, `IRelogio`, `IUnidadeDeTrabalho` e o registo da camada |
+| `src/DoseCerta.Api` | API REST e raiz de composição | arranque (`Arranque/`), erros (`Erros/`), `GET /saude` (`Saude/`), validação JWT (`Seguranca/`), controllers (`Controllers/`) e contratos dos pedidos e respostas (`Contratos/`) |
+| `src/DoseCerta.Application` | Serviços de aplicação | contas (`Contas/`), fichas e autorização por papel (`Fichas/`, `AutorizacaoFichaService`), documentos (`Documentos/`), interfaces dos repositórios (`Repositorios/`) e abstrações (`IArmazenamentoDocumentos`, `IEmailSender`, `IRelogio`, `IUnidadeDeTrabalho`, ...) |
 | `src/DoseCerta.Domain` | Domínio | entidades do modelo de dados (`Entidades/`), listas de valores (`Enumerados/`), exceções e códigos de erro (`Comum/`), calendário de Lisboa (`Tempo/`) |
-| `src/DoseCerta.Infrastructure` | Infraestrutura | `DoseCertaDbContext` com as 23 tabelas, mapeamento (`Persistence/Configuracoes/`), gatilhos (`Persistence/GatilhosSql.cs`), migrações (`Persistence/Migrations/`), unidade de trabalho, e-mail SMTP, opções JWT, relógio |
+| `src/DoseCerta.Infrastructure` | Infraestrutura | `DoseCertaDbContext` com as 23 tabelas, mapeamento (`Persistence/Configuracoes/`), gatilhos (`Persistence/GatilhosSql.cs`), migrações (`Persistence/Migrations/`), repositórios (`Persistence/Repositorios/`), unidade de trabalho, armazenamento de documentos no sistema de ficheiros (`Documentos/`), e-mail SMTP, segurança (hash e JWT), relógio |
 | `scripts-base-dados` | Base de dados | scripts SQL de criação, dados fictícios e reposição (ver secção 9) |
 | `tests/DoseCerta.UnitTests` | Testes unitários (QG-02) | sem base de dados nem rede |
 | `tests/DoseCerta.IntegrationTests` | Testes de integração (QG-03) | API em memória contra um SQL Server real |
@@ -81,6 +82,7 @@ e `Email__Servidor`. Os user-secrets só são lidos no ambiente `Development` (o
 | `Jwt:Emissor`, `Jwt:Publico` | não | Por omissão `DoseCerta`. |
 | `Email:Servidor`, `Email:Remetente` | para enviar e-mail | Sem estes valores o envio não é tentado e fica registado um aviso no log. |
 | `Email:Porta`, `Email:UsarTls`, `Email:Utilizador`, `Email:PalavraPasse`, `Email:NomeRemetente` | não | Por omissão 587, TLS ativo e nome `DoseCerta`. |
+| `Documentos:PastaRaiz` | não | Pasta onde ficam os ficheiros dos documentos (RNF-006), fora do conteúdo servido pela API (RNF-007). Vazia: `%LOCALAPPDATA%\DoseCerta\documentos` no Windows ou `~/.local/share/DoseCerta/documentos` em Linux. As cópias de segurança têm de incluir esta pasta (RNF-045). |
 
 Com `BaseDados:AplicarMigracoesNoArranque` a `true`, a API aplica as migrações do EF Core ao arrancar e cria a base de dados
 `DoseCerta` se ainda não existir, com as 23 tabelas, os 4 gatilhos e os valores predefinidos das listas fechadas (secção 8).
@@ -103,6 +105,38 @@ curl -k https://localhost:7180/saude
 Se a base de dados não estiver acessível, a resposta é 503 com `"estado":"Indisponivel"`.
 Todos os outros endpoints exigem um token JWT válido no cabeçalho `Authorization: Bearer <token>`.
 Em desenvolvimento, a documentação interativa da API fica em `https://localhost:7180/swagger`.
+
+### 5.1 Fichas e documentos (F002)
+
+Os endpoints seguem a documentação da API (`m2-documentacao-api-v01.md`, secção 5.2) e a matriz de permissões
+(`m2-matriz-permissoes-ficha-v01.md`). O papel é verificado em cada pedido por `AutorizacaoFichaService`, lido da base de dados:
+quem não está associado à ficha recebe 404, o Familiar recebe 403 nas operações de Cuidador e uma ficha arquivada recebe 409
+`FICHA_ARQUIVADA` nas escritas que exigem ficha ativa.
+
+| Operação | Método e caminho |
+|---|---|
+| OP-07 Listar fichas | `GET /api/v1/fichas?estado=Ativa\|Arquivada` |
+| OP-08 Listas de necessidades | `GET /api/v1/dominios/necessidades` |
+| OP-09 Criar ficha | `POST /api/v1/fichas` |
+| OP-10 Consultar ficha | `GET /api/v1/fichas/{fichaId}` |
+| OP-11 Editar ficha | `PUT /api/v1/fichas/{fichaId}` |
+| OP-12 Arquivar ficha | `POST /api/v1/fichas/{fichaId}/arquivo` |
+| OP-13 Reativar ficha | `DELETE /api/v1/fichas/{fichaId}/arquivo` |
+| OP-14 Eliminar ficha | `DELETE /api/v1/fichas/{fichaId}` |
+| OP-15 Carregar documento | `POST /api/v1/fichas/{fichaId}/documentos` (`multipart/form-data`: partes `categoria` e `ficheiro`) |
+| OP-16 Listar documentos | `GET /api/v1/fichas/{fichaId}/documentos` |
+| OP-17 Descarregar documento | `GET /api/v1/documentos/{documentoId}` |
+
+A criação (OP-09) e a edição (OP-11) aceitam `application/json` ou, com documentos, `multipart/form-data` com a parte `dados`
+(o mesmo JSON), uma parte `documento` por ficheiro e uma parte `categoria` por ficheiro, pela mesma ordem
+(`ReceitaMedica`, `RelatorioClinico` ou `DocumentoIdentificacao`). Os ficheiros são PDF, JPG ou PNG até 10 MB, com o formato
+verificado pelo conteúdo. O ficheiro é guardado antes dos metadados e apagado se a transação falhar: se um documento não puder
+ser guardado, a operação responde 503 `DOCUMENTO_NAO_GUARDADO` e nada é gravado (RF-023, RNF-046).
+
+Na ficha de terceiro com `cuidadorPrincipal.eu=false`, o criador fica Cuidador principal provisório e o convite para Cuidador
+principal fica pendente; o envio do convite por e-mail e a resposta a ele são implementados com a F004 (Issue I035). A eliminação
+(OP-14) verifica as tabelas de tratamentos, tarefas, tomas, execuções, ocorrências e notas; a verificação volta a ser testada
+quando a medicação (F005) e as tarefas (F007) forem implementadas.
 
 ## 6. Enviar uma mensagem de teste pelo serviço de e-mail
 

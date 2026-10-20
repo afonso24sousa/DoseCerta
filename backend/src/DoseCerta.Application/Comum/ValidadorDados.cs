@@ -16,6 +16,11 @@ public sealed partial class ValidadorDados
     /// </summary>
     public const int ComprimentoMaximoEmail = 254;
 
+    /// <summary>
+    /// Comprimento máximo do contacto de emergência (modelo de dados).
+    /// </summary>
+    public const int ComprimentoMaximoTelefone = 30;
+
     private readonly List<ErroCampo> erros = new();
 
     /// <summary>
@@ -113,6 +118,24 @@ public sealed partial class ValidadorDados
     }
 
     /// <summary>
+    /// Valida um contacto telefónico obrigatório: algarismos, espaços e o prefixo + opcional, até 30 caracteres.
+    /// </summary>
+    /// <param name="campo">Nome do campo no pedido.</param>
+    /// <param name="valor">Valor já normalizado.</param>
+    /// <returns>O próprio validador, para encadear regras.</returns>
+    public ValidadorDados Telefone(string campo, string? valor)
+    {
+        if (valor is null)
+        {
+            return this.Erro(campo, "É obrigatório.");
+        }
+
+        return valor.Length <= ComprimentoMaximoTelefone && PadraoTelefone().IsMatch(valor)
+            ? this
+            : this.Erro(campo, "Tem de ser um número de telefone com algarismos, espaços e o prefixo + opcional, até 30 caracteres, por exemplo +351 910 000 001.");
+    }
+
+    /// <summary>
     /// Lança uma <see cref="ValidacaoException"/> se existirem erros registados.
     /// </summary>
     /// <exception cref="ValidacaoException">Existem campos em erro.</exception>
@@ -126,4 +149,7 @@ public sealed partial class ValidadorDados
 
     [GeneratedRegex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
     private static partial Regex PadraoEmail();
+
+    [GeneratedRegex(@"^\+?[0-9][0-9 ]{5,}$", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex PadraoTelefone();
 }

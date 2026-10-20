@@ -1,5 +1,7 @@
 // Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
 
+using DoseCerta.Domain.Entidades;
+
 namespace DoseCerta.Application.Repositorios;
 
 /// <summary>
@@ -14,4 +16,10 @@ public interface IConviteRepositorio
     /// <param name="cancelamento">Token de cancelamento.</param>
     /// <returns>O número de convites pendentes.</returns>
     Task<int> ContarPendentesPorEmailAsync(string email, CancellationToken cancelamento);
+
+    /// <summary>
+    /// Regista um convite novo.
+    /// </summary>
+    /// <param name="convite">Convite a registar.</param>
+    void Adicionar(Convite convite);
 }

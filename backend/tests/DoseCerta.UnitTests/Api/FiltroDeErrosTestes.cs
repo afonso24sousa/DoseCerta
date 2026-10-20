@@ -24,6 +24,18 @@ public class FiltroDeErrosTestes
     /// <param name="estado">Código HTTP esperado.</param>
     [Theory]
     [InlineData(CodigosErro.ValidacaoInvalida, 400)]
+    [InlineData(CodigosErro.AcessoProibido, 403)]
+    [InlineData(CodigosErro.FichaNaoEncontrada, 404)]
+    [InlineData(CodigosErro.DocumentoNaoEncontrado, 404)]
+    [InlineData(CodigosErro.FichaArquivada, 409)]
+    [InlineData(CodigosErro.FichaJaArquivada, 409)]
+    [InlineData(CodigosErro.FichaNaoArquivada, 409)]
+    [InlineData(CodigosErro.FichaComHistorico, 409)]
+    [InlineData(CodigosErro.FichaPropriaJaExiste, 409)]
+    [InlineData(CodigosErro.FicheiroDemasiadoGrande, 413)]
+    [InlineData(CodigosErro.FormatoNaoSuportado, 415)]
+    [InlineData(CodigosErro.DocumentoNaoGuardado, 503)]
+    [InlineData(CodigosErro.DocumentoIndisponivel, 503)]
     [InlineData(CodigosErro.ErroInterno, 500)]
     public void EstadoHttpCorrespondeAoContrato(string codigo, int estado)
     {
