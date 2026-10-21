@@ -30,6 +30,14 @@ public sealed class ConviteRepositorio : IConviteRepositorio
     }
 
     /// <inheritdoc/>
+    public Task<bool> ExistePendenteAsync(Guid fichaId, string email, CancellationToken cancelamento)
+    {
+        return this.contexto.Convites.AnyAsync(
+            c => c.FichaId == fichaId && c.EmailConvidado == email && c.Estado == EstadoConvite.Pendente,
+            cancelamento);
+    }
+
+    /// <inheritdoc/>
     public void Adicionar(Convite convite)
     {
         this.contexto.Convites.Add(convite);

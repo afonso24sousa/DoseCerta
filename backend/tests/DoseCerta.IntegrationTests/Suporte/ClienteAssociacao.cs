@@ -70,6 +70,38 @@ public static class ClienteAssociacao
     }
 
     /// <summary>
+    /// Cria a ficha própria do Utilizador do cliente (OP-09 com <c>propria=true</c>).
+    /// </summary>
+    /// <param name="cliente">Cliente autenticado do titular.</param>
+    /// <returns>O identificador da ficha.</returns>
+    public static async Task<Guid> CriarFichaPropriaAsync(HttpClient cliente)
+    {
+        ArgumentNullException.ThrowIfNull(cliente);
+        using var resposta = await cliente.PostAsJsonAsync("api/v1/fichas", new
+        {
+            propria = true,
+            nomeCompleto = "Ana Fictícia",
+            dataNascimento = "1980-02-29",
+            contactoEmergencia = "+351 910 000 003",
+        });
+        resposta.EnsureSuccessStatusCode();
+        return (await ClienteApi.JsonAsync(resposta)).GetProperty("id").GetGuid();
+    }
+
+    /// <summary>
+    /// Pede um convite para a ficha (OP-19) com o corpo indicado.
+    /// </summary>
+    /// <param name="cliente">Cliente autenticado.</param>
+    /// <param name="fichaId">Ficha.</param>
+    /// <param name="corpo">Corpo do pedido, por exemplo <c>new { email, papel = "Familiar" }</c>.</param>
+    /// <returns>A resposta HTTP.</returns>
+    public static Task<HttpResponseMessage> ConvidarAsync(HttpClient cliente, Guid fichaId, object corpo)
+    {
+        ArgumentNullException.ThrowIfNull(cliente);
+        return cliente.PostAsJsonAsync($"api/v1/fichas/{fichaId}/convites", corpo);
+    }
+
+    /// <summary>
     /// Pede a transferência do papel de Cuidador principal (OP-26), com o corpo <c>{ "utilizadorId": ... }</c>.
     /// </summary>
     /// <param name="cliente">Cliente autenticado.</param>
