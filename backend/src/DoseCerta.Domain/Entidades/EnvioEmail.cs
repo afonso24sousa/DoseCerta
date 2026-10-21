@@ -1,5 +1,6 @@
 // Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
 
+using DoseCerta.Domain.Comum;
 using DoseCerta.Domain.Enumerados;
 
 namespace DoseCerta.Domain.Entidades;
@@ -97,4 +98,90 @@ public class EnvioEmail
     /// Gets o instante da próxima tentativa, em UTC, enquanto o envio está pendente.
     /// </summary>
     public DateTime? ProximaTentativaEmUtc { get; private set; }
+
+    /// <summary>
+    /// Indica se o e-mail está pendente e a próxima tentativa já chegou.
+    /// </summary>
+    /// <param name="agoraUtc">Instante atual, em UTC.</param>
+    /// <returns><see langword="true"/> se for altura de tentar o envio.</returns>
+    public bool Devido(DateTime agoraUtc)
+    {
+        return this.Estado == EstadoEnvioEmail.Pendente && this.ProximaTentativaEmUtc <= agoraUtc;
+    }
+
+    /// <summary>
+    /// Indica se, depois de uma falha, ainda há reenvios disponíveis (no máximo <see cref="ParametrosDeNegocio.ReenviosMaximos"/>).
+    /// </summary>
+    /// <returns><see langword="true"/> se ainda puder ser reenviado.</returns>
+    public bool PodeReenviar()
+    {
+        return this.Reenvios < ParametrosDeNegocio.ReenviosMaximos;
+    }
+
+    /// <summary>
+    /// Regista o início de uma tentativa de envio: a primeira guarda o instante da primeira tentativa (RNF-018); as seguintes
+    /// contam como reenvios (RF-136).
+    /// </summary>
+    /// <param name="agoraUtc">Instante da tentativa, em UTC.</param>
+    /// <exception cref="InvalidOperationException">Se o e-mail não estiver pendente ou a próxima tentativa ainda não tiver chegado.</exception>
+    public void IniciarTentativa(DateTime agoraUtc)
+    {
+        if (!this.Devido(agoraUtc))
+        {
+            throw new InvalidOperationException("O e-mail não tem nenhuma tentativa de envio devida.");
+        }
+
+        if (this.PrimeiraTentativaEmUtc is null)
+        {
+            this.PrimeiraTentativaEmUtc = agoraUtc;
+        }
+        else
+        {
+            this.Reenvios++;
+        }
+
+        this.UltimaTentativaEmUtc = agoraUtc;
+    }
+
+    /// <summary>
+    /// Marca o e-mail como enviado: o serviço de envio aceitou-o e não há mais tentativas.
+    /// </summary>
+    /// <param name="agoraUtc">Instante da tentativa bem-sucedida, em UTC.</param>
+    /// <exception cref="InvalidOperationException">Se o e-mail não estiver pendente.</exception>
+    public void MarcarEnviado(DateTime agoraUtc)
+    {
+        this.ExigirPendente();
+        this.Estado = EstadoEnvioEmail.Enviado;
+        this.UltimaTentativaEmUtc = agoraUtc;
+        this.ProximaTentativaEmUtc = null;
+    }
+
+    /// <summary>
+    /// Regista a falha de uma tentativa: agenda o reenvio <see cref="ParametrosDeNegocio.IntervaloReenvio"/> depois ou, se os
+    /// reenvios já se esgotaram, marca o e-mail como não entregue (RF-119, RF-136). A falha nunca altera o convite nem a notificação.
+    /// </summary>
+    /// <param name="agoraUtc">Instante da tentativa falhada, em UTC.</param>
+    /// <exception cref="InvalidOperationException">Se o e-mail não estiver pendente.</exception>
+    public void RegistarFalha(DateTime agoraUtc)
+    {
+        this.ExigirPendente();
+        this.UltimaTentativaEmUtc = agoraUtc;
+        if (this.PodeReenviar())
+        {
+            this.ProximaTentativaEmUtc = agoraUtc + ParametrosDeNegocio.IntervaloReenvio;
+        }
+        else
+        {
+            this.Estado = EstadoEnvioEmail.NaoEntregue;
+            this.ProximaTentativaEmUtc = null;
+        }
+    }
+
+    private void ExigirPendente()
+    {
+        if (this.Estado != EstadoEnvioEmail.Pendente)
+        {
+            throw new InvalidOperationException("O envio do e-mail já terminou.");
+        }
+    }
 }

@@ -18,6 +18,16 @@ public static class ParametrosDeNegocio
     public const int TamanhoMaximoDocumento = 10 * 1024 * 1024;
 
     /// <summary>
+    /// Número máximo de reenvios de um e-mail depois da primeira tentativa falhada (RF-118, RF-136).
+    /// </summary>
+    public const int ReenviosMaximos = 3;
+
+    /// <summary>
+    /// Intervalo entre as tentativas de envio de um e-mail: 5 minutos (RF-118, RF-136).
+    /// </summary>
+    public static readonly TimeSpan IntervaloReenvio = TimeSpan.FromMinutes(5);
+
+    /// <summary>
     /// Data de nascimento mais antiga aceite numa ficha (<c>CK_Ficha_Nascimento</c>).
     /// </summary>
     public static readonly DateOnly DataNascimentoMinima = new(1900, 1, 1);

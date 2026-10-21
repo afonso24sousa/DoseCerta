@@ -2,6 +2,7 @@
 
 using DoseCerta.Application.Abstracoes;
 using DoseCerta.Application.Comum;
+using DoseCerta.Application.Emails;
 using DoseCerta.Application.Fichas;
 using DoseCerta.Application.Pessoas;
 using DoseCerta.Application.Repositorios;
@@ -19,6 +20,8 @@ public sealed class ConviteService
     private readonly IConviteRepositorio convites;
     private readonly IFichaRepositorio fichas;
     private readonly IUtilizadorRepositorio utilizadores;
+    private readonly INotificacaoRepositorio notificacoes;
+    private readonly EnvioEmailService envioEmail;
     private readonly AutorizacaoFichaService autorizacao;
     private readonly IUnidadeDeTrabalho unidadeDeTrabalho;
     private readonly IRelogio relogio;
@@ -29,6 +32,8 @@ public sealed class ConviteService
     /// <param name="convites">Repositório dos convites.</param>
     /// <param name="fichas">Repositório das fichas, para associar quem aceita um convite.</param>
     /// <param name="utilizadores">Repositório das contas.</param>
+    /// <param name="notificacoes">Repositório das notificações, para a notificação <c>ConviteRecebido</c>.</param>
+    /// <param name="envioEmail">Registo do e-mail de convite.</param>
     /// <param name="autorizacao">Verificação do papel na ficha.</param>
     /// <param name="unidadeDeTrabalho">Transação de cada operação de escrita.</param>
     /// <param name="relogio">Relógio do sistema.</param>
@@ -36,6 +41,8 @@ public sealed class ConviteService
         IConviteRepositorio convites,
         IFichaRepositorio fichas,
         IUtilizadorRepositorio utilizadores,
+        INotificacaoRepositorio notificacoes,
+        EnvioEmailService envioEmail,
         AutorizacaoFichaService autorizacao,
         IUnidadeDeTrabalho unidadeDeTrabalho,
         IRelogio relogio)
@@ -43,6 +50,8 @@ public sealed class ConviteService
         this.convites = convites;
         this.fichas = fichas;
         this.utilizadores = utilizadores;
+        this.notificacoes = notificacoes;
+        this.envioEmail = envioEmail;
         this.autorizacao = autorizacao;
         this.unidadeDeTrabalho = unidadeDeTrabalho;
         this.relogio = relogio;
@@ -113,16 +122,17 @@ public sealed class ConviteService
                     ficha.MarcarPrincipalProvisorio();
                 }
 
+                var convidadoPor = await this.NomeDaContaAsync(utilizadorId, cancelamento).ConfigureAwait(false);
                 var convite = await this.CriarConviteAsync(
                     ficha,
                     emailLimpo!,
                     papel!.Value,
                     paraPrincipal,
                     utilizadorId,
+                    convidadoPor,
                     this.relogio.AgoraUtc(),
                     cancelamento).ConfigureAwait(false);
-                var quemConvida = await this.utilizadores.ObterPorIdAsync(utilizadorId, cancelamento).ConfigureAwait(false);
-                return Resumo(convite, ficha, quemConvida?.Nome ?? string.Empty);
+                return Resumo(convite, ficha, convidadoPor);
             },
             cancelamento).ConfigureAwait(false);
     }
@@ -137,10 +147,12 @@ public sealed class ConviteService
     /// <param name="agoraUtc">Instante da criação, em UTC.</param>
     /// <param name="cancelamento">Token de cancelamento.</param>
     /// <returns>O convite criado.</returns>
-    public Task<Convite> ConvidarParaPrincipalAsync(Ficha ficha, Guid criadorId, string email, DateTime agoraUtc, CancellationToken cancelamento)
+    public async Task<Convite> ConvidarParaPrincipalAsync(Ficha ficha, Guid criadorId, string email, DateTime agoraUtc, CancellationToken cancelamento)
     {
         ArgumentNullException.ThrowIfNull(ficha);
-        return this.CriarConviteAsync(ficha, email, Papel.Cuidador, paraPrincipal: true, criadorId, agoraUtc, cancelamento);
+        var convidadoPor = await this.NomeDaContaAsync(criadorId, cancelamento).ConfigureAwait(false);
+        return await this.CriarConviteAsync(ficha, email, Papel.Cuidador, paraPrincipal: true, criadorId, convidadoPor, agoraUtc, cancelamento)
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -239,21 +251,48 @@ public sealed class ConviteService
     }
 
     /// <summary>
-    /// Cria o convite pendente, na transação em curso; é o único sítio onde um convite é criado (OP-09 e OP-19).
+    /// Cria o convite pendente e, na mesma transação, a notificação <c>ConviteRecebido</c> (só se o e-mail já tiver conta) e o
+    /// e-mail de convite (sempre), ligado à notificação quando ela existe (RF-041, D1). É o único sítio onde um convite é criado
+    /// (OP-09 e OP-19). O e-mail é só registado: a falha do envio nunca desfaz o convite (RF-135).
     /// </summary>
-    private Task<Convite> CriarConviteAsync(
+    private async Task<Convite> CriarConviteAsync(
         Ficha ficha,
         string email,
         Papel papel,
         bool paraPrincipal,
         Guid convidadoPorId,
+        string convidadoPor,
         DateTime agoraUtc,
         CancellationToken cancelamento)
     {
-        cancelamento.ThrowIfCancellationRequested();
         var convite = new Convite(ficha.Id, email, papel, paraPrincipal, convidadoPorId, agoraUtc);
         this.convites.Adicionar(convite);
-        return Task.FromResult(convite);
+
+        Guid? notificacaoId = null;
+        var destinatario = await this.utilizadores.ObterPorEmailAsync(email, cancelamento).ConfigureAwait(false);
+        if (destinatario is not null)
+        {
+            var notificacao = new Notificacao(
+                destinatario.Id,
+                ficha.Id,
+                TipoNotificacao.ConviteRecebido,
+                TextosConvite.Notificacao(ficha.NomeCompleto, papel, paraPrincipal, convidadoPor),
+                TipoReferencia.Convite,
+                convite.Id,
+                agoraUtc,
+                agoraUtc);
+            this.notificacoes.Adicionar(notificacao);
+            notificacaoId = notificacao.Id;
+        }
+
+        this.envioEmail.RegistarDeConvite(convite, notificacaoId, agoraUtc);
+        return convite;
+    }
+
+    private async Task<string> NomeDaContaAsync(Guid utilizadorId, CancellationToken cancelamento)
+    {
+        var conta = await this.utilizadores.ObterPorIdAsync(utilizadorId, cancelamento).ConfigureAwait(false);
+        return conta?.Nome ?? string.Empty;
     }
 
     private async Task<Utilizador> ObterContaAsync(Guid utilizadorId, CancellationToken cancelamento)

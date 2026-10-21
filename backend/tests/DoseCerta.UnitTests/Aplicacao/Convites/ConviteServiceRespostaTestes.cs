@@ -29,13 +29,7 @@ public class ConviteServiceRespostaTestes
     /// </summary>
     public ConviteServiceRespostaTestes()
     {
-        this.servico = new ConviteService(
-            this.repositorios,
-            this.repositorios,
-            this.repositorios,
-            new AutorizacaoFichaService(this.repositorios),
-            this.unidadeDeTrabalho,
-            new RelogioFixo(Agora));
+        this.servico = ServicosDeTeste.ConviteService(this.repositorios, this.unidadeDeTrabalho, new RelogioFixo(Agora));
         this.cuidador = this.NovoUtilizador("Zé Cuidador", "ze@exemplo.pt");
         this.convidado = this.NovoUtilizador("Rui Convidado", "rui@exemplo.pt");
         this.ficha = FichasDeTeste.DeTerceiro(this.cuidador.Id);

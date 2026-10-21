@@ -28,13 +28,7 @@ public class ConviteServiceTestes
     /// </summary>
     public ConviteServiceTestes()
     {
-        this.servico = new ConviteService(
-            this.repositorios,
-            this.repositorios,
-            this.repositorios,
-            new AutorizacaoFichaService(this.repositorios),
-            this.unidadeDeTrabalho,
-            new RelogioFixo(Agora));
+        this.servico = ServicosDeTeste.ConviteService(this.repositorios, this.unidadeDeTrabalho, new RelogioFixo(Agora));
         this.cuidador = this.NovoUtilizador("Zé Cuidador", "ze@exemplo.pt");
         this.familiar = this.NovoUtilizador("Ana Familiar", "ana@exemplo.pt");
         this.ficha = FichasDeTeste.DeTerceiro(this.cuidador.Id);
@@ -87,6 +81,56 @@ public class ConviteServiceTestes
         Assert.Equal(campoEmErro, Assert.Single(erro.Campos).Campo);
         Assert.Empty(this.repositorios.Convites);
         Assert.Equal(0, this.unidadeDeTrabalho.Confirmadas);
+    }
+
+    /// <summary>
+    /// RF-041 CA1, D1: o convite para um e-mail com conta cria a notificação <c>ConviteRecebido</c> para essa conta e o e-mail de
+    /// convite pendente, ligado ao convite e à notificação.
+    /// </summary>
+    /// <returns>Uma tarefa assíncrona.</returns>
+    [Fact]
+    public async Task ConviteParaEmailComContaCriaNotificacaoEEmail()
+    {
+        var rui = this.NovoUtilizador("Rui Convidado", "rui@exemplo.pt");
+
+        await this.Convidar("RUI@exemplo.pt", Papel.Familiar);
+
+        var convite = Assert.Single(this.repositorios.Convites);
+        var notificacao = Assert.Single(this.repositorios.Notificacoes);
+        Assert.Equal(rui.Id, notificacao.DestinatarioId);
+        Assert.Equal(this.ficha.Id, notificacao.FichaId);
+        Assert.Equal(TipoNotificacao.ConviteRecebido, notificacao.Tipo);
+        Assert.Equal(TipoReferencia.Convite, notificacao.ReferenciaTipo);
+        Assert.Equal(convite.Id, notificacao.ReferenciaId);
+        Assert.Equal(Agora, notificacao.InstanteLimiteUtc);
+        Assert.Equal(TextosConvite.Notificacao(this.ficha.NomeCompleto, Papel.Familiar, false, "Zé Cuidador"), notificacao.Mensagem);
+        var envio = Assert.Single(this.repositorios.EnviosEmail);
+        Assert.Equal(convite.Id, envio.ConviteId);
+        Assert.Equal(notificacao.Id, envio.NotificacaoId);
+        Assert.Equal("RUI@exemplo.pt", envio.EnderecoDestino);
+        Assert.Equal(TextosConvite.Assunto, envio.Assunto);
+        Assert.Equal(EstadoEnvioEmail.Pendente, envio.Estado);
+        Assert.Equal(Agora, envio.ProximaTentativaEmUtc);
+    }
+
+    /// <summary>
+    /// RF-041 CA2: o convite para um e-mail sem conta só cria o e-mail de convite, ligado ao convite e sem notificação.
+    /// O convite para Cuidador principal da criação da ficha (OP-09) segue a mesma regra.
+    /// </summary>
+    /// <returns>Uma tarefa assíncrona.</returns>
+    [Fact]
+    public async Task ConviteParaEmailSemContaSoCriaOEmail()
+    {
+        await this.Convidar("joao@exemplo.pt", Papel.Familiar);
+        var nova = FichasDeTeste.DeTerceiro(this.cuidador.Id, provisorio: true);
+        await this.servico.ConvidarParaPrincipalAsync(nova, this.cuidador.Id, "rita@exemplo.pt", Agora, CancellationToken.None);
+
+        Assert.Empty(this.repositorios.Notificacoes);
+        Assert.Equal(2, this.repositorios.EnviosEmail.Count);
+        Assert.All(this.repositorios.EnviosEmail, e => Assert.Null(e.NotificacaoId));
+        Assert.Equal(
+            this.repositorios.Convites.Select(c => (Guid?)c.Id).Order(),
+            this.repositorios.EnviosEmail.Select(e => e.ConviteId).Order());
     }
 
     /// <summary>

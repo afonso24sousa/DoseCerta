@@ -3,6 +3,7 @@
 using DoseCerta.Application.Contas;
 using DoseCerta.Application.Convites;
 using DoseCerta.Application.Documentos;
+using DoseCerta.Application.Emails;
 using DoseCerta.Application.Fichas;
 using DoseCerta.Application.Pessoas;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,6 +30,7 @@ public static class InjecaoDependencias
         servicos.AddScoped<FichaService>();
         servicos.AddScoped<PessoasService>();
         servicos.AddScoped<ConviteService>();
+        servicos.AddScoped<EnvioEmailService>();
         return servicos;
     }
 }
