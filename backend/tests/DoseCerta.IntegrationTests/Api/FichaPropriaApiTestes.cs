@@ -57,6 +57,43 @@ public class FichaPropriaApiTestes
     }
 
     /// <summary>
+    /// RF-031 CA1 com pedidos simultâneos: só um cria a ficha própria; os outros recebem 409 <c>FICHA_PROPRIA_JA_EXISTE</c>, nunca 500.
+    /// A recusa pode vir da verificação prévia ou do índice <c>UQ_Ficha_UtilizadorProprio</c>; o caminho do índice é provado em
+    /// <c>UnidadeDeTrabalhoUnicidadeTestes</c>.
+    /// </summary>
+    /// <returns>Uma tarefa assíncrona.</returns>
+    [Fact]
+    public async Task PedidosSimultaneosCriamSoUmaFichaPropria()
+    {
+        const int Pedidos = 5;
+        var conta = await ClienteApi.NovoUtilizadorAutenticadoAsync(this.fabrica);
+        using var cliente = conta.Cliente;
+
+        var respostas = await Task.WhenAll(Enumerable.Range(0, Pedidos).Select(_ => cliente.PostAsJsonAsync("api/v1/fichas", PedidoProprio())));
+        try
+        {
+            Assert.Single(respostas, r => r.StatusCode == HttpStatusCode.Created);
+            var recusadas = respostas.Where(r => r.StatusCode != HttpStatusCode.Created).ToList();
+            Assert.Equal(Pedidos - 1, recusadas.Count);
+            Assert.All(recusadas, r => Assert.Equal(HttpStatusCode.Conflict, r.StatusCode));
+            foreach (var recusada in recusadas)
+            {
+                Assert.Equal("FICHA_PROPRIA_JA_EXISTE", await ClienteApi.CodigoErroAsync(recusada));
+            }
+
+            Assert.Equal(1, await this.fabrica.ComContextoAsync(c => c.Fichas.CountAsync(f => f.UtilizadorProprioId == conta.Id)));
+            Assert.Equal(1, await this.fabrica.ComContextoAsync(c => c.Associacoes.CountAsync(a => a.UtilizadorId == conta.Id)));
+        }
+        finally
+        {
+            foreach (var resposta in respostas)
+            {
+                resposta.Dispose();
+            }
+        }
+    }
+
+    /// <summary>
     /// OP-09: com <c>propria=true</c> o campo <c>cuidadorPrincipal</c> é ignorado; o titular fica Cuidador principal e não é criado convite
     /// (decisão do Executor: a documentação só exige o campo numa ficha de terceiro).
     /// </summary>
