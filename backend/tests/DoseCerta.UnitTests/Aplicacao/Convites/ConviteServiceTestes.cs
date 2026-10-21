@@ -188,6 +188,44 @@ public class ConviteServiceTestes
         Assert.Empty(this.repositorios.Convites);
     }
 
+    /// <summary>
+    /// RF-042 CA1, RF-044: o Utilizador vê só os convites pendentes dirigidos ao seu e-mail, sem distinguir maiúsculas, com a ficha
+    /// e quem convidou, do mais recente para o mais antigo; os convites respondidos e os de outros e-mails não aparecem.
+    /// </summary>
+    /// <returns>Uma tarefa assíncrona.</returns>
+    [Fact]
+    public async Task ListarRecebidosDevolveSoOsPendentesDoSeuEmail()
+    {
+        var convidado = this.NovoUtilizador("Rui Convidado", "rui@exemplo.pt");
+        var outraFicha = FichasDeTeste.DeTerceiro(this.cuidador.Id);
+        this.repositorios.Fichas.Add(outraFicha);
+        var antigo = new Convite(this.ficha.Id, "RUI@exemplo.pt", Papel.Familiar, false, this.cuidador.Id, Agora.AddDays(-2));
+        var recente = new Convite(outraFicha.Id, "rui@exemplo.pt", Papel.Cuidador, false, this.cuidador.Id, Agora);
+        var respondido = new Convite(this.ficha.Id, "rui@exemplo.pt", Papel.Familiar, false, this.cuidador.Id, Agora.AddDays(-5));
+        respondido.Recusar(convidado.Id, Agora.AddDays(-4));
+        var outroEmail = new Convite(this.ficha.Id, "rita@exemplo.pt", Papel.Familiar, false, this.cuidador.Id, Agora);
+        this.repositorios.Convites.AddRange(new[] { antigo, recente, respondido, outroEmail });
+
+        var recebidos = await this.servico.ListarRecebidosAsync(convidado.Id, CancellationToken.None);
+
+        Assert.Equal(new[] { recente.Id, antigo.Id }, recebidos.Select(r => r.Id));
+        Assert.Equal(
+            new ConviteResumo(antigo.Id, this.ficha.Id, this.ficha.NomeCompleto, Papel.Familiar, false, "Zé Cuidador", EstadoConvite.Pendente, Agora.AddDays(-2)),
+            recebidos[1]);
+    }
+
+    /// <summary>
+    /// Se a conta do token já não existir, a listagem é recusada com 401, como na consulta da conta (OP-04).
+    /// </summary>
+    /// <returns>Uma tarefa assíncrona.</returns>
+    [Fact]
+    public async Task ListarRecebidosSemContaDa401()
+    {
+        var erro = await Assert.ThrowsAsync<DominioException>(() => this.servico.ListarRecebidosAsync(Guid.NewGuid(), CancellationToken.None));
+
+        Assert.Equal(CodigosErro.NaoAutenticado, erro.Codigo);
+    }
+
     private Task<ConviteResumo> Convidar(string? email, Papel? papel, bool paraPrincipal = false)
     {
         return this.servico.ConvidarAsync(this.cuidador.Id, this.ficha.Id, email, papel, paraPrincipal, CancellationToken.None);

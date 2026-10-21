@@ -10,7 +10,7 @@ namespace DoseCerta.Api.Controllers;
 
 /// <summary>
 /// Convites para uma ficha: criar, listar os recebidos, aceitar e recusar (F004).
-/// Endpoints: OP-19.
+/// Endpoints: OP-19 e OP-20.
 /// </summary>
 [ApiController]
 [Route("api/v1")]
@@ -45,6 +45,18 @@ public sealed class ConvitesController : ControllerBase
             .ConvidarAsync(UtilizadorAutenticado.Id(this.User), fichaId, pedido.Email, pedido.Papel, pedido.ParaPrincipal ?? false, cancelamento)
             .ConfigureAwait(false);
         return this.StatusCode(StatusCodes.Status201Created, this.Resposta(convite));
+    }
+
+    /// <summary>
+    /// OP-20 Listar convites recebidos.
+    /// </summary>
+    /// <param name="cancelamento">Token de cancelamento do pedido.</param>
+    /// <returns>200 com os convites pendentes dirigidos ao e-mail do Utilizador.</returns>
+    [HttpGet("convites")]
+    public async Task<IActionResult> ListarConvitesRecebidos(CancellationToken cancelamento)
+    {
+        var convites = await this.conviteService.ListarRecebidosAsync(UtilizadorAutenticado.Id(this.User), cancelamento).ConfigureAwait(false);
+        return this.Ok(convites.Select(this.Resposta).ToList());
     }
 
     private RespostaConvite Resposta(ConviteResumo convite)

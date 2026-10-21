@@ -1,5 +1,6 @@
 // Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
 
+using DoseCerta.Application.Convites;
 using DoseCerta.Domain.Entidades;
 
 namespace DoseCerta.Application.Repositorios;
@@ -25,6 +26,15 @@ public interface IConviteRepositorio
     /// <param name="cancelamento">Token de cancelamento.</param>
     /// <returns><see langword="true"/> se existir um convite pendente.</returns>
     Task<bool> ExistePendenteAsync(Guid fichaId, string email, CancellationToken cancelamento);
+
+    /// <summary>
+    /// Lista os convites pendentes dirigidos a um e-mail, sem distinguir maiúsculas, com o nome da ficha e de quem convidou,
+    /// do mais recente para o mais antigo (RF-042, RF-044, RF-135).
+    /// </summary>
+    /// <param name="email">E-mail da conta.</param>
+    /// <param name="cancelamento">Token de cancelamento.</param>
+    /// <returns>Os convites pendentes.</returns>
+    Task<IReadOnlyList<ConviteResumo>> PendentesPorEmailAsync(string email, CancellationToken cancelamento);
 
     /// <summary>
     /// Regista um convite novo.

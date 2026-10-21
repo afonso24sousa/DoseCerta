@@ -116,6 +116,22 @@ public sealed class ConviteService
             cancelamento).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// OP-20: lista os convites pendentes dirigidos ao e-mail da conta autenticada, com a ficha, o papel oferecido e quem convidou
+    /// (RF-042). Inclui os convites criados antes do registo da conta (RF-044) e aqueles cujo e-mail não foi entregue (RF-135),
+    /// porque o convite se liga à conta pelo e-mail e não depende do estado do envio.
+    /// </summary>
+    /// <param name="utilizadorId">Utilizador autenticado.</param>
+    /// <param name="cancelamento">Token de cancelamento.</param>
+    /// <returns>Os convites pendentes, do mais recente para o mais antigo.</returns>
+    /// <exception cref="DominioException">Com <see cref="CodigosErro.NaoAutenticado"/>, se a conta do token já não existir.</exception>
+    public async Task<IReadOnlyList<ConviteResumo>> ListarRecebidosAsync(Guid utilizadorId, CancellationToken cancelamento)
+    {
+        var conta = await this.utilizadores.ObterPorIdAsync(utilizadorId, cancelamento).ConfigureAwait(false)
+            ?? throw new DominioException(CodigosErro.NaoAutenticado, "A sessão não é válida ou expirou. Inicie sessão novamente.");
+        return await this.convites.PendentesPorEmailAsync(conta.Email, cancelamento).ConfigureAwait(false);
+    }
+
     private static ConviteResumo Resumo(Convite convite, Ficha ficha, string convidadoPor)
     {
         return new ConviteResumo(

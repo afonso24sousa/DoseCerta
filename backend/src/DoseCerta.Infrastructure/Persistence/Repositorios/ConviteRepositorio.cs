@@ -1,5 +1,6 @@
 // Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
 
+using DoseCerta.Application.Convites;
 using DoseCerta.Application.Repositorios;
 using DoseCerta.Domain.Entidades;
 using DoseCerta.Domain.Enumerados;
@@ -35,6 +36,29 @@ public sealed class ConviteRepositorio : IConviteRepositorio
         return this.contexto.Convites.AnyAsync(
             c => c.FichaId == fichaId && c.EmailConvidado == email && c.Estado == EstadoConvite.Pendente,
             cancelamento);
+    }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<ConviteResumo>> PendentesPorEmailAsync(string email, CancellationToken cancelamento)
+    {
+        return await this.contexto.Convites
+            .AsNoTracking()
+            .Where(c => c.EmailConvidado == email && c.Estado == EstadoConvite.Pendente)
+            .Join(this.contexto.Fichas, c => c.FichaId, f => f.Id, (c, f) => new { Convite = c, Ficha = f })
+            .Join(this.contexto.Utilizadores, p => p.Convite.ConvidadoPorId, u => u.Id, (p, u) => new { p.Convite, p.Ficha, QuemConvidou = u })
+            .OrderByDescending(p => p.Convite.CriadoEmUtc)
+            .ThenBy(p => p.Convite.Id)
+            .Select(p => new ConviteResumo(
+                p.Convite.Id,
+                p.Convite.FichaId,
+                p.Ficha.NomeCompleto,
+                p.Convite.PapelOferecido,
+                p.Convite.ParaPrincipal,
+                p.QuemConvidou.Nome,
+                p.Convite.Estado,
+                p.Convite.CriadoEmUtc))
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false);
     }
 
     /// <inheritdoc/>

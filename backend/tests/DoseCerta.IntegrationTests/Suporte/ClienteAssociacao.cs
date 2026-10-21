@@ -159,6 +159,20 @@ public static class ClienteAssociacao
     }
 
     /// <summary>
+    /// Pede os convites recebidos (OP-20) e devolve-os, exigindo 200.
+    /// </summary>
+    /// <param name="cliente">Cliente autenticado.</param>
+    /// <returns>Os convites, pela ordem da resposta.</returns>
+    public static async Task<IReadOnlyList<JsonElement>> ConvitesRecebidosAsync(HttpClient cliente)
+    {
+        ArgumentNullException.ThrowIfNull(cliente);
+        using var resposta = await cliente.GetAsync("api/v1/convites");
+        resposta.EnsureSuccessStatusCode();
+        var corpo = await ClienteApi.JsonAsync(resposta);
+        return corpo.EnumerateArray().ToList();
+    }
+
+    /// <summary>
     /// Pede a lista das pessoas associadas a uma ficha (OP-18) e devolve-a, exigindo 200.
     /// </summary>
     /// <param name="cliente">Cliente autenticado.</param>

@@ -1,5 +1,6 @@
 // Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
 
+using DoseCerta.Application.Convites;
 using DoseCerta.Domain.Enumerados;
 
 namespace DoseCerta.UnitTests.Suporte;
@@ -13,5 +14,26 @@ public partial class RepositoriosEmMemoria
     public Task<bool> ExistePendenteAsync(Guid fichaId, string email, CancellationToken cancelamento)
     {
         return Task.FromResult(this.Convites.Exists(c => c.FichaId == fichaId && MesmoEmail(c.EmailConvidado, email) && c.Estado == EstadoConvite.Pendente));
+    }
+
+    /// <inheritdoc/>
+    public Task<IReadOnlyList<ConviteResumo>> PendentesPorEmailAsync(string email, CancellationToken cancelamento)
+    {
+        IReadOnlyList<ConviteResumo> resumos = this.Convites
+            .Where(c => MesmoEmail(c.EmailConvidado, email) && c.Estado == EstadoConvite.Pendente)
+            .Join(this.Fichas, c => c.FichaId, f => f.Id, (c, f) => (Convite: c, Ficha: f))
+            .Join(this.Utilizadores, p => p.Convite.ConvidadoPorId, u => u.Id, (p, u) => new ConviteResumo(
+                p.Convite.Id,
+                p.Convite.FichaId,
+                p.Ficha.NomeCompleto,
+                p.Convite.PapelOferecido,
+                p.Convite.ParaPrincipal,
+                u.Nome,
+                p.Convite.Estado,
+                p.Convite.CriadoEmUtc))
+            .OrderByDescending(r => r.CriadoEmUtc)
+            .ThenBy(r => r.Id)
+            .ToList();
+        return Task.FromResult(resumos);
     }
 }
