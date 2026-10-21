@@ -9,7 +9,7 @@ namespace DoseCerta.Api.Controllers;
 
 /// <summary>
 /// Pessoas associadas a uma ficha, alteração de papel, remoção de acesso e transferência do Cuidador principal (F004).
-/// Endpoints: OP-18.
+/// Endpoints: OP-18, OP-23 e OP-24.
 /// </summary>
 [ApiController]
 [Route("api/v1/fichas/{fichaId:guid}")]
@@ -37,6 +37,28 @@ public sealed class PessoasController : ControllerBase
     {
         var pessoas = await this.pessoasService.ListarAsync(UtilizadorAutenticado.Id(this.User), fichaId, cancelamento).ConfigureAwait(false);
         return this.Ok(pessoas.Select(Resposta).ToList());
+    }
+
+    /// <summary>
+    /// OP-23 Promover Familiar a Cuidador e OP-24 Despromover Cuidador a Familiar: o corpo indica o papel pretendido.
+    /// </summary>
+    /// <param name="fichaId">Identificador da ficha.</param>
+    /// <param name="utilizadorId">Identificador da pessoa cujo papel muda.</param>
+    /// <param name="pedido">Papel pretendido.</param>
+    /// <param name="cancelamento">Token de cancelamento do pedido.</param>
+    /// <returns>200 com a pessoa e o novo papel.</returns>
+    [HttpPut("pessoas/{utilizadorId:guid}/papel")]
+    public async Task<IActionResult> AlterarPapelDeUmaPessoa(
+        Guid fichaId,
+        Guid utilizadorId,
+        [FromBody] PedidoPapel pedido,
+        CancellationToken cancelamento)
+    {
+        ArgumentNullException.ThrowIfNull(pedido);
+        var pessoa = await this.pessoasService
+            .AlterarPapelAsync(UtilizadorAutenticado.Id(this.User), fichaId, utilizadorId, pedido.Papel, cancelamento)
+            .ConfigureAwait(false);
+        return this.Ok(Resposta(pessoa));
     }
 
     /// <summary>

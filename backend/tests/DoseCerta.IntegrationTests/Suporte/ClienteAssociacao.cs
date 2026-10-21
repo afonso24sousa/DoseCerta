@@ -3,6 +3,7 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using DoseCerta.Domain.Enumerados;
 
 namespace DoseCerta.IntegrationTests.Suporte;
 
@@ -48,6 +49,55 @@ public static class ClienteAssociacao
         resposta.EnsureSuccessStatusCode();
         var corpo = await ClienteApi.JsonAsync(resposta);
         return corpo.GetProperty("id").GetGuid();
+    }
+
+    /// <summary>
+    /// Cria duas contas autenticadas e uma ficha de terceiro: a primeira conta é o Cuidador principal e a segunda fica associada
+    /// com o papel indicado.
+    /// </summary>
+    /// <param name="fabrica">Fábrica da API.</param>
+    /// <param name="papelDoOutro">Papel da segunda conta na ficha.</param>
+    /// <returns>As duas contas (cliente, e-mail e identificador) e a ficha.</returns>
+    public static async Task<((HttpClient Cliente, string Email, Guid Id) Principal, (HttpClient Cliente, string Email, Guid Id) Outro, Guid FichaId)> FichaComPessoaAsync(
+        FabricaApi fabrica,
+        Papel papelDoOutro)
+    {
+        var principal = await ClienteApi.NovoUtilizadorAutenticadoAsync(fabrica, "Zé Principal");
+        var outro = await ClienteApi.NovoUtilizadorAutenticadoAsync(fabrica, "Rui Associado");
+        var fichaId = await ClienteFichas.CriarFichaAsync(principal.Cliente);
+        await ClienteFichas.AssociarAsync(fabrica, fichaId, outro.Id, papelDoOutro);
+        return (principal, outro, fichaId);
+    }
+
+    /// <summary>
+    /// Pede a alteração do papel de uma pessoa na ficha (OP-23 e OP-24), com o corpo <c>{ "papel": ... }</c>.
+    /// </summary>
+    /// <param name="cliente">Cliente autenticado.</param>
+    /// <param name="fichaId">Ficha.</param>
+    /// <param name="utilizadorId">Pessoa cujo papel muda.</param>
+    /// <param name="papel">Valor do campo <c>papel</c>, tal como é enviado.</param>
+    /// <returns>A resposta HTTP.</returns>
+    public static Task<HttpResponseMessage> AlterarPapelAsync(HttpClient cliente, Guid fichaId, Guid utilizadorId, object? papel)
+    {
+        ArgumentNullException.ThrowIfNull(cliente);
+        return cliente.PutAsJsonAsync($"api/v1/fichas/{fichaId}/pessoas/{utilizadorId}/papel", new { papel });
+    }
+
+    /// <summary>
+    /// Edita a ficha com dados válidos (OP-11), para verificar se o Utilizador tem permissão de escrita.
+    /// </summary>
+    /// <param name="cliente">Cliente autenticado.</param>
+    /// <param name="fichaId">Ficha.</param>
+    /// <returns>A resposta HTTP.</returns>
+    public static Task<HttpResponseMessage> EditarFichaAsync(HttpClient cliente, Guid fichaId)
+    {
+        ArgumentNullException.ThrowIfNull(cliente);
+        return cliente.PutAsJsonAsync($"api/v1/fichas/{fichaId}", new
+        {
+            nomeCompleto = "Maria Fictícia Santos",
+            dataNascimento = "1941-05-17",
+            contactoEmergencia = "+351 910 000 002",
+        });
     }
 
     /// <summary>

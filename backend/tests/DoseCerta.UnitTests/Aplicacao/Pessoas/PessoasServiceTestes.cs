@@ -15,6 +15,7 @@ namespace DoseCerta.UnitTests.Aplicacao.Pessoas;
 public class PessoasServiceTestes
 {
     private readonly RepositoriosEmMemoria repositorios = new();
+    private readonly UnidadeDeTrabalhoEmMemoria unidadeDeTrabalho = new();
     private readonly PessoasService servico;
     private readonly Utilizador principal;
     private readonly Utilizador familiar;
@@ -25,7 +26,7 @@ public class PessoasServiceTestes
     /// </summary>
     public PessoasServiceTestes()
     {
-        this.servico = new PessoasService(this.repositorios, new AutorizacaoFichaService(this.repositorios));
+        this.servico = new PessoasService(this.repositorios, this.repositorios, new AutorizacaoFichaService(this.repositorios), this.unidadeDeTrabalho);
         this.principal = this.NovoUtilizador("Zé Principal", "ze@exemplo.pt");
         this.familiar = this.NovoUtilizador("Ana Familiar", "ana@exemplo.pt");
         this.ficha = FichasDeTeste.DeTerceiro(this.principal.Id);
@@ -66,6 +67,60 @@ public class PessoasServiceTestes
 
         Assert.Equal(CodigosErro.FichaNaoEncontrada, naoAssociado.Codigo);
         Assert.Equal(CodigosErro.FichaNaoEncontrada, inexistente.Codigo);
+    }
+
+    /// <summary>
+    /// RF-049 e RF-130: o Cuidador promove o Familiar e depois despromove-o; cada pedido devolve a pessoa com o nome, o e-mail
+    /// e o novo papel, numa transação confirmada.
+    /// </summary>
+    /// <returns>Uma tarefa assíncrona.</returns>
+    [Fact]
+    public async Task PromoverEDespromoverDevolvemAPessoaComONovoPapel()
+    {
+        var promovido = await this.servico.AlterarPapelAsync(this.principal.Id, this.ficha.Id, this.familiar.Id, Papel.Cuidador, CancellationToken.None);
+        var despromovido = await this.servico.AlterarPapelAsync(this.principal.Id, this.ficha.Id, this.familiar.Id, Papel.Familiar, CancellationToken.None);
+
+        Assert.Equal(new PessoaAssociada(this.familiar.Id, "Ana Familiar", "ana@exemplo.pt", Papel.Cuidador, false, false), promovido);
+        Assert.Equal(Papel.Familiar, despromovido.Papel);
+        Assert.Equal(Papel.Familiar, this.ficha.ObterAssociacao(this.familiar.Id)!.Papel);
+        Assert.Equal(2, this.unidadeDeTrabalho.Confirmadas);
+    }
+
+    /// <summary>
+    /// RNF-028: o papel é obrigatório e só pode ser Cuidador ou Familiar, incluindo quando chega como número; nada é gravado.
+    /// </summary>
+    /// <param name="valor">Valor do papel, ou <see langword="null"/> se faltar.</param>
+    /// <returns>Uma tarefa assíncrona.</returns>
+    [Theory]
+    [InlineData(null)]
+    [InlineData(99)]
+    public async Task PapelEmFaltaOuInvalidoDa400(int? valor)
+    {
+        var papel = (Papel?)valor;
+
+        var erro = await Assert.ThrowsAsync<ValidacaoException>(
+            () => this.servico.AlterarPapelAsync(this.principal.Id, this.ficha.Id, this.familiar.Id, papel, CancellationToken.None));
+
+        Assert.Equal("papel", Assert.Single(erro.Campos).Campo);
+        Assert.Equal(0, this.unidadeDeTrabalho.Confirmadas);
+    }
+
+    /// <summary>
+    /// RNF-004, RF-048: o Familiar não altera papéis (403), e numa ficha arquivada a operação é recusada com 409 (RP-13).
+    /// </summary>
+    /// <returns>Uma tarefa assíncrona.</returns>
+    [Fact]
+    public async Task FamiliarEFichaArquivadaSaoRecusados()
+    {
+        var doFamiliar = await Assert.ThrowsAsync<DominioException>(
+            () => this.servico.AlterarPapelAsync(this.familiar.Id, this.ficha.Id, this.familiar.Id, Papel.Cuidador, CancellationToken.None));
+        this.ficha.Arquivar(FichasDeTeste.Agora);
+        var arquivada = await Assert.ThrowsAsync<DominioException>(
+            () => this.servico.AlterarPapelAsync(this.principal.Id, this.ficha.Id, this.familiar.Id, Papel.Cuidador, CancellationToken.None));
+
+        Assert.Equal(CodigosErro.AcessoProibido, doFamiliar.Codigo);
+        Assert.Equal(CodigosErro.FichaArquivada, arquivada.Codigo);
+        Assert.Equal(Papel.Familiar, this.ficha.ObterAssociacao(this.familiar.Id)!.Papel);
     }
 
     private Utilizador NovoUtilizador(string nome, string email)
