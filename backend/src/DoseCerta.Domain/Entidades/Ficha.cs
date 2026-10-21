@@ -11,6 +11,12 @@ namespace DoseCerta.Domain.Entidades;
 /// </summary>
 public class Ficha
 {
+    /// <summary>
+    /// Mensagem do erro <c>PESSOA_JA_ASSOCIADA</c>, igual na verificação prévia e na violação do índice único
+    /// <c>UQ_Associacao_FichaUtilizador</c>.
+    /// </summary>
+    public const string MensagemPessoaJaAssociada = "A pessoa já está associada à ficha.";
+
     private const string MensagemPrincipalSemSubstituto =
         "O Cuidador principal só pode ser despromovido ou removido depois de outro Cuidador assumir o papel; "
         + "transfira primeiro o papel de Cuidador principal (POST /api/v1/fichas/{fichaId}/cuidador-principal).";
@@ -435,7 +441,7 @@ public class Ficha
     {
         if (this.ObterAssociacao(utilizadorId) is not null)
         {
-            throw new DominioException(CodigosErro.PessoaJaAssociada, "A pessoa já está associada à ficha.");
+            throw new DominioException(CodigosErro.PessoaJaAssociada, MensagemPessoaJaAssociada);
         }
     }
 

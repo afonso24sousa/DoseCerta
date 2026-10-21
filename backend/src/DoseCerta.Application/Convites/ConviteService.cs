@@ -17,6 +17,12 @@ namespace DoseCerta.Application.Convites;
 /// </summary>
 public sealed class ConviteService
 {
+    /// <summary>
+    /// Mensagem do erro <c>CONVITE_PENDENTE_EXISTE</c> para o mesmo e-mail e a mesma ficha, igual na verificação prévia e na violação
+    /// do índice único <c>UQ_Convite_Pendente</c> (RF-043).
+    /// </summary>
+    public const string MensagemConvitePendenteExiste = "Já existe um convite pendente para este e-mail nesta ficha; o convite não foi criado.";
+
     private readonly IConviteRepositorio convites;
     private readonly IFichaRepositorio fichas;
     private readonly IUtilizadorRepositorio utilizadores;
@@ -112,9 +118,7 @@ public sealed class ConviteService
 
                 if (await this.convites.ExistePendenteAsync(fichaId, emailLimpo!, cancelamento).ConfigureAwait(false))
                 {
-                    throw new DominioException(
-                        CodigosErro.ConvitePendenteExiste,
-                        "Já existe um convite pendente para este e-mail nesta ficha; o convite não foi criado.");
+                    throw new DominioException(CodigosErro.ConvitePendenteExiste, MensagemConvitePendenteExiste);
                 }
 
                 if (paraPrincipal)
