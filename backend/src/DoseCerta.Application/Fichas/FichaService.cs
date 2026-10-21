@@ -2,6 +2,7 @@
 
 using DoseCerta.Application.Abstracoes;
 using DoseCerta.Application.Comum;
+using DoseCerta.Application.Convites;
 using DoseCerta.Application.Documentos;
 using DoseCerta.Application.Repositorios;
 using DoseCerta.Domain.Comum;
@@ -30,7 +31,7 @@ public sealed class FichaService
 
     private readonly IFichaRepositorio fichas;
     private readonly IDominiosRepositorio dominios;
-    private readonly IConviteRepositorio convites;
+    private readonly ConviteService conviteService;
     private readonly IDocumentoRepositorio documentos;
     private readonly INotificacaoRepositorio notificacoes;
     private readonly DocumentoService documentoService;
@@ -43,7 +44,7 @@ public sealed class FichaService
     /// </summary>
     /// <param name="fichas">Repositório das fichas.</param>
     /// <param name="dominios">Repositório das listas fechadas.</param>
-    /// <param name="convites">Repositório dos convites.</param>
+    /// <param name="conviteService">Serviço dos convites, que regista o convite para Cuidador principal.</param>
     /// <param name="documentos">Repositório dos documentos.</param>
     /// <param name="notificacoes">Repositório das notificações.</param>
     /// <param name="documentoService">Serviço dos documentos.</param>
@@ -53,7 +54,7 @@ public sealed class FichaService
     public FichaService(
         IFichaRepositorio fichas,
         IDominiosRepositorio dominios,
-        IConviteRepositorio convites,
+        ConviteService conviteService,
         IDocumentoRepositorio documentos,
         INotificacaoRepositorio notificacoes,
         DocumentoService documentoService,
@@ -63,7 +64,7 @@ public sealed class FichaService
     {
         this.fichas = fichas;
         this.dominios = dominios;
-        this.convites = convites;
+        this.conviteService = conviteService;
         this.documentos = documentos;
         this.notificacoes = notificacoes;
         this.documentoService = documentoService;
@@ -75,7 +76,7 @@ public sealed class FichaService
     /// <summary>
     /// OP-09: cria uma ficha de terceiro ou a ficha própria. O criador fica associado como Cuidador principal; numa ficha de terceiro
     /// com <c>eu=false</c> fica Cuidador principal provisório e o convite para Cuidador principal fica pendente (RF-020 a RF-025, RF-030, RF-031).
-    /// O envio do convite e a resposta a ele são implementados com a F004.
+    /// O convite é registado pelo <see cref="ConviteService"/>, como os convites de OP-19 (F004).
     /// </summary>
     /// <param name="criadorId">Utilizador autenticado.</param>
     /// <param name="dados">Dados de identificação e necessidades.</param>
@@ -138,7 +139,7 @@ public sealed class FichaService
 
                 if (emailConvidado is not null)
                 {
-                    this.convites.Adicionar(new Convite(ficha.Id, emailConvidado, Papel.Cuidador, paraPrincipal: true, criadorId, agora));
+                    await this.conviteService.ConvidarParaPrincipalAsync(ficha, criadorId, emailConvidado, agora, cancelamento).ConfigureAwait(false);
                 }
 
                 foreach (var ficheiro in ficheiros)

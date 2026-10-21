@@ -154,6 +154,29 @@ public class ConviteServiceTestes
     }
 
     /// <summary>
+    /// OP-09, RF-025: o convite para Cuidador principal da criação da ficha é registado pendente, com o papel Cuidador e a marca de
+    /// Cuidador principal, sem alterar as associações (o criador já foi associado como provisório pela ficha).
+    /// </summary>
+    /// <returns>Uma tarefa assíncrona.</returns>
+    [Fact]
+    public async Task ConviteParaPrincipalDaCriacaoDaFichaFicaPendente()
+    {
+        var nova = FichasDeTeste.DeTerceiro(this.cuidador.Id, provisorio: true);
+
+        var convite = await this.servico.ConvidarParaPrincipalAsync(nova, this.cuidador.Id, "rui@exemplo.pt", Agora, CancellationToken.None);
+
+        Assert.Same(convite, Assert.Single(this.repositorios.Convites));
+        Assert.Equal(nova.Id, convite.FichaId);
+        Assert.Equal("rui@exemplo.pt", convite.EmailConvidado);
+        Assert.Equal(Papel.Cuidador, convite.PapelOferecido);
+        Assert.True(convite.ParaPrincipal);
+        Assert.Equal(this.cuidador.Id, convite.ConvidadoPorId);
+        Assert.Equal(EstadoConvite.Pendente, convite.Estado);
+        Assert.Equal(Agora, convite.CriadoEmUtc);
+        Assert.Single(nova.Associacoes);
+    }
+
+    /// <summary>
     /// RF-034, UC-13 E6: na ficha própria o convite para Cuidador principal é recusado com 403; os outros convites são aceites (RF-032).
     /// </summary>
     /// <returns>Uma tarefa assíncrona.</returns>

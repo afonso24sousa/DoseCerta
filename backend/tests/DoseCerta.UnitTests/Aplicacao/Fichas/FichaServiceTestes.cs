@@ -1,5 +1,6 @@
 // Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
 
+using DoseCerta.Application.Convites;
 using DoseCerta.Application.Documentos;
 using DoseCerta.Application.Fichas;
 using DoseCerta.Domain.Comum;
@@ -37,7 +38,7 @@ public class FichaServiceTestes
         this.servico = new FichaService(
             this.repositorios,
             this.repositorios,
-            this.repositorios,
+            new ConviteService(this.repositorios, this.repositorios, this.repositorios, autorizacao, this.unidadeDeTrabalho, this.relogio),
             this.repositorios,
             this.repositorios,
             documentos,
@@ -508,7 +509,7 @@ public class FichaServiceTestes
         return new FichaService(
             this.repositorios,
             this.repositorios,
-            this.repositorios,
+            new ConviteService(this.repositorios, this.repositorios, this.repositorios, autorizacao, unidade, this.relogio),
             this.repositorios,
             this.repositorios,
             documentos,

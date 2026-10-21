@@ -113,12 +113,34 @@ public sealed class ConviteService
                     ficha.MarcarPrincipalProvisorio();
                 }
 
-                var convite = new Convite(fichaId, emailLimpo!, papel!.Value, paraPrincipal, utilizadorId, this.relogio.AgoraUtc());
-                this.convites.Adicionar(convite);
+                var convite = await this.CriarConviteAsync(
+                    ficha,
+                    emailLimpo!,
+                    papel!.Value,
+                    paraPrincipal,
+                    utilizadorId,
+                    this.relogio.AgoraUtc(),
+                    cancelamento).ConfigureAwait(false);
                 var quemConvida = await this.utilizadores.ObterPorIdAsync(utilizadorId, cancelamento).ConfigureAwait(false);
                 return Resumo(convite, ficha, quemConvida?.Nome ?? string.Empty);
             },
             cancelamento).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// OP-09 com <c>cuidadorPrincipal.eu=false</c>: regista, na transação da criação da ficha, o convite para Cuidador principal
+    /// dirigido ao e-mail indicado (RF-025, RF-041). O criador já está associado como Cuidador principal provisório.
+    /// </summary>
+    /// <param name="ficha">Ficha acabada de criar.</param>
+    /// <param name="criadorId">Utilizador que cria a ficha e convida.</param>
+    /// <param name="email">E-mail validado da pessoa convidada.</param>
+    /// <param name="agoraUtc">Instante da criação, em UTC.</param>
+    /// <param name="cancelamento">Token de cancelamento.</param>
+    /// <returns>O convite criado.</returns>
+    public Task<Convite> ConvidarParaPrincipalAsync(Ficha ficha, Guid criadorId, string email, DateTime agoraUtc, CancellationToken cancelamento)
+    {
+        ArgumentNullException.ThrowIfNull(ficha);
+        return this.CriarConviteAsync(ficha, email, Papel.Cuidador, paraPrincipal: true, criadorId, agoraUtc, cancelamento);
     }
 
     /// <summary>
@@ -214,6 +236,24 @@ public sealed class ConviteService
             convidadoPor,
             convite.Estado,
             convite.CriadoEmUtc);
+    }
+
+    /// <summary>
+    /// Cria o convite pendente, na transação em curso; é o único sítio onde um convite é criado (OP-09 e OP-19).
+    /// </summary>
+    private Task<Convite> CriarConviteAsync(
+        Ficha ficha,
+        string email,
+        Papel papel,
+        bool paraPrincipal,
+        Guid convidadoPorId,
+        DateTime agoraUtc,
+        CancellationToken cancelamento)
+    {
+        cancelamento.ThrowIfCancellationRequested();
+        var convite = new Convite(ficha.Id, email, papel, paraPrincipal, convidadoPorId, agoraUtc);
+        this.convites.Adicionar(convite);
+        return Task.FromResult(convite);
     }
 
     private async Task<Utilizador> ObterContaAsync(Guid utilizadorId, CancellationToken cancelamento)
