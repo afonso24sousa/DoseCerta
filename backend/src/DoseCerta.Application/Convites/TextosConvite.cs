@@ -30,6 +30,22 @@ public static class TextosConvite
     }
 
     /// <summary>
+    /// Corpo, em texto simples, do e-mail de convite. Explica como aceitar ou recusar, incluindo a quem ainda não tem conta (RF-044).
+    /// </summary>
+    /// <param name="convite">Convite, com a ficha e quem convidou.</param>
+    /// <param name="criadoEm">Instante do convite, já formatado em dd/mm/aaaa hh:mm na hora de Lisboa (RNF-029).</param>
+    /// <returns>O corpo do e-mail.</returns>
+    public static string CorpoEmail(ConviteResumo convite, string criadoEm)
+    {
+        ArgumentNullException.ThrowIfNull(convite);
+        return $"Recebeu um convite de {convite.ConvidadoPor} para a ficha de {convite.NomeFicha} no DoseCerta, como "
+            + $"{PapelOferecido(convite.PapelOferecido, convite.ParaPrincipal)}.\n\n"
+            + "Para aceitar ou recusar, inicie sessão no DoseCerta com este endereço de e-mail e abra a área de convites. "
+            + "Se ainda não tem conta, crie uma com este endereço: o convite aparece na área de convites.\n\n"
+            + $"Convite feito em {criadoEm}.";
+    }
+
+    /// <summary>
     /// Nome do papel oferecido, como aparece nos textos do convite.
     /// </summary>
     /// <param name="papel">Papel oferecido.</param>

@@ -26,8 +26,23 @@ public partial class RepositoriosEmMemoria
     /// <inheritdoc/>
     public Task<IReadOnlyList<ConviteResumo>> PendentesPorEmailAsync(string email, CancellationToken cancelamento)
     {
-        IReadOnlyList<ConviteResumo> resumos = this.Convites
-            .Where(c => MesmoEmail(c.EmailConvidado, email) && c.Estado == EstadoConvite.Pendente)
+        IReadOnlyList<ConviteResumo> resumos = this.Resumos(c => MesmoEmail(c.EmailConvidado, email) && c.Estado == EstadoConvite.Pendente)
+            .OrderByDescending(r => r.CriadoEmUtc)
+            .ThenBy(r => r.Id)
+            .ToList();
+        return Task.FromResult(resumos);
+    }
+
+    /// <inheritdoc/>
+    public Task<ConviteResumo?> ObterResumoAsync(Guid id, CancellationToken cancelamento)
+    {
+        return Task.FromResult(this.Resumos(c => c.Id == id).FirstOrDefault());
+    }
+
+    private IEnumerable<ConviteResumo> Resumos(Func<Convite, bool> filtro)
+    {
+        return this.Convites
+            .Where(filtro)
             .Join(this.Fichas, c => c.FichaId, f => f.Id, (c, f) => (Convite: c, Ficha: f))
             .Join(this.Utilizadores, p => p.Convite.ConvidadoPorId, u => u.Id, (p, u) => new ConviteResumo(
                 p.Convite.Id,
@@ -37,10 +52,6 @@ public partial class RepositoriosEmMemoria
                 p.Convite.ParaPrincipal,
                 u.Nome,
                 p.Convite.Estado,
-                p.Convite.CriadoEmUtc))
-            .OrderByDescending(r => r.CriadoEmUtc)
-            .ThenBy(r => r.Id)
-            .ToList();
-        return Task.FromResult(resumos);
+                p.Convite.CriadoEmUtc));
     }
 }

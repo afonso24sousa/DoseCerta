@@ -31,4 +31,15 @@ public partial class RepositoriosEmMemoria : IEnvioEmailRepositorio
     {
         this.EnviosEmail.Add(envio);
     }
+
+    /// <inheritdoc/>
+    public Task<IReadOnlyList<EnvioEmail>> PendentesDevidosAsync(DateTime agoraUtc, CancellationToken cancelamento)
+    {
+        IReadOnlyList<EnvioEmail> devidos = this.EnviosEmail
+            .Where(e => e.ConviteId is not null && e.Devido(agoraUtc))
+            .OrderBy(e => e.ProximaTentativaEmUtc)
+            .ThenBy(e => e.Id)
+            .ToList();
+        return Task.FromResult(devidos);
+    }
 }

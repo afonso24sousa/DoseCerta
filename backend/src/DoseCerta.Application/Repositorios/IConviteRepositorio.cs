@@ -45,6 +45,14 @@ public interface IConviteRepositorio
     Task<Convite?> ObterAsync(Guid id, CancellationToken cancelamento);
 
     /// <summary>
+    /// Obtém um convite, em qualquer estado, com o nome da ficha e de quem convidou, para o texto do e-mail de convite.
+    /// </summary>
+    /// <param name="id">Identificador do convite.</param>
+    /// <param name="cancelamento">Token de cancelamento.</param>
+    /// <returns>O convite, ou <see langword="null"/> se não existir.</returns>
+    Task<ConviteResumo?> ObterResumoAsync(Guid id, CancellationToken cancelamento);
+
+    /// <summary>
     /// Regista um convite novo.
     /// </summary>
     /// <param name="convite">Convite a registar.</param>

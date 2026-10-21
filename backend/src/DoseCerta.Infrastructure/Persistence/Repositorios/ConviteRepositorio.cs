@@ -1,5 +1,6 @@
 // Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
 
+using System.Linq.Expressions;
 using DoseCerta.Application.Convites;
 using DoseCerta.Application.Repositorios;
 using DoseCerta.Domain.Entidades;
@@ -13,6 +14,16 @@ namespace DoseCerta.Infrastructure.Persistence.Repositorios;
 /// </summary>
 public sealed class ConviteRepositorio : IConviteRepositorio
 {
+    private static readonly Expression<Func<LinhaConvite, ConviteResumo>> ParaResumo = l => new ConviteResumo(
+        l.Convite.Id,
+        l.Convite.FichaId,
+        l.Ficha.NomeCompleto,
+        l.Convite.PapelOferecido,
+        l.Convite.ParaPrincipal,
+        l.QuemConvidou.Nome,
+        l.Convite.Estado,
+        l.Convite.CriadoEmUtc);
+
     private readonly DoseCertaDbContext contexto;
 
     /// <summary>
@@ -41,24 +52,18 @@ public sealed class ConviteRepositorio : IConviteRepositorio
     /// <inheritdoc/>
     public async Task<IReadOnlyList<ConviteResumo>> PendentesPorEmailAsync(string email, CancellationToken cancelamento)
     {
-        return await this.contexto.Convites
-            .AsNoTracking()
-            .Where(c => c.EmailConvidado == email && c.Estado == EstadoConvite.Pendente)
-            .Join(this.contexto.Fichas, c => c.FichaId, f => f.Id, (c, f) => new { Convite = c, Ficha = f })
-            .Join(this.contexto.Utilizadores, p => p.Convite.ConvidadoPorId, u => u.Id, (p, u) => new { p.Convite, p.Ficha, QuemConvidou = u })
-            .OrderByDescending(p => p.Convite.CriadoEmUtc)
-            .ThenBy(p => p.Convite.Id)
-            .Select(p => new ConviteResumo(
-                p.Convite.Id,
-                p.Convite.FichaId,
-                p.Ficha.NomeCompleto,
-                p.Convite.PapelOferecido,
-                p.Convite.ParaPrincipal,
-                p.QuemConvidou.Nome,
-                p.Convite.Estado,
-                p.Convite.CriadoEmUtc))
+        return await this.ComFichaEQuemConvidou(this.contexto.Convites.Where(c => c.EmailConvidado == email && c.Estado == EstadoConvite.Pendente))
+            .OrderByDescending(l => l.Convite.CriadoEmUtc)
+            .ThenBy(l => l.Convite.Id)
+            .Select(ParaResumo)
             .ToListAsync(cancelamento)
             .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc/>
+    public Task<ConviteResumo?> ObterResumoAsync(Guid id, CancellationToken cancelamento)
+    {
+        return this.ComFichaEQuemConvidou(this.contexto.Convites.Where(c => c.Id == id)).Select(ParaResumo).FirstOrDefaultAsync(cancelamento);
     }
 
     /// <inheritdoc/>
@@ -71,5 +76,30 @@ public sealed class ConviteRepositorio : IConviteRepositorio
     public void Adicionar(Convite convite)
     {
         this.contexto.Convites.Add(convite);
+    }
+
+    private IQueryable<LinhaConvite> ComFichaEQuemConvidou(IQueryable<Convite> convites)
+    {
+        return convites
+            .AsNoTracking()
+            .Join(this.contexto.Fichas, c => c.FichaId, f => f.Id, (c, f) => new { Convite = c, Ficha = f })
+            .Join(
+                this.contexto.Utilizadores,
+                p => p.Convite.ConvidadoPorId,
+                u => u.Id,
+                (p, u) => new LinhaConvite { Convite = p.Convite, Ficha = p.Ficha, QuemConvidou = u });
+    }
+
+    /// <summary>
+    /// Convite com a ficha e a conta de quem convidou, antes da projeção para <see cref="ConviteResumo"/>; as propriedades permitem
+    /// ordenar no SQL.
+    /// </summary>
+    private sealed class LinhaConvite
+    {
+        public Convite Convite { get; init; } = null!;
+
+        public Ficha Ficha { get; init; } = null!;
+
+        public Utilizador QuemConvidou { get; init; } = null!;
     }
 }

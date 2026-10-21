@@ -26,9 +26,26 @@ public static class ServicosDeTeste
             repositorios,
             repositorios,
             repositorios,
-            new EnvioEmailService(repositorios),
+            EnvioEmailService(repositorios, unidadeDeTrabalho, relogio, new EmailSenderFalso()),
             new AutorizacaoFichaService(repositorios),
             unidadeDeTrabalho,
             relogio);
+    }
+
+    /// <summary>
+    /// Cria o serviço dos e-mails com os repositórios em memória.
+    /// </summary>
+    /// <param name="repositorios">Repositórios em memória.</param>
+    /// <param name="unidadeDeTrabalho">Unidade de trabalho dos testes.</param>
+    /// <param name="relogio">Relógio dos testes.</param>
+    /// <param name="emailSender">Serviço de e-mail falso.</param>
+    /// <returns>O serviço dos e-mails.</returns>
+    public static EnvioEmailService EnvioEmailService(
+        RepositoriosEmMemoria repositorios,
+        IUnidadeDeTrabalho unidadeDeTrabalho,
+        IRelogio relogio,
+        IEmailSender emailSender)
+    {
+        return new EnvioEmailService(repositorios, repositorios, emailSender, unidadeDeTrabalho, relogio);
     }
 }

@@ -2,6 +2,8 @@
 
 using DoseCerta.Application.Repositorios;
 using DoseCerta.Domain.Entidades;
+using DoseCerta.Domain.Enumerados;
+using Microsoft.EntityFrameworkCore;
 
 namespace DoseCerta.Infrastructure.Persistence.Repositorios;
 
@@ -25,5 +27,16 @@ public sealed class EnvioEmailRepositorio : IEnvioEmailRepositorio
     public void Adicionar(EnvioEmail envio)
     {
         this.contexto.EnviosEmail.Add(envio);
+    }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<EnvioEmail>> PendentesDevidosAsync(DateTime agoraUtc, CancellationToken cancelamento)
+    {
+        return await this.contexto.EnviosEmail
+            .Where(e => e.Estado == EstadoEnvioEmail.Pendente && e.ProximaTentativaEmUtc <= agoraUtc && e.ConviteId != null)
+            .OrderBy(e => e.ProximaTentativaEmUtc)
+            .ThenBy(e => e.Id)
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false);
     }
 }
