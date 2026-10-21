@@ -10,7 +10,7 @@ namespace DoseCerta.Api.Controllers;
 
 /// <summary>
 /// Convites para uma ficha: criar, listar os recebidos, aceitar e recusar (F004).
-/// Endpoints: OP-19 e OP-20.
+/// Endpoints: OP-19, OP-20, OP-21 e OP-22.
 /// </summary>
 [ApiController]
 [Route("api/v1")]
@@ -57,6 +57,32 @@ public sealed class ConvitesController : ControllerBase
     {
         var convites = await this.conviteService.ListarRecebidosAsync(UtilizadorAutenticado.Id(this.User), cancelamento).ConfigureAwait(false);
         return this.Ok(convites.Select(this.Resposta).ToList());
+    }
+
+    /// <summary>
+    /// OP-21 Aceitar convite.
+    /// </summary>
+    /// <param name="conviteId">Identificador do convite.</param>
+    /// <param name="cancelamento">Token de cancelamento do pedido.</param>
+    /// <returns>200 com a pessoa associada à ficha e o seu papel.</returns>
+    [HttpPost("convites/{conviteId:guid}/aceitacao")]
+    public async Task<IActionResult> AceitarConvite(Guid conviteId, CancellationToken cancelamento)
+    {
+        var pessoa = await this.conviteService.AceitarAsync(UtilizadorAutenticado.Id(this.User), conviteId, cancelamento).ConfigureAwait(false);
+        return this.Ok(PessoasController.Resposta(pessoa));
+    }
+
+    /// <summary>
+    /// OP-22 Recusar convite.
+    /// </summary>
+    /// <param name="conviteId">Identificador do convite.</param>
+    /// <param name="cancelamento">Token de cancelamento do pedido.</param>
+    /// <returns>204 sem corpo.</returns>
+    [HttpPost("convites/{conviteId:guid}/recusa")]
+    public async Task<IActionResult> RecusarConvite(Guid conviteId, CancellationToken cancelamento)
+    {
+        await this.conviteService.RecusarAsync(UtilizadorAutenticado.Id(this.User), conviteId, cancelamento).ConfigureAwait(false);
+        return this.NoContent();
     }
 
     private RespostaConvite Resposta(ConviteResumo convite)

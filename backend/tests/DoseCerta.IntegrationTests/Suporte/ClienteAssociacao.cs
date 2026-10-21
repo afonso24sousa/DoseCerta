@@ -159,6 +159,30 @@ public static class ClienteAssociacao
     }
 
     /// <summary>
+    /// Aceita um convite (OP-21).
+    /// </summary>
+    /// <param name="cliente">Cliente autenticado do convidado.</param>
+    /// <param name="conviteId">Convite.</param>
+    /// <returns>A resposta HTTP.</returns>
+    public static Task<HttpResponseMessage> AceitarConviteAsync(HttpClient cliente, Guid conviteId)
+    {
+        ArgumentNullException.ThrowIfNull(cliente);
+        return cliente.PostAsync($"api/v1/convites/{conviteId}/aceitacao", null);
+    }
+
+    /// <summary>
+    /// Recusa um convite (OP-22).
+    /// </summary>
+    /// <param name="cliente">Cliente autenticado do convidado.</param>
+    /// <param name="conviteId">Convite.</param>
+    /// <returns>A resposta HTTP.</returns>
+    public static Task<HttpResponseMessage> RecusarConviteAsync(HttpClient cliente, Guid conviteId)
+    {
+        ArgumentNullException.ThrowIfNull(cliente);
+        return cliente.PostAsync($"api/v1/convites/{conviteId}/recusa", null);
+    }
+
+    /// <summary>
     /// Pede os convites recebidos (OP-20) e devolve-os, exigindo 200.
     /// </summary>
     /// <param name="cliente">Cliente autenticado.</param>

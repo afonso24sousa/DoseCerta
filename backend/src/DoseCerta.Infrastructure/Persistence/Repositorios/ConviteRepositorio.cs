@@ -62,6 +62,12 @@ public sealed class ConviteRepositorio : IConviteRepositorio
     }
 
     /// <inheritdoc/>
+    public Task<Convite?> ObterAsync(Guid id, CancellationToken cancelamento)
+    {
+        return this.contexto.Convites.FirstOrDefaultAsync(c => c.Id == id, cancelamento);
+    }
+
+    /// <inheritdoc/>
     public void Adicionar(Convite convite)
     {
         this.contexto.Convites.Add(convite);

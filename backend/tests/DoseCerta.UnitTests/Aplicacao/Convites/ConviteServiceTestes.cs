@@ -31,6 +31,7 @@ public class ConviteServiceTestes
         this.servico = new ConviteService(
             this.repositorios,
             this.repositorios,
+            this.repositorios,
             new AutorizacaoFichaService(this.repositorios),
             this.unidadeDeTrabalho,
             new RelogioFixo(Agora));

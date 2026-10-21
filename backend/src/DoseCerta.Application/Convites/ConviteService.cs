@@ -3,6 +3,7 @@
 using DoseCerta.Application.Abstracoes;
 using DoseCerta.Application.Comum;
 using DoseCerta.Application.Fichas;
+using DoseCerta.Application.Pessoas;
 using DoseCerta.Application.Repositorios;
 using DoseCerta.Domain.Comum;
 using DoseCerta.Domain.Entidades;
@@ -16,6 +17,7 @@ namespace DoseCerta.Application.Convites;
 public sealed class ConviteService
 {
     private readonly IConviteRepositorio convites;
+    private readonly IFichaRepositorio fichas;
     private readonly IUtilizadorRepositorio utilizadores;
     private readonly AutorizacaoFichaService autorizacao;
     private readonly IUnidadeDeTrabalho unidadeDeTrabalho;
@@ -25,18 +27,21 @@ public sealed class ConviteService
     /// Initializes a new instance of the <see cref="ConviteService"/> class.
     /// </summary>
     /// <param name="convites">Repositório dos convites.</param>
+    /// <param name="fichas">Repositório das fichas, para associar quem aceita um convite.</param>
     /// <param name="utilizadores">Repositório das contas.</param>
     /// <param name="autorizacao">Verificação do papel na ficha.</param>
     /// <param name="unidadeDeTrabalho">Transação de cada operação de escrita.</param>
     /// <param name="relogio">Relógio do sistema.</param>
     public ConviteService(
         IConviteRepositorio convites,
+        IFichaRepositorio fichas,
         IUtilizadorRepositorio utilizadores,
         AutorizacaoFichaService autorizacao,
         IUnidadeDeTrabalho unidadeDeTrabalho,
         IRelogio relogio)
     {
         this.convites = convites;
+        this.fichas = fichas;
         this.utilizadores = utilizadores;
         this.autorizacao = autorizacao;
         this.unidadeDeTrabalho = unidadeDeTrabalho;
@@ -127,9 +132,75 @@ public sealed class ConviteService
     /// <exception cref="DominioException">Com <see cref="CodigosErro.NaoAutenticado"/>, se a conta do token já não existir.</exception>
     public async Task<IReadOnlyList<ConviteResumo>> ListarRecebidosAsync(Guid utilizadorId, CancellationToken cancelamento)
     {
-        var conta = await this.utilizadores.ObterPorIdAsync(utilizadorId, cancelamento).ConfigureAwait(false)
-            ?? throw new DominioException(CodigosErro.NaoAutenticado, "A sessão não é válida ou expirou. Inicie sessão novamente.");
+        var conta = await this.ObterContaAsync(utilizadorId, cancelamento).ConfigureAwait(false);
         return await this.convites.PendentesPorEmailAsync(conta.Email, cancelamento).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// OP-21: o convidado aceita o convite e fica associado à ficha com o papel oferecido (RF-045). Se o convite é para Cuidador
+    /// principal, o convidado passa a Cuidador principal e o Cuidador principal provisório deixa de estar associado (RF-026).
+    /// Também numa ficha arquivada, porque a resposta pertence ao convidado (UC-14 A5, RP-13).
+    /// </summary>
+    /// <param name="utilizadorId">Utilizador autenticado.</param>
+    /// <param name="conviteId">Convite a aceitar.</param>
+    /// <param name="cancelamento">Token de cancelamento.</param>
+    /// <returns>A pessoa associada, com o papel na ficha.</returns>
+    /// <exception cref="DominioException">
+    /// Com <see cref="CodigosErro.ConviteNaoEncontrado"/>, <see cref="CodigosErro.ConviteJaRespondido"/> ou
+    /// <see cref="CodigosErro.PessoaJaAssociada"/> (D4), por esta ordem.
+    /// </exception>
+    public async Task<PessoaAssociada> AceitarAsync(Guid utilizadorId, Guid conviteId, CancellationToken cancelamento)
+    {
+        var conta = await this.ObterContaAsync(utilizadorId, cancelamento).ConfigureAwait(false);
+        return await this.unidadeDeTrabalho.ExecutarEmTransacaoAsync(
+            async () =>
+            {
+                var convite = await this.ObterConviteDirigidoAsync(conviteId, conta, cancelamento).ConfigureAwait(false);
+                var agora = this.relogio.AgoraUtc();
+                convite.Aceitar(conta.Id, agora);
+                var ficha = await this.ObterFichaAsync(convite, cancelamento).ConfigureAwait(false);
+                Associacao associacao;
+                if (convite.ParaPrincipal)
+                {
+                    associacao = ficha.AceitarPrincipalConvidado(conta.Id, agora);
+                }
+                else
+                {
+                    ficha.ExigirQueNaoEstaAssociado(conta.Id);
+                    associacao = ficha.Associar(conta.Id, convite.PapelOferecido, agora);
+                }
+
+                return new PessoaAssociada(conta.Id, conta.Nome, conta.Email, associacao.Papel, associacao.EPrincipal, associacao.EProvisorio);
+            },
+            cancelamento).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// OP-22: o convidado recusa o convite, sem associação à ficha; o mesmo e-mail pode voltar a ser convidado (RF-043, RF-046).
+    /// Se o convite é para Cuidador principal, o Cuidador principal provisório mantém o papel e deixa de ser provisório (RF-027).
+    /// </summary>
+    /// <param name="utilizadorId">Utilizador autenticado.</param>
+    /// <param name="conviteId">Convite a recusar.</param>
+    /// <param name="cancelamento">Token de cancelamento.</param>
+    /// <returns>Uma tarefa assíncrona.</returns>
+    /// <exception cref="DominioException">Com <see cref="CodigosErro.ConviteNaoEncontrado"/> ou <see cref="CodigosErro.ConviteJaRespondido"/>.</exception>
+    public async Task RecusarAsync(Guid utilizadorId, Guid conviteId, CancellationToken cancelamento)
+    {
+        var conta = await this.ObterContaAsync(utilizadorId, cancelamento).ConfigureAwait(false);
+        await this.unidadeDeTrabalho.ExecutarEmTransacaoAsync(
+            async () =>
+            {
+                var convite = await this.ObterConviteDirigidoAsync(conviteId, conta, cancelamento).ConfigureAwait(false);
+                convite.Recusar(conta.Id, this.relogio.AgoraUtc());
+                if (convite.ParaPrincipal)
+                {
+                    var ficha = await this.ObterFichaAsync(convite, cancelamento).ConfigureAwait(false);
+                    ficha.RecusarPrincipalConvidado();
+                }
+
+                return true;
+            },
+            cancelamento).ConfigureAwait(false);
     }
 
     private static ConviteResumo Resumo(Convite convite, Ficha ficha, string convidadoPor)
@@ -143,5 +214,32 @@ public sealed class ConviteService
             convidadoPor,
             convite.Estado,
             convite.CriadoEmUtc);
+    }
+
+    private async Task<Utilizador> ObterContaAsync(Guid utilizadorId, CancellationToken cancelamento)
+    {
+        return await this.utilizadores.ObterPorIdAsync(utilizadorId, cancelamento).ConfigureAwait(false)
+            ?? throw new DominioException(CodigosErro.NaoAutenticado, "A sessão não é válida ou expirou. Inicie sessão novamente.");
+    }
+
+    /// <summary>
+    /// Obtém o convite, que só existe para quem tem o e-mail convidado: para os outros, a resposta é a de um convite inexistente
+    /// (UC-14 E2, RP-09).
+    /// </summary>
+    private async Task<Convite> ObterConviteDirigidoAsync(Guid conviteId, Utilizador conta, CancellationToken cancelamento)
+    {
+        var convite = await this.convites.ObterAsync(conviteId, cancelamento).ConfigureAwait(false);
+        if (convite is null || !convite.DirigidoA(conta.Email))
+        {
+            throw new DominioException(CodigosErro.ConviteNaoEncontrado, "O convite não existe ou não é dirigido ao seu e-mail.");
+        }
+
+        return convite;
+    }
+
+    private async Task<Ficha> ObterFichaAsync(Convite convite, CancellationToken cancelamento)
+    {
+        return await this.fichas.ObterCompletaAsync(convite.FichaId, cancelamento).ConfigureAwait(false)
+            ?? throw new InvalidOperationException("O convite pertence a uma ficha que não existe.");
     }
 }

@@ -37,6 +37,14 @@ public interface IConviteRepositorio
     Task<IReadOnlyList<ConviteResumo>> PendentesPorEmailAsync(string email, CancellationToken cancelamento);
 
     /// <summary>
+    /// Obtém um convite pelo identificador, para responder a ele.
+    /// </summary>
+    /// <param name="id">Identificador do convite.</param>
+    /// <param name="cancelamento">Token de cancelamento.</param>
+    /// <returns>O convite, ou <see langword="null"/> se não existir.</returns>
+    Task<Convite?> ObterAsync(Guid id, CancellationToken cancelamento);
+
+    /// <summary>
     /// Regista um convite novo.
     /// </summary>
     /// <param name="convite">Convite a registar.</param>

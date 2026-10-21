@@ -1,6 +1,7 @@
 // Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
 
 using DoseCerta.Application.Convites;
+using DoseCerta.Domain.Entidades;
 using DoseCerta.Domain.Enumerados;
 
 namespace DoseCerta.UnitTests.Suporte;
@@ -14,6 +15,12 @@ public partial class RepositoriosEmMemoria
     public Task<bool> ExistePendenteAsync(Guid fichaId, string email, CancellationToken cancelamento)
     {
         return Task.FromResult(this.Convites.Exists(c => c.FichaId == fichaId && MesmoEmail(c.EmailConvidado, email) && c.Estado == EstadoConvite.Pendente));
+    }
+
+    /// <inheritdoc/>
+    public Task<Convite?> ObterAsync(Guid id, CancellationToken cancelamento)
+    {
+        return Task.FromResult(this.Convites.Find(c => c.Id == id));
     }
 
     /// <inheritdoc/>
