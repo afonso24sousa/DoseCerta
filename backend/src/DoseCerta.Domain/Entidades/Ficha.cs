@@ -11,6 +11,10 @@ namespace DoseCerta.Domain.Entidades;
 /// </summary>
 public class Ficha
 {
+    private const string MensagemPrincipalSemSubstituto =
+        "O Cuidador principal só pode ser despromovido ou removido depois de outro Cuidador assumir o papel; "
+        + "transfira primeiro o papel de Cuidador principal (POST /api/v1/fichas/{fichaId}/cuidador-principal).";
+
     private readonly List<Associacao> associacoes = new();
     private readonly List<CondicaoSaude> condicoesSaude = new();
     private readonly List<Alergia> alergias = new();
@@ -331,5 +335,66 @@ public class Ficha
         var associacao = new Associacao(this.Id, utilizadorId, papel, agoraUtc);
         this.associacoes.Add(associacao);
         return associacao;
+    }
+
+    /// <summary>
+    /// OP-23 e OP-24: promove um Familiar a Cuidador ou despromove um Cuidador a Familiar (RF-049, RF-130).
+    /// Verifica, por esta ordem: a pessoa está associada, não é o titular da ficha própria, a ficha não fica sem Cuidador
+    /// e a pessoa não é o Cuidador principal (Modelo de Classes do Backend, secção 10; RF-033, RF-133, RF-134).
+    /// Um pedido com o papel atual não altera nada.
+    /// </summary>
+    /// <param name="utilizadorId">Pessoa visada.</param>
+    /// <param name="novoPapel">Papel pretendido.</param>
+    /// <returns>A associação da pessoa, já com o papel pretendido.</returns>
+    /// <exception cref="DominioException">
+    /// Com <see cref="CodigosErro.PessoaNaoEncontrada"/>, <see cref="CodigosErro.CuidadorPrincipalProtegido"/>,
+    /// <see cref="CodigosErro.FichaSemCuidador"/> ou <see cref="CodigosErro.CuidadorPrincipalSemSubstituto"/>.
+    /// </exception>
+    public Associacao AlterarPapel(Guid utilizadorId, Papel novoPapel)
+    {
+        var associacao = this.ExigirAssociacao(utilizadorId);
+        if (associacao.Papel == novoPapel)
+        {
+            return associacao;
+        }
+
+        if (novoPapel == Papel.Familiar)
+        {
+            this.ExigirQueNaoETitular(utilizadorId);
+            this.ExigirQuePodeDeixarDeSerCuidador(associacao);
+        }
+
+        associacao.DefinirPapel(novoPapel);
+        return associacao;
+    }
+
+    private Associacao ExigirAssociacao(Guid utilizadorId)
+    {
+        return this.ObterAssociacao(utilizadorId)
+            ?? throw new DominioException(CodigosErro.PessoaNaoEncontrada, "A pessoa não está associada à ficha.");
+    }
+
+    /// <summary>
+    /// Recusa que um Cuidador deixe de o ser, por despromoção ou remoção, se a ficha ficar sem Cuidador (RF-134)
+    /// ou se for o Cuidador principal sem que outro Cuidador tenha assumido o papel (RF-133).
+    /// </summary>
+    private void ExigirQuePodeDeixarDeSerCuidador(Associacao associacao)
+    {
+        if (!associacao.EhCuidador())
+        {
+            return;
+        }
+
+        if (this.associacoes.Count(a => a.EhCuidador()) == 1)
+        {
+            throw new DominioException(
+                CodigosErro.FichaSemCuidador,
+                "A operação deixaria a ficha sem Cuidador; promova primeiro um Familiar ou convide um novo Cuidador.");
+        }
+
+        if (associacao.EPrincipal)
+        {
+            throw new DominioException(CodigosErro.CuidadorPrincipalSemSubstituto, MensagemPrincipalSemSubstituto);
+        }
     }
 }
