@@ -111,4 +111,14 @@ public class Associacao
     {
         this.Papel = papel;
     }
+
+    /// <summary>
+    /// Retira a marca de Cuidador principal, provisório ou não; a pessoa continua Cuidador (RF-132).
+    /// Só a ficha a usa, ao transferir o papel para outro Cuidador.
+    /// </summary>
+    internal void DesmarcarPrincipal()
+    {
+        this.EPrincipal = false;
+        this.EProvisorio = false;
+    }
 }

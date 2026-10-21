@@ -16,14 +16,15 @@ public static class FichasDeTeste
     public static readonly DateTime Agora = new(2026, 10, 21, 9, 0, 0, DateTimeKind.Utc);
 
     /// <summary>
-    /// Cria uma ficha de terceiro com o Cuidador principal indicado, não provisório.
+    /// Cria uma ficha de terceiro com o Cuidador principal indicado.
     /// </summary>
     /// <param name="principalId">Cuidador principal.</param>
+    /// <param name="provisorio">Indica se o Cuidador principal é provisório (convite para Cuidador principal pendente).</param>
     /// <returns>A ficha.</returns>
-    public static Ficha DeTerceiro(Guid principalId)
+    public static Ficha DeTerceiro(Guid principalId, bool provisorio = false)
     {
         var ficha = new Ficha("Maria Fictícia Santos", new DateOnly(1941, 5, 17), "+351 910 000 001", null, principalId, Agora);
-        ficha.AssociarCuidadorPrincipal(principalId, provisorio: false, Agora);
+        ficha.AssociarCuidadorPrincipal(principalId, provisorio, Agora);
         return ficha;
     }
 

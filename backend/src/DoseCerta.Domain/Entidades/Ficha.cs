@@ -386,6 +386,45 @@ public class Ficha
         this.associacoes.Remove(associacao);
     }
 
+    /// <summary>
+    /// OP-26: atribui o papel de Cuidador principal a outro Cuidador da ficha; o anterior continua Cuidador e a ficha fica
+    /// com exatamente um Cuidador principal (RF-132). Se o anterior era provisório, por haver um convite para Cuidador principal
+    /// pendente, o novo fica provisório no seu lugar. Não se aplica à ficha própria (RF-034).
+    /// A marca é retirada ao anterior e <paramref name="gravarAlteracoes"/> é chamada antes de a dar ao novo, porque o índice único
+    /// filtrado <c>UQ_Associacao_Principal</c> é verificado a cada escrita (Modelo de Dados, secção 7).
+    /// </summary>
+    /// <param name="novoPrincipalId">Cuidador que passa a Cuidador principal.</param>
+    /// <param name="gravarAlteracoes">Grava, na transação em curso, a associação do anterior já sem a marca.</param>
+    /// <returns>A associação do novo Cuidador principal.</returns>
+    /// <exception cref="DominioException">
+    /// Com <see cref="CodigosErro.CuidadorPrincipalProtegido"/>, numa ficha própria, ou <see cref="CodigosErro.DestinatarioNaoECuidador"/>,
+    /// se a pessoa indicada não for Cuidador da ficha.
+    /// </exception>
+    public async Task<Associacao> TransferirPrincipalAsync(Guid novoPrincipalId, Func<Task> gravarAlteracoes)
+    {
+        ArgumentNullException.ThrowIfNull(gravarAlteracoes);
+        this.ExigirPrincipalTransferivel();
+        var novo = this.ObterAssociacao(novoPrincipalId);
+        if (novo is null || !novo.EhCuidador())
+        {
+            throw new DominioException(
+                CodigosErro.DestinatarioNaoECuidador,
+                "A pessoa indicada não é Cuidador da ficha; promova-a ou convide-a como Cuidador primeiro.");
+        }
+
+        var anterior = this.associacoes.Single(a => a.EPrincipal);
+        if (anterior == novo)
+        {
+            return novo;
+        }
+
+        var provisorio = anterior.EProvisorio;
+        anterior.DesmarcarPrincipal();
+        await gravarAlteracoes().ConfigureAwait(false);
+        novo.MarcarPrincipal(provisorio);
+        return novo;
+    }
+
     private Associacao ExigirAssociacao(Guid utilizadorId)
     {
         return this.ObterAssociacao(utilizadorId)
