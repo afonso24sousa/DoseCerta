@@ -425,6 +425,75 @@ public class Ficha
         return novo;
     }
 
+    /// <summary>
+    /// Recusa associar uma pessoa que já está associada à ficha: cada Utilizador tem uma só associação por ficha
+    /// (OP-19, OP-21; <c>UQ_Associacao_FichaUtilizador</c>).
+    /// </summary>
+    /// <param name="utilizadorId">Pessoa a associar ou a convidar.</param>
+    /// <exception cref="DominioException">Com <see cref="CodigosErro.PessoaJaAssociada"/>, se a pessoa já estiver associada.</exception>
+    public void ExigirQueNaoEstaAssociado(Guid utilizadorId)
+    {
+        if (this.ObterAssociacao(utilizadorId) is not null)
+        {
+            throw new DominioException(CodigosErro.PessoaJaAssociada, "A pessoa já está associada à ficha.");
+        }
+    }
+
+    /// <summary>
+    /// OP-19 com <c>paraPrincipal=true</c>: o Cuidador principal atual passa a provisório até à resposta ao convite (RF-025, RF-027).
+    /// Só pode haver um convite para Cuidador principal pendente, o que a marca de provisório indica. Não se aplica à ficha própria (RF-034).
+    /// </summary>
+    /// <exception cref="DominioException">
+    /// Com <see cref="CodigosErro.CuidadorPrincipalProtegido"/>, numa ficha própria, ou <see cref="CodigosErro.ConvitePendenteExiste"/>,
+    /// se já existir um convite para Cuidador principal pendente.
+    /// </exception>
+    public void MarcarPrincipalProvisorio()
+    {
+        this.ExigirPrincipalTransferivel();
+        var principal = this.associacoes.Single(a => a.EPrincipal);
+        if (principal.EProvisorio)
+        {
+            throw new DominioException(
+                CodigosErro.ConvitePendenteExiste,
+                "Já existe um convite para Cuidador principal pendente nesta ficha; aguarde a resposta antes de convidar outra pessoa.");
+        }
+
+        principal.MarcarPrincipal(provisorio: true);
+    }
+
+    /// <summary>
+    /// OP-21 de um convite para Cuidador principal: o convidado passa a Cuidador principal e o Cuidador principal provisório
+    /// deixa de estar associado à ficha (RF-026).
+    /// </summary>
+    /// <param name="convidadoId">Utilizador que aceita o convite.</param>
+    /// <param name="agoraUtc">Instante da aceitação, em UTC.</param>
+    /// <returns>A associação do novo Cuidador principal.</returns>
+    /// <exception cref="DominioException">Com <see cref="CodigosErro.PessoaJaAssociada"/>, se o convidado já estiver associado à ficha.</exception>
+    /// <exception cref="InvalidOperationException">Se a ficha não tiver Cuidador principal provisório.</exception>
+    public Associacao AceitarPrincipalConvidado(Guid convidadoId, DateTime agoraUtc)
+    {
+        this.ExigirQueNaoEstaAssociado(convidadoId);
+        var provisorio = this.ObterPrincipalProvisorio();
+        this.associacoes.Remove(provisorio);
+        return this.AssociarCuidadorPrincipal(convidadoId, provisorio: false, agoraUtc);
+    }
+
+    /// <summary>
+    /// OP-22 de um convite para Cuidador principal: o Cuidador principal provisório mantém o papel e deixa de ser provisório,
+    /// podendo convidar outra pessoa (RF-027).
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Se a ficha não tiver Cuidador principal provisório.</exception>
+    public void RecusarPrincipalConvidado()
+    {
+        this.ObterPrincipalProvisorio().MarcarPrincipal(provisorio: false);
+    }
+
+    private Associacao ObterPrincipalProvisorio()
+    {
+        return this.associacoes.SingleOrDefault(a => a.EPrincipal && a.EProvisorio)
+            ?? throw new InvalidOperationException("A ficha não tem Cuidador principal provisório: não existe convite para Cuidador principal pendente.");
+    }
+
     private Associacao ExigirAssociacao(Guid utilizadorId)
     {
         return this.ObterAssociacao(utilizadorId)
