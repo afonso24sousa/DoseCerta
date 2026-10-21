@@ -1,5 +1,6 @@
 // Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
 
+using DoseCerta.Application.Pessoas;
 using DoseCerta.Domain.Entidades;
 using DoseCerta.Domain.Enumerados;
 
@@ -26,6 +27,14 @@ public interface IFichaRepositorio
     /// <param name="cancelamento">Token de cancelamento.</param>
     /// <returns>As fichas, ordenadas pelo nome do utente.</returns>
     Task<IReadOnlyList<Ficha>> ListarDoUtilizadorAsync(Guid utilizadorId, EstadoFicha? estado, CancellationToken cancelamento);
+
+    /// <summary>
+    /// Lista as pessoas associadas a uma ficha, com o nome e o e-mail da conta: o Cuidador principal primeiro e depois por nome (OP-18).
+    /// </summary>
+    /// <param name="fichaId">Identificador da ficha.</param>
+    /// <param name="cancelamento">Token de cancelamento.</param>
+    /// <returns>As pessoas associadas.</returns>
+    Task<IReadOnlyList<PessoaAssociada>> ListarPessoasAsync(Guid fichaId, CancellationToken cancelamento);
 
     /// <summary>
     /// Indica se o Utilizador já tem uma ficha própria (RF-031).

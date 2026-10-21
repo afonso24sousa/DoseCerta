@@ -1,5 +1,6 @@
 // Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
 
+using DoseCerta.Application.Pessoas;
 using DoseCerta.Application.Repositorios;
 using DoseCerta.Domain.Entidades;
 using DoseCerta.Domain.Enumerados;
@@ -50,6 +51,27 @@ public sealed class FichaRepositorio : IFichaRepositorio
         return await consulta
             .OrderBy(f => f.NomeCompleto)
             .ThenBy(f => f.Id)
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<PessoaAssociada>> ListarPessoasAsync(Guid fichaId, CancellationToken cancelamento)
+    {
+        return await this.contexto.Associacoes
+            .AsNoTracking()
+            .Where(a => a.FichaId == fichaId)
+            .Join(this.contexto.Utilizadores, a => a.UtilizadorId, u => u.Id, (a, u) => new { Associacao = a, Utilizador = u })
+            .OrderByDescending(p => p.Associacao.EPrincipal)
+            .ThenBy(p => p.Utilizador.Nome)
+            .ThenBy(p => p.Utilizador.Id)
+            .Select(p => new PessoaAssociada(
+                p.Utilizador.Id,
+                p.Utilizador.Nome,
+                p.Utilizador.Email,
+                p.Associacao.Papel,
+                p.Associacao.EPrincipal,
+                p.Associacao.EProvisorio))
             .ToListAsync(cancelamento)
             .ConfigureAwait(false);
     }

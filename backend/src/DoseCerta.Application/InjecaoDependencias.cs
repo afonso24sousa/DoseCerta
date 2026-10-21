@@ -3,6 +3,7 @@
 using DoseCerta.Application.Contas;
 using DoseCerta.Application.Documentos;
 using DoseCerta.Application.Fichas;
+using DoseCerta.Application.Pessoas;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DoseCerta.Application;
@@ -25,6 +26,7 @@ public static class InjecaoDependencias
         servicos.AddScoped<AutorizacaoFichaService>();
         servicos.AddScoped<DocumentoService>();
         servicos.AddScoped<FichaService>();
+        servicos.AddScoped<PessoasService>();
         return servicos;
     }
 }
