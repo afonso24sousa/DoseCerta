@@ -86,6 +86,28 @@ public sealed class PessoasService
             cancelamento).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// OP-25: remove o acesso de uma pessoa a uma ficha ativa, a pedido de um Cuidador, incluindo o seu próprio acesso.
+    /// A pessoa removida passa a receber 404 nessa ficha a partir do pedido seguinte (RF-131, RNF-005). O Familiar não remove
+    /// ninguém, nem a si próprio (DP-01).
+    /// </summary>
+    /// <param name="utilizadorId">Utilizador autenticado.</param>
+    /// <param name="fichaId">Ficha.</param>
+    /// <param name="alvoId">Pessoa cujo acesso é removido.</param>
+    /// <param name="cancelamento">Token de cancelamento.</param>
+    /// <returns>Uma tarefa assíncrona.</returns>
+    public async Task RemoverAcessoAsync(Guid utilizadorId, Guid fichaId, Guid alvoId, CancellationToken cancelamento)
+    {
+        await this.unidadeDeTrabalho.ExecutarEmTransacaoAsync(
+            async () =>
+            {
+                var acesso = await this.autorizacao.ExigirCuidadorDeFichaAtivaAsync(utilizadorId, fichaId, cancelamento).ConfigureAwait(false);
+                acesso.Ficha.RemoverAcesso(alvoId);
+                return true;
+            },
+            cancelamento).ConfigureAwait(false);
+    }
+
     private async Task<PessoaAssociada> PessoaAsync(Associacao associacao, CancellationToken cancelamento)
     {
         var utilizador = await this.utilizadores.ObterPorIdAsync(associacao.UtilizadorId, cancelamento).ConfigureAwait(false)

@@ -70,6 +70,19 @@ public static class ClienteAssociacao
     }
 
     /// <summary>
+    /// Pede a remoção do acesso de uma pessoa à ficha (OP-25).
+    /// </summary>
+    /// <param name="cliente">Cliente autenticado.</param>
+    /// <param name="fichaId">Ficha.</param>
+    /// <param name="utilizadorId">Pessoa cujo acesso é removido.</param>
+    /// <returns>A resposta HTTP.</returns>
+    public static Task<HttpResponseMessage> RemoverAcessoAsync(HttpClient cliente, Guid fichaId, Guid utilizadorId)
+    {
+        ArgumentNullException.ThrowIfNull(cliente);
+        return cliente.DeleteAsync($"api/v1/fichas/{fichaId}/pessoas/{utilizadorId}");
+    }
+
+    /// <summary>
     /// Pede a alteração do papel de uma pessoa na ficha (OP-23 e OP-24), com o corpo <c>{ "papel": ... }</c>.
     /// </summary>
     /// <param name="cliente">Cliente autenticado.</param>

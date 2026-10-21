@@ -9,7 +9,7 @@ namespace DoseCerta.Api.Controllers;
 
 /// <summary>
 /// Pessoas associadas a uma ficha, alteração de papel, remoção de acesso e transferência do Cuidador principal (F004).
-/// Endpoints: OP-18, OP-23 e OP-24.
+/// Endpoints: OP-18, OP-23, OP-24 e OP-25.
 /// </summary>
 [ApiController]
 [Route("api/v1/fichas/{fichaId:guid}")]
@@ -59,6 +59,22 @@ public sealed class PessoasController : ControllerBase
             .AlterarPapelAsync(UtilizadorAutenticado.Id(this.User), fichaId, utilizadorId, pedido.Papel, cancelamento)
             .ConfigureAwait(false);
         return this.Ok(Resposta(pessoa));
+    }
+
+    /// <summary>
+    /// OP-25 Remover acesso de uma pessoa.
+    /// </summary>
+    /// <param name="fichaId">Identificador da ficha.</param>
+    /// <param name="utilizadorId">Identificador da pessoa cujo acesso é removido.</param>
+    /// <param name="cancelamento">Token de cancelamento do pedido.</param>
+    /// <returns>204 sem corpo; a pessoa removida passa a receber 404 nessa ficha (RF-131).</returns>
+    [HttpDelete("pessoas/{utilizadorId:guid}")]
+    public async Task<IActionResult> RemoverAcessoDeUmaPessoa(Guid fichaId, Guid utilizadorId, CancellationToken cancelamento)
+    {
+        await this.pessoasService
+            .RemoverAcessoAsync(UtilizadorAutenticado.Id(this.User), fichaId, utilizadorId, cancelamento)
+            .ConfigureAwait(false);
+        return this.NoContent();
     }
 
     /// <summary>

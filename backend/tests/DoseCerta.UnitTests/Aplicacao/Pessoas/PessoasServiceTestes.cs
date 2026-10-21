@@ -123,6 +123,38 @@ public class PessoasServiceTestes
         Assert.Equal(Papel.Familiar, this.ficha.ObterAssociacao(this.familiar.Id)!.Papel);
     }
 
+    /// <summary>
+    /// RF-131 CA1: o Cuidador remove o Familiar, que deixa de estar associado, numa transação confirmada.
+    /// </summary>
+    /// <returns>Uma tarefa assíncrona.</returns>
+    [Fact]
+    public async Task RemoverAcessoRetiraAPessoaDaFicha()
+    {
+        await this.servico.RemoverAcessoAsync(this.principal.Id, this.ficha.Id, this.familiar.Id, CancellationToken.None);
+
+        Assert.Null(this.ficha.ObterAssociacao(this.familiar.Id));
+        Assert.Equal(1, this.unidadeDeTrabalho.Confirmadas);
+    }
+
+    /// <summary>
+    /// DP-01, RP-13: o Familiar não se remove a si próprio (403) e numa ficha arquivada a remoção é recusada (409); nada muda.
+    /// </summary>
+    /// <returns>Uma tarefa assíncrona.</returns>
+    [Fact]
+    public async Task FamiliarARemoverSeEFichaArquivadaSaoRecusados()
+    {
+        var doFamiliar = await Assert.ThrowsAsync<DominioException>(
+            () => this.servico.RemoverAcessoAsync(this.familiar.Id, this.ficha.Id, this.familiar.Id, CancellationToken.None));
+        this.ficha.Arquivar(FichasDeTeste.Agora);
+        var arquivada = await Assert.ThrowsAsync<DominioException>(
+            () => this.servico.RemoverAcessoAsync(this.principal.Id, this.ficha.Id, this.familiar.Id, CancellationToken.None));
+
+        Assert.Equal(CodigosErro.AcessoProibido, doFamiliar.Codigo);
+        Assert.Equal(CodigosErro.FichaArquivada, arquivada.Codigo);
+        Assert.NotNull(this.ficha.ObterAssociacao(this.familiar.Id));
+        Assert.Equal(0, this.unidadeDeTrabalho.Confirmadas);
+    }
+
     private Utilizador NovoUtilizador(string nome, string email)
     {
         var utilizador = new Utilizador(nome, email, "hash-ficticio", FichasDeTeste.Agora);
