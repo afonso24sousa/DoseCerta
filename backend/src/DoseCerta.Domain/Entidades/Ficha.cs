@@ -368,6 +368,24 @@ public class Ficha
         return associacao;
     }
 
+    /// <summary>
+    /// OP-25: remove o acesso de uma pessoa à ficha, incluindo o do próprio Cuidador que o pede (RF-131).
+    /// Verifica, por esta ordem: a pessoa está associada, não é o titular da ficha própria, a ficha não fica sem Cuidador
+    /// e a pessoa não é o Cuidador principal (Modelo de Classes do Backend, secção 10; RF-033, RF-133, RF-134).
+    /// </summary>
+    /// <param name="utilizadorId">Pessoa visada.</param>
+    /// <exception cref="DominioException">
+    /// Com <see cref="CodigosErro.PessoaNaoEncontrada"/>, <see cref="CodigosErro.CuidadorPrincipalProtegido"/>,
+    /// <see cref="CodigosErro.FichaSemCuidador"/> ou <see cref="CodigosErro.CuidadorPrincipalSemSubstituto"/>.
+    /// </exception>
+    public void RemoverAcesso(Guid utilizadorId)
+    {
+        var associacao = this.ExigirAssociacao(utilizadorId);
+        this.ExigirQueNaoETitular(utilizadorId);
+        this.ExigirQuePodeDeixarDeSerCuidador(associacao);
+        this.associacoes.Remove(associacao);
+    }
+
     private Associacao ExigirAssociacao(Guid utilizadorId)
     {
         return this.ObterAssociacao(utilizadorId)
