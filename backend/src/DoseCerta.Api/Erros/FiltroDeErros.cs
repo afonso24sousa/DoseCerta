@@ -28,6 +28,7 @@ public sealed partial class FiltroDeErros : IExceptionHandler
         [CodigosErro.FichaNaoArquivada] = StatusCodes.Status409Conflict,
         [CodigosErro.FichaComHistorico] = StatusCodes.Status409Conflict,
         [CodigosErro.FichaPropriaJaExiste] = StatusCodes.Status409Conflict,
+        [CodigosErro.CuidadorPrincipalProtegido] = StatusCodes.Status403Forbidden,
         [CodigosErro.FicheiroDemasiadoGrande] = StatusCodes.Status413PayloadTooLarge,
         [CodigosErro.FormatoNaoSuportado] = StatusCodes.Status415UnsupportedMediaType,
         [CodigosErro.DocumentoNaoGuardado] = StatusCodes.Status503ServiceUnavailable,
