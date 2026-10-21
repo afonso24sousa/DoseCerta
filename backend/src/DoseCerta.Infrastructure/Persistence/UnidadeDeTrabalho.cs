@@ -9,7 +9,8 @@ namespace DoseCerta.Infrastructure.Persistence;
 /// <summary>
 /// Implementação de <see cref="IUnidadeDeTrabalho"/> sobre a transação do <see cref="DoseCertaDbContext"/>.
 /// Uma falha (incluindo de concorrência ou de unicidade) desfaz a transação inteira, executa as compensações registadas
-/// e volta a lançar o erro original.
+/// e volta a lançar o erro original, exceto a violação de um índice único que garante uma regra de negócio, que é lançada
+/// como o erro dessa regra (<see cref="ConversorViolacaoUnicidade"/>).
 /// </summary>
 public sealed partial class UnidadeDeTrabalho : IUnidadeDeTrabalho
 {
@@ -43,11 +44,18 @@ public sealed partial class UnidadeDeTrabalho : IUnidadeDeTrabalho
             this.compensacoes.Clear();
             return resultado;
         }
-        catch
+        catch (Exception erro)
         {
             await transacao.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
             this.contexto.ChangeTracker.Clear();
             this.ExecutarCompensacoes();
+
+            // A violação de um índice que garante uma regra de negócio (por exemplo, pedidos simultâneos) dá o erro dessa regra.
+            if (erro is DbUpdateException gravacao && ConversorViolacaoUnicidade.Converter(gravacao) is { } regraDeNegocio)
+            {
+                throw regraDeNegocio;
+            }
+
             throw;
         }
     }
