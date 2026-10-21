@@ -70,6 +70,19 @@ public static class ClienteAssociacao
     }
 
     /// <summary>
+    /// Pede a transferência do papel de Cuidador principal (OP-26), com o corpo <c>{ "utilizadorId": ... }</c>.
+    /// </summary>
+    /// <param name="cliente">Cliente autenticado.</param>
+    /// <param name="fichaId">Ficha.</param>
+    /// <param name="utilizadorId">Valor do campo <c>utilizadorId</c>, tal como é enviado.</param>
+    /// <returns>A resposta HTTP.</returns>
+    public static Task<HttpResponseMessage> TransferirPrincipalAsync(HttpClient cliente, Guid fichaId, object? utilizadorId)
+    {
+        ArgumentNullException.ThrowIfNull(cliente);
+        return cliente.PostAsJsonAsync($"api/v1/fichas/{fichaId}/cuidador-principal", new { utilizadorId });
+    }
+
+    /// <summary>
     /// Pede a remoção do acesso de uma pessoa à ficha (OP-25).
     /// </summary>
     /// <param name="cliente">Cliente autenticado.</param>

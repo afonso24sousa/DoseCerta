@@ -108,6 +108,39 @@ public sealed class PessoasService
             cancelamento).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// OP-26: atribui o papel de Cuidador principal a outro Cuidador de uma ficha ativa, a pedido de qualquer Cuidador; o anterior
+    /// continua Cuidador e a ficha fica com exatamente um Cuidador principal, numa só transação (RF-132, RNF-046, DP-02).
+    /// </summary>
+    /// <param name="utilizadorId">Utilizador autenticado.</param>
+    /// <param name="fichaId">Ficha.</param>
+    /// <param name="novoPrincipalId">Cuidador que passa a Cuidador principal.</param>
+    /// <param name="cancelamento">Token de cancelamento.</param>
+    /// <returns>O novo Cuidador principal.</returns>
+    /// <exception cref="ValidacaoException">Se o destinatário não for indicado.</exception>
+    public async Task<PessoaAssociada> TransferirPrincipalAsync(
+        Guid utilizadorId,
+        Guid fichaId,
+        Guid? novoPrincipalId,
+        CancellationToken cancelamento)
+    {
+        if (novoPrincipalId is not Guid destinatario || destinatario == Guid.Empty)
+        {
+            throw ValidacaoException.DoCampo("utilizadorId", "É obrigatório: identificador do Cuidador que passa a Cuidador principal.");
+        }
+
+        return await this.unidadeDeTrabalho.ExecutarEmTransacaoAsync(
+            async () =>
+            {
+                var acesso = await this.autorizacao.ExigirCuidadorDeFichaAtivaAsync(utilizadorId, fichaId, cancelamento).ConfigureAwait(false);
+                var novo = await acesso.Ficha
+                    .TransferirPrincipalAsync(destinatario, () => this.unidadeDeTrabalho.GravarAlteracoesAsync(cancelamento))
+                    .ConfigureAwait(false);
+                return await this.PessoaAsync(novo, cancelamento).ConfigureAwait(false);
+            },
+            cancelamento).ConfigureAwait(false);
+    }
+
     private async Task<PessoaAssociada> PessoaAsync(Associacao associacao, CancellationToken cancelamento)
     {
         var utilizador = await this.utilizadores.ObterPorIdAsync(associacao.UtilizadorId, cancelamento).ConfigureAwait(false)

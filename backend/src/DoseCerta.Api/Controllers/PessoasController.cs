@@ -9,7 +9,7 @@ namespace DoseCerta.Api.Controllers;
 
 /// <summary>
 /// Pessoas associadas a uma ficha, alteração de papel, remoção de acesso e transferência do Cuidador principal (F004).
-/// Endpoints: OP-18, OP-23, OP-24 e OP-25.
+/// Endpoints: OP-18, OP-23, OP-24, OP-25 e OP-26.
 /// </summary>
 [ApiController]
 [Route("api/v1/fichas/{fichaId:guid}")]
@@ -75,6 +75,26 @@ public sealed class PessoasController : ControllerBase
             .RemoverAcessoAsync(UtilizadorAutenticado.Id(this.User), fichaId, utilizadorId, cancelamento)
             .ConfigureAwait(false);
         return this.NoContent();
+    }
+
+    /// <summary>
+    /// OP-26 Transferir o papel de Cuidador principal.
+    /// </summary>
+    /// <param name="fichaId">Identificador da ficha.</param>
+    /// <param name="pedido">Cuidador que passa a Cuidador principal.</param>
+    /// <param name="cancelamento">Token de cancelamento do pedido.</param>
+    /// <returns>200 com o novo Cuidador principal.</returns>
+    [HttpPost("cuidador-principal")]
+    public async Task<IActionResult> TransferirOPapelDeCuidadorPrincipal(
+        Guid fichaId,
+        [FromBody] PedidoTransferenciaPrincipal pedido,
+        CancellationToken cancelamento)
+    {
+        ArgumentNullException.ThrowIfNull(pedido);
+        var pessoa = await this.pessoasService
+            .TransferirPrincipalAsync(UtilizadorAutenticado.Id(this.User), fichaId, pedido.UtilizadorId, cancelamento)
+            .ConfigureAwait(false);
+        return this.Ok(Resposta(pessoa));
     }
 
     /// <summary>
