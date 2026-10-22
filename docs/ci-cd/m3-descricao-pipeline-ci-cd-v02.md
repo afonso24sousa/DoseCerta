@@ -6,7 +6,7 @@
 | Projeto | DoseCerta |
 | Milestone de Entrega | m3 |
 | Versão | v02 |
-| Issues | I031 (integração contínua) e I040 (publicação no ambiente de demonstração) |
+| Issue | I031 (Sprint 03); I040 (Sprint 04) |
 | Configuração arquivada | `/projeto/04-artefactos-tecnicos/04.16-ci-cd/m3-v02` |
 
 | Versão | Alterações |
