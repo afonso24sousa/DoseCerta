@@ -101,4 +101,24 @@ public class Associacao
         this.EPrincipal = true;
         this.EProvisorio = provisorio;
     }
+
+    /// <summary>
+    /// Muda o papel na ficha (RF-049, RF-130). Só a ficha a usa, depois de verificar que a ficha não fica sem Cuidador
+    /// e que esta associação não é a do Cuidador principal.
+    /// </summary>
+    /// <param name="papel">Novo papel.</param>
+    internal void DefinirPapel(Papel papel)
+    {
+        this.Papel = papel;
+    }
+
+    /// <summary>
+    /// Retira a marca de Cuidador principal, provisório ou não; a pessoa continua Cuidador (RF-132).
+    /// Só a ficha a usa, ao transferir o papel para outro Cuidador.
+    /// </summary>
+    internal void DesmarcarPrincipal()
+    {
+        this.EPrincipal = false;
+        this.EProvisorio = false;
+    }
 }

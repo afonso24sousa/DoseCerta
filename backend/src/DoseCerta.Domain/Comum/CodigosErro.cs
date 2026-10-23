@@ -93,6 +93,46 @@ public static class CodigosErro
     public const string CuidadorPrincipalProtegido = "CUIDADOR_PRINCIPAL_PROTEGIDO";
 
     /// <summary>
+    /// Já existe um convite pendente para o mesmo e-mail e a mesma ficha (409, RF-043).
+    /// </summary>
+    public const string ConvitePendenteExiste = "CONVITE_PENDENTE_EXISTE";
+
+    /// <summary>
+    /// O e-mail pertence a uma pessoa já associada à ficha (409, OP-19).
+    /// </summary>
+    public const string PessoaJaAssociada = "PESSOA_JA_ASSOCIADA";
+
+    /// <summary>
+    /// O convite não existe ou não é dirigido ao e-mail do Utilizador (404, OP-21, OP-22).
+    /// </summary>
+    public const string ConviteNaoEncontrado = "CONVITE_NAO_ENCONTRADO";
+
+    /// <summary>
+    /// O convite já foi aceite ou recusado (409, OP-21, OP-22).
+    /// </summary>
+    public const string ConviteJaRespondido = "CONVITE_JA_RESPONDIDO";
+
+    /// <summary>
+    /// A pessoa não está associada à ficha (404, OP-23 a OP-25).
+    /// </summary>
+    public const string PessoaNaoEncontrada = "PESSOA_NAO_ENCONTRADA";
+
+    /// <summary>
+    /// O Cuidador principal só é despromovido ou removido depois de outro Cuidador assumir o papel (409, RF-133).
+    /// </summary>
+    public const string CuidadorPrincipalSemSubstituto = "CUIDADOR_PRINCIPAL_SEM_SUBSTITUTO";
+
+    /// <summary>
+    /// A operação deixaria a ficha sem Cuidador (409, RF-134).
+    /// </summary>
+    public const string FichaSemCuidador = "FICHA_SEM_CUIDADOR";
+
+    /// <summary>
+    /// A pessoa indicada para Cuidador principal não é Cuidador da ficha (409, RF-132).
+    /// </summary>
+    public const string DestinatarioNaoECuidador = "DESTINATARIO_NAO_E_CUIDADOR";
+
+    /// <summary>
     /// Ficheiro com mais de 10 MB (413, RNF-008).
     /// </summary>
     public const string FicheiroDemasiadoGrande = "FICHEIRO_DEMASIADO_GRANDE";

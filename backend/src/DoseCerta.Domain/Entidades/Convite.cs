@@ -1,5 +1,6 @@
 // Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
 
+using DoseCerta.Domain.Comum;
 using DoseCerta.Domain.Enumerados;
 
 namespace DoseCerta.Domain.Entidades;
@@ -89,4 +90,49 @@ public class Convite
     /// Gets o instante da resposta, em UTC.
     /// </summary>
     public DateTime? RespondidoEmUtc { get; private set; }
+
+    /// <summary>
+    /// Indica se o convite é dirigido a um e-mail, sem distinguir maiúsculas, como a collation da coluna (RF-042, RF-044).
+    /// </summary>
+    /// <param name="email">E-mail da conta do Utilizador.</param>
+    /// <returns><see langword="true"/> se o convite for para esse e-mail.</returns>
+    public bool DirigidoA(string? email)
+    {
+        return string.Equals(this.EmailConvidado, email?.Trim(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Aceita o convite: deixa de estar pendente e regista quem respondeu e quando (RF-045, <c>CK_Convite_Resposta</c>).
+    /// A associação à ficha é criada pela ficha.
+    /// </summary>
+    /// <param name="utilizadorId">Utilizador que aceita.</param>
+    /// <param name="agoraUtc">Instante da resposta, em UTC.</param>
+    /// <exception cref="DominioException">Com <see cref="CodigosErro.ConviteJaRespondido"/>, se o convite já não estiver pendente.</exception>
+    public void Aceitar(Guid utilizadorId, DateTime agoraUtc)
+    {
+        this.Responder(EstadoConvite.Aceite, utilizadorId, agoraUtc);
+    }
+
+    /// <summary>
+    /// Recusa o convite: deixa de estar pendente, sem associação à ficha, e o mesmo e-mail pode voltar a ser convidado (RF-043, RF-046).
+    /// </summary>
+    /// <param name="utilizadorId">Utilizador que recusa.</param>
+    /// <param name="agoraUtc">Instante da resposta, em UTC.</param>
+    /// <exception cref="DominioException">Com <see cref="CodigosErro.ConviteJaRespondido"/>, se o convite já não estiver pendente.</exception>
+    public void Recusar(Guid utilizadorId, DateTime agoraUtc)
+    {
+        this.Responder(EstadoConvite.Recusado, utilizadorId, agoraUtc);
+    }
+
+    private void Responder(EstadoConvite resposta, Guid utilizadorId, DateTime agoraUtc)
+    {
+        if (this.Estado != EstadoConvite.Pendente)
+        {
+            throw new DominioException(CodigosErro.ConviteJaRespondido, "O convite já foi aceite ou recusado.");
+        }
+
+        this.Estado = resposta;
+        this.UtilizadorConvidadoId = utilizadorId;
+        this.RespondidoEmUtc = agoraUtc;
+    }
 }

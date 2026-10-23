@@ -1,5 +1,6 @@
 // Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
 
+using DoseCerta.Application.Pessoas;
 using DoseCerta.Application.Repositorios;
 using DoseCerta.Domain.Entidades;
 using DoseCerta.Domain.Enumerados;
@@ -60,6 +61,19 @@ public partial class RepositoriosEmMemoria : IFichaRepositorio, IDominiosReposit
     public Task<Ficha?> ObterCompletaAsync(Guid id, CancellationToken cancelamento)
     {
         return Task.FromResult(this.Fichas.FirstOrDefault(f => f.Id == id));
+    }
+
+    /// <inheritdoc/>
+    public Task<IReadOnlyList<PessoaAssociada>> ListarPessoasAsync(Guid fichaId, CancellationToken cancelamento)
+    {
+        var associacoes = this.Fichas.FirstOrDefault(f => f.Id == fichaId)?.Associacoes ?? Array.Empty<Associacao>();
+        IReadOnlyList<PessoaAssociada> pessoas = associacoes
+            .Join(this.Utilizadores, a => a.UtilizadorId, u => u.Id, (a, u) => new PessoaAssociada(u.Id, u.Nome, u.Email, a.Papel, a.EPrincipal, a.EProvisorio))
+            .OrderByDescending(p => p.Principal)
+            .ThenBy(p => p.Nome, StringComparer.Ordinal)
+            .ThenBy(p => p.UtilizadorId)
+            .ToList();
+        return Task.FromResult(pessoas);
     }
 
     /// <inheritdoc/>

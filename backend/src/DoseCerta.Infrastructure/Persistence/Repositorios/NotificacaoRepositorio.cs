@@ -1,6 +1,7 @@
 // Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
 
 using DoseCerta.Application.Repositorios;
+using DoseCerta.Domain.Entidades;
 using Microsoft.EntityFrameworkCore;
 
 namespace DoseCerta.Infrastructure.Persistence.Repositorios;
@@ -26,5 +27,11 @@ public sealed class NotificacaoRepositorio : INotificacaoRepositorio
     {
         // Os EnvioEmail das notificações saem por cascata (FK_EnvioEmail_NotificacaoId).
         return this.contexto.Notificacoes.Where(n => n.FichaId == fichaId).ExecuteDeleteAsync(cancelamento);
+    }
+
+    /// <inheritdoc/>
+    public void Adicionar(Notificacao notificacao)
+    {
+        this.contexto.Notificacoes.Add(notificacao);
     }
 }
