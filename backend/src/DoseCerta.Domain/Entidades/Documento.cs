@@ -97,4 +97,13 @@ public class Documento
     /// Gets o instante do carregamento, em UTC.
     /// </summary>
     public DateTime CarregadoEmUtc { get; private set; }
+
+    /// <summary>
+    /// Indica se o documento é uma receita médica (RF-052).
+    /// </summary>
+    /// <returns><see langword="true"/> se a categoria for <see cref="CategoriaDocumento.ReceitaMedica"/>.</returns>
+    public bool EReceita()
+    {
+        return this.Categoria == CategoriaDocumento.ReceitaMedica;
+    }
 }

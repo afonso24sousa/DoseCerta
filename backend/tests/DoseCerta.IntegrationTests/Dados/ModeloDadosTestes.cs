@@ -19,9 +19,8 @@ public class ModeloDadosTestes
     private static readonly string[] TabelasEsperadas =
     {
         "Alergia", "Associacao", "Compromisso", "CondicaoSaude", "Convite", "Documento", "EnvioEmail",
-        "ExecucaoTarefa", "Ficha", "FichaAlergia", "FichaCondicaoSaude", "GrauAutonomia", "HorarioTarefa",
-        "HorarioToma", "Nota", "Notificacao", "Ocorrencia", "SessaoRevogada", "TarefaDiaSemana",
-        "TarefaRecorrente", "Toma", "Tratamento", "Utilizador",
+        "Ficha", "FichaAlergia", "FichaCondicaoSaude", "GrauAutonomia", "HorarioToma", "Nota", "Notificacao",
+        "Ocorrencia", "SessaoRevogada", "Toma", "Tratamento", "Utilizador",
     };
 
     private readonly FabricaApi fabrica;
@@ -36,11 +35,11 @@ public class ModeloDadosTestes
     }
 
     /// <summary>
-    /// A migração inicial cria as 23 tabelas do modelo de dados.
+    /// As migrações deixam as 19 tabelas do modelo de dados v02: a migração RetirarTarefasRecorrentes remove as quatro tabelas da F007.
     /// </summary>
     /// <returns>Uma tarefa assíncrona.</returns>
     [Fact]
-    public async Task MigracaoCriaAsVinteETresTabelas()
+    public async Task MigracoesDeixamAsDezanoveTabelas()
     {
         var tabelas = await this.fabrica.ComContextoAsync(c => c.Database
             .SqlQueryRaw<string>("SELECT TABLE_NAME AS [Value] FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME <> '__EFMigrationsHistory'")
@@ -50,20 +49,18 @@ public class ModeloDadosTestes
     }
 
     /// <summary>
-    /// A migração inicial cria os quatro gatilhos de imutabilidade do histórico.
+    /// As migrações deixam os três gatilhos de imutabilidade do histórico; o gatilho da F007 é removido.
     /// </summary>
     /// <returns>Uma tarefa assíncrona.</returns>
     [Fact]
-    public async Task MigracaoCriaOsQuatroGatilhos()
+    public async Task MigracoesDeixamOsTresGatilhos()
     {
         var gatilhos = await this.fabrica.ComContextoAsync(c => c.Database
             .SqlQueryRaw<string>("SELECT name AS [Value] FROM sys.triggers WHERE parent_class = 1")
             .ToListAsync());
 
-        foreach (var nome in GatilhosSql.Nomes())
-        {
-            Assert.Contains(nome, gatilhos);
-        }
+        Assert.Equal(GatilhosSql.Nomes().OrderBy(n => n, StringComparer.Ordinal), gatilhos.OrderBy(n => n, StringComparer.Ordinal));
+        Assert.DoesNotContain(GatilhosSql.NomeGatilhoExecucaoTarefa, gatilhos);
     }
 
     /// <summary>

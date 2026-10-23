@@ -126,14 +126,18 @@ public sealed class DocumentoService
     /// O ficheiro é guardado primeiro e é apagado se a transação falhar (RNF-046).
     /// </summary>
     /// <param name="fichaId">Ficha do documento.</param>
+    /// <param name="tratamentoId">Tratamento da receita (RF-052), ou <see langword="null"/> nos documentos da ficha.</param>
     /// <param name="documento">Documento validado.</param>
     /// <param name="autorId">Utilizador que carrega o documento.</param>
     /// <param name="agoraUtc">Instante do carregamento, em UTC.</param>
     /// <param name="cancelamento">Token de cancelamento.</param>
     /// <returns>Os metadados do documento.</returns>
-    /// <exception cref="DominioException">Com <see cref="CodigosErro.DocumentoNaoGuardado"/>, se o ficheiro não puder ser guardado (RF-023).</exception>
+    /// <exception cref="DominioException">
+    /// Com <see cref="CodigosErro.DocumentoNaoGuardado"/>, se o ficheiro não puder ser guardado (RF-023, RF-053).
+    /// </exception>
     public async Task<Documento> GuardarNaTransacaoAsync(
         Guid fichaId,
+        Guid? tratamentoId,
         DocumentoValidado documento,
         Guid autorId,
         DateTime agoraUtc,
@@ -161,7 +165,7 @@ public sealed class DocumentoService
 
         var registo = new Documento(
             fichaId,
-            null,
+            tratamentoId,
             documento.Categoria,
             documento.NomeOriginal,
             caminho,
@@ -188,7 +192,7 @@ public sealed class DocumentoService
             {
                 await this.autorizacao.ExigirCuidadorDeFichaAtivaAsync(utilizadorId, fichaId, cancelamento).ConfigureAwait(false);
                 var validado = await ValidarAsync(submetido, string.Empty, cancelamento).ConfigureAwait(false);
-                return await this.GuardarNaTransacaoAsync(fichaId, validado, utilizadorId, this.relogio.AgoraUtc(), cancelamento)
+                return await this.GuardarNaTransacaoAsync(fichaId, null, validado, utilizadorId, this.relogio.AgoraUtc(), cancelamento)
                     .ConfigureAwait(false);
             },
             cancelamento).ConfigureAwait(false);
@@ -236,6 +240,22 @@ public sealed class DocumentoService
                 CodigosErro.DocumentoIndisponivel,
                 "Não foi possível obter o documento; os restantes dados da ficha não foram afetados. Tente novamente.");
         }
+    }
+
+    /// <summary>
+    /// Obtém a receita mais recente de cada tratamento de uma ficha (RF-052). Chamado depois de verificada a associação à ficha.
+    /// </summary>
+    /// <param name="fichaId">Ficha dos tratamentos.</param>
+    /// <param name="cancelamento">Token de cancelamento.</param>
+    /// <returns>O identificador da receita mais recente, por tratamento.</returns>
+    public async Task<IReadOnlyDictionary<Guid, Guid>> ReceitasPorTratamentoAsync(Guid fichaId, CancellationToken cancelamento)
+    {
+        var documentos = await this.documentos.DaFichaAsync(fichaId, cancelamento).ConfigureAwait(false);
+        return documentos
+            .Where(d => d.EReceita() && d.TratamentoId is not null)
+            .OrderByDescending(d => d.CarregadoEmUtc)
+            .GroupBy(d => d.TratamentoId!.Value)
+            .ToDictionary(g => g.Key, g => g.First().Id);
     }
 
     /// <summary>

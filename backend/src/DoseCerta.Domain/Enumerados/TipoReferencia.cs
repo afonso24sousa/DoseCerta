@@ -13,11 +13,6 @@ public enum TipoReferencia
     Toma,
 
     /// <summary>
-    /// Uma execução de tarefa.
-    /// </summary>
-    ExecucaoTarefa,
-
-    /// <summary>
     /// Uma ocorrência.
     /// </summary>
     Ocorrencia,

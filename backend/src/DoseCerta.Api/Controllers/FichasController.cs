@@ -27,7 +27,7 @@ public sealed class FichasController : ControllerBase
     /// <summary>
     /// Nome da parte com o JSON do pedido, em <c>multipart/form-data</c>.
     /// </summary>
-    public const string ParteDados = "dados";
+    public const string ParteDados = LeitorMultipart.ParteDados;
 
     /// <summary>
     /// Nome das partes com os ficheiros dos documentos, em <c>multipart/form-data</c>.
@@ -96,7 +96,7 @@ public sealed class FichasController : ControllerBase
     public async Task<IActionResult> CriarFichaComDocumentos(CancellationToken cancelamento)
     {
         var formulario = await this.Request.ReadFormAsync(cancelamento).ConfigureAwait(false);
-        var pedido = this.LerDados<PedidoCriacaoFicha>(formulario);
+        var pedido = LeitorMultipart.LerDados<PedidoCriacaoFicha>(formulario, this.opcoesJson);
         return await this.CriarAsync(pedido, Documentos(formulario), cancelamento).ConfigureAwait(false);
     }
 
@@ -139,7 +139,7 @@ public sealed class FichasController : ControllerBase
     public async Task<IActionResult> EditarFichaComDocumentos(Guid fichaId, CancellationToken cancelamento)
     {
         var formulario = await this.Request.ReadFormAsync(cancelamento).ConfigureAwait(false);
-        var pedido = this.LerDados<PedidoEdicaoFicha>(formulario);
+        var pedido = LeitorMultipart.LerDados<PedidoEdicaoFicha>(formulario, this.opcoesJson);
         return await this.EditarAsync(fichaId, pedido, Documentos(formulario), cancelamento).ConfigureAwait(false);
     }
 
@@ -174,7 +174,7 @@ public sealed class FichasController : ControllerBase
     /// </summary>
     /// <param name="fichaId">Identificador da ficha.</param>
     /// <param name="cancelamento">Token de cancelamento do pedido.</param>
-    /// <returns>204 sem corpo; 409 se a ficha tiver medicação, tarefas ou histórico (RF-123).</returns>
+    /// <returns>204 sem corpo; 409 se a ficha tiver medicação ou histórico (RF-123).</returns>
     [HttpDelete("{fichaId:guid}")]
     public async Task<IActionResult> EliminarFicha(Guid fichaId, CancellationToken cancelamento)
     {
@@ -226,26 +226,6 @@ public sealed class FichasController : ControllerBase
                 ficheiro.Length,
                 ficheiro.OpenReadStream))
             .ToList();
-    }
-
-    private T LerDados<T>(IFormCollection formulario)
-        where T : class
-    {
-        var json = formulario[ParteDados].ToString();
-        const string Regra = "É obrigatória e tem de conter os dados do pedido em JSON válido.";
-        if (string.IsNullOrWhiteSpace(json))
-        {
-            throw ValidacaoException.DoCampo(ParteDados, Regra);
-        }
-
-        try
-        {
-            return JsonSerializer.Deserialize<T>(json, this.opcoesJson) ?? throw ValidacaoException.DoCampo(ParteDados, Regra);
-        }
-        catch (JsonException)
-        {
-            throw ValidacaoException.DoCampo(ParteDados, Regra);
-        }
     }
 
     private async Task<IActionResult> CriarAsync(PedidoCriacaoFicha pedido, IReadOnlyList<DocumentoSubmetido> documentos, CancellationToken cancelamento)

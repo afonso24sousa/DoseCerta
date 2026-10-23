@@ -1,5 +1,7 @@
 // Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
 
+using DoseCerta.Domain.Entidades;
+
 namespace DoseCerta.Application.Repositorios;
 
 /// <summary>
@@ -14,4 +16,10 @@ public interface INotificacaoRepositorio
     /// <param name="cancelamento">Token de cancelamento.</param>
     /// <returns>O número de notificações apagadas.</returns>
     Task<int> EliminarDaFichaAsync(Guid fichaId, CancellationToken cancelamento);
+
+    /// <summary>
+    /// Regista uma notificação nova, na transação em curso.
+    /// </summary>
+    /// <param name="notificacao">Notificação a registar.</param>
+    void Adicionar(Notificacao notificacao);
 }

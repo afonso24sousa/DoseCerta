@@ -161,20 +161,18 @@ public class FichaTestes
     }
 
     /// <summary>
-    /// RF-123: a ficha só pode ser eliminada sem medicação, tarefas nem histórico.
+    /// RF-123: a ficha só pode ser eliminada sem medicação nem histórico.
     /// </summary>
     /// <param name="medicacao">Tem medicação.</param>
-    /// <param name="tarefas">Tem tarefas.</param>
     /// <param name="historico">Tem histórico.</param>
     /// <param name="esperado">Resultado esperado.</param>
     [Theory]
-    [InlineData(false, false, false, true)]
-    [InlineData(true, false, false, false)]
-    [InlineData(false, true, false, false)]
-    [InlineData(false, false, true, false)]
-    public void PodeSerEliminadaSoSemRegistos(bool medicacao, bool tarefas, bool historico, bool esperado)
+    [InlineData(false, false, true)]
+    [InlineData(true, false, false)]
+    [InlineData(false, true, false)]
+    public void PodeSerEliminadaSoSemRegistos(bool medicacao, bool historico, bool esperado)
     {
-        Assert.Equal(esperado, Ficha.PodeSerEliminada(medicacao, tarefas, historico));
+        Assert.Equal(esperado, Ficha.PodeSerEliminada(medicacao, historico));
     }
 
     private static Ficha NovaFicha(bool propria = false)

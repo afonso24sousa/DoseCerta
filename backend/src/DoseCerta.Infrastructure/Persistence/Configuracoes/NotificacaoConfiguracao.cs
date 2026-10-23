@@ -18,10 +18,10 @@ internal sealed class NotificacaoConfiguracao : IEntityTypeConfiguration<Notific
         {
             t.HasCheckConstraint(
                 "CK_Notificacao_Tipo",
-                "[Tipo] IN ('TomaEmAtraso','TomaGraveFamiliares','TarefaNaoConfirmada','NovaOcorrencia','ProximoCompromisso','ConviteRecebido')");
+                "[Tipo] IN ('TomaEmAtraso','TomaGraveFamiliares','NovaOcorrencia','ProximoCompromisso','ConviteRecebido')");
             t.HasCheckConstraint(
                 "CK_Notificacao_Referencia",
-                "([Tipo] IN ('TomaEmAtraso','TomaGraveFamiliares') AND [ReferenciaTipo] = 'Toma') OR ([Tipo] = 'TarefaNaoConfirmada' AND [ReferenciaTipo] = 'ExecucaoTarefa') OR ([Tipo] = 'NovaOcorrencia' AND [ReferenciaTipo] = 'Ocorrencia') OR ([Tipo] = 'ProximoCompromisso' AND [ReferenciaTipo] = 'Compromisso') OR ([Tipo] = 'ConviteRecebido' AND [ReferenciaTipo] = 'Convite')");
+                "([Tipo] IN ('TomaEmAtraso','TomaGraveFamiliares') AND [ReferenciaTipo] = 'Toma') OR ([Tipo] = 'NovaOcorrencia' AND [ReferenciaTipo] = 'Ocorrencia') OR ([Tipo] = 'ProximoCompromisso' AND [ReferenciaTipo] = 'Compromisso') OR ([Tipo] = 'ConviteRecebido' AND [ReferenciaTipo] = 'Convite')");
         });
         builder.HasKey(e => e.Id).HasName("PK_Notificacao");
         builder.Property(e => e.Id).IdSequencial();

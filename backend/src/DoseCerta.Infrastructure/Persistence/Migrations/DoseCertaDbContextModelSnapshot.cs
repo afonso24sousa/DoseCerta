@@ -440,70 +440,6 @@ namespace DoseCerta.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("DoseCerta.Domain.Entidades.ExecucaoTarefa", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier")
-                        .HasDefaultValueSql("NEWSEQUENTIALID()");
-
-                    b.Property<DateTime?>("ConfirmadaEmUtc")
-                        .HasColumnType("datetime2(0)");
-
-                    b.Property<Guid?>("ConfirmadaPorId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("CuidadoresNotificadosEmUtc")
-                        .HasColumnType("datetime2(0)");
-
-                    b.Property<string>("Designacao")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("Estado")
-                        .IsRequired()
-                        .HasMaxLength(12)
-                        .HasColumnType("nvarchar(12)")
-                        .HasDefaultValueSql("'PorConfirmar'");
-
-                    b.Property<DateTime>("PrevistaEmUtc")
-                        .HasColumnType("datetime2(0)");
-
-                    b.Property<Guid>("TarefaId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<short>("ToleranciaMinutos")
-                        .HasColumnType("smallint");
-
-                    b.Property<byte[]>("Versao")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
-
-                    b.HasKey("Id")
-                        .HasName("PK_ExecucaoTarefa");
-
-                    b.HasIndex(new[] { "PrevistaEmUtc" }, "IX_ExecucaoTarefa_PorConfirmar")
-                        .HasFilter("[Estado] = 'PorConfirmar' AND [CuidadoresNotificadosEmUtc] IS NULL");
-
-                    b.HasIndex(new[] { "TarefaId", "PrevistaEmUtc" }, "UQ_ExecucaoTarefa_TarefaInstante")
-                        .IsUnique();
-
-                    b.ToTable("ExecucaoTarefa", "dbo", t =>
-                        {
-                            t.HasTrigger("TR_ExecucaoTarefa_Historico");
-
-                            t.HasCheckConstraint("CK_ExecucaoTarefa_Confirmacao", "([Estado] = 'Realizada' AND [ConfirmadaPorId] IS NOT NULL AND [ConfirmadaEmUtc] IS NOT NULL) OR ([Estado] = 'PorConfirmar' AND [ConfirmadaPorId] IS NULL AND [ConfirmadaEmUtc] IS NULL)");
-
-                            t.HasCheckConstraint("CK_ExecucaoTarefa_Estado", "[Estado] IN ('PorConfirmar','Realizada')");
-
-                            t.HasCheckConstraint("CK_ExecucaoTarefa_Tolerancia", "[ToleranciaMinutos] BETWEEN 15 AND 1440");
-                        });
-
-                    b.HasAnnotation("SqlServer:UseSqlOutputClause", false);
-                });
-
             modelBuilder.Entity("DoseCerta.Domain.Entidades.Ficha", b =>
                 {
                     b.Property<Guid>("Id")
@@ -623,27 +559,6 @@ namespace DoseCerta.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("DoseCerta.Domain.Entidades.HorarioTarefa", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier")
-                        .HasDefaultValueSql("NEWSEQUENTIALID()");
-
-                    b.Property<TimeOnly>("HoraLocal")
-                        .HasColumnType("time(0)");
-
-                    b.Property<Guid>("TarefaId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id")
-                        .HasName("PK_HorarioTarefa");
-
-                    b.HasIndex(new[] { "TarefaId", "HoraLocal" }, "UQ_HorarioTarefa_TarefaHora")
-                        .IsUnique();
-
-                    b.ToTable("HorarioTarefa", "dbo");
-                });
-
             modelBuilder.Entity("DoseCerta.Domain.Entidades.HorarioToma", b =>
                 {
                     b.Property<Guid>("Id")
@@ -748,9 +663,9 @@ namespace DoseCerta.Infrastructure.Persistence.Migrations
 
                     b.ToTable("Notificacao", "dbo", t =>
                         {
-                            t.HasCheckConstraint("CK_Notificacao_Referencia", "([Tipo] IN ('TomaEmAtraso','TomaGraveFamiliares') AND [ReferenciaTipo] = 'Toma') OR ([Tipo] = 'TarefaNaoConfirmada' AND [ReferenciaTipo] = 'ExecucaoTarefa') OR ([Tipo] = 'NovaOcorrencia' AND [ReferenciaTipo] = 'Ocorrencia') OR ([Tipo] = 'ProximoCompromisso' AND [ReferenciaTipo] = 'Compromisso') OR ([Tipo] = 'ConviteRecebido' AND [ReferenciaTipo] = 'Convite')");
+                            t.HasCheckConstraint("CK_Notificacao_Referencia", "([Tipo] IN ('TomaEmAtraso','TomaGraveFamiliares') AND [ReferenciaTipo] = 'Toma') OR ([Tipo] = 'NovaOcorrencia' AND [ReferenciaTipo] = 'Ocorrencia') OR ([Tipo] = 'ProximoCompromisso' AND [ReferenciaTipo] = 'Compromisso') OR ([Tipo] = 'ConviteRecebido' AND [ReferenciaTipo] = 'Convite')");
 
-                            t.HasCheckConstraint("CK_Notificacao_Tipo", "[Tipo] IN ('TomaEmAtraso','TomaGraveFamiliares','TarefaNaoConfirmada','NovaOcorrencia','ProximoCompromisso','ConviteRecebido')");
+                            t.HasCheckConstraint("CK_Notificacao_Tipo", "[Tipo] IN ('TomaEmAtraso','TomaGraveFamiliares','NovaOcorrencia','ProximoCompromisso','ConviteRecebido')");
                         });
                 });
 
@@ -815,77 +730,6 @@ namespace DoseCerta.Infrastructure.Persistence.Migrations
                     b.ToTable("SessaoRevogada", "dbo", t =>
                         {
                             t.HasCheckConstraint("CK_SessaoRevogada_Validade", "[ExpiraEmUtc] <= DATEADD(HOUR, 8, [RevogadaEmUtc])");
-                        });
-                });
-
-            modelBuilder.Entity("DoseCerta.Domain.Entidades.TarefaDiaSemana", b =>
-                {
-                    b.Property<Guid>("TarefaId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<byte>("DiaSemana")
-                        .HasColumnType("tinyint");
-
-                    b.HasKey("TarefaId", "DiaSemana")
-                        .HasName("PK_TarefaDiaSemana");
-
-                    b.ToTable("TarefaDiaSemana", "dbo", t =>
-                        {
-                            t.HasCheckConstraint("CK_TarefaDiaSemana_Dia", "[DiaSemana] BETWEEN 1 AND 7");
-                        });
-                });
-
-            modelBuilder.Entity("DoseCerta.Domain.Entidades.TarefaRecorrente", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier")
-                        .HasDefaultValueSql("NEWSEQUENTIALID()");
-
-                    b.Property<bool>("Ativa")
-                        .HasColumnType("bit")
-                        .HasDefaultValueSql("1");
-
-                    b.Property<DateTime>("CriadaEmUtc")
-                        .HasColumnType("datetime2(0)")
-                        .HasDefaultValueSql("SYSUTCDATETIME()");
-
-                    b.Property<Guid>("CriadaPorId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateOnly>("DataInicio")
-                        .HasColumnType("date");
-
-                    b.Property<string>("Designacao")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<Guid>("FichaId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<byte?>("IntervaloDias")
-                        .HasColumnType("tinyint");
-
-                    b.Property<string>("PeriodicidadeTipo")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<short>("ToleranciaMinutos")
-                        .HasColumnType("smallint");
-
-                    b.HasKey("Id")
-                        .HasName("PK_TarefaRecorrente");
-
-                    b.HasIndex(new[] { "FichaId", "Ativa" }, "IX_Tarefa_FichaAtiva");
-
-                    b.ToTable("TarefaRecorrente", "dbo", t =>
-                        {
-                            t.HasCheckConstraint("CK_Tarefa_Intervalo", "([PeriodicidadeTipo] = 'CadaNDias' AND [IntervaloDias] BETWEEN 2 AND 30) OR ([PeriodicidadeTipo] <> 'CadaNDias' AND [IntervaloDias] IS NULL)");
-
-                            t.HasCheckConstraint("CK_Tarefa_Periodicidade", "[PeriodicidadeTipo] IN ('Diaria','DiasSemana','CadaNDias')");
-
-                            t.HasCheckConstraint("CK_Tarefa_Tolerancia", "[ToleranciaMinutos] BETWEEN 15 AND 1440");
                         });
                 });
 
@@ -1195,22 +1039,6 @@ namespace DoseCerta.Infrastructure.Persistence.Migrations
                         .HasConstraintName("FK_EnvioEmail_NotificacaoId");
                 });
 
-            modelBuilder.Entity("DoseCerta.Domain.Entidades.ExecucaoTarefa", b =>
-                {
-                    b.HasOne("DoseCerta.Domain.Entidades.Utilizador", null)
-                        .WithMany()
-                        .HasForeignKey("ConfirmadaPorId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .HasConstraintName("FK_ExecucaoTarefa_ConfirmadaPorId");
-
-                    b.HasOne("DoseCerta.Domain.Entidades.TarefaRecorrente", null)
-                        .WithMany()
-                        .HasForeignKey("TarefaId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired()
-                        .HasConstraintName("FK_ExecucaoTarefa_TarefaId");
-                });
-
             modelBuilder.Entity("DoseCerta.Domain.Entidades.Ficha", b =>
                 {
                     b.HasOne("DoseCerta.Domain.Entidades.Utilizador", null)
@@ -1235,20 +1063,10 @@ namespace DoseCerta.Infrastructure.Persistence.Migrations
                     b.Navigation("GrauAutonomia");
                 });
 
-            modelBuilder.Entity("DoseCerta.Domain.Entidades.HorarioTarefa", b =>
-                {
-                    b.HasOne("DoseCerta.Domain.Entidades.TarefaRecorrente", null)
-                        .WithMany()
-                        .HasForeignKey("TarefaId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_HorarioTarefa_TarefaId");
-                });
-
             modelBuilder.Entity("DoseCerta.Domain.Entidades.HorarioToma", b =>
                 {
                     b.HasOne("DoseCerta.Domain.Entidades.Tratamento", null)
-                        .WithMany()
+                        .WithMany("Horarios")
                         .HasForeignKey("TratamentoId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
@@ -1314,33 +1132,6 @@ namespace DoseCerta.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("FK_SessaoRevogada_UtilizadorId");
-                });
-
-            modelBuilder.Entity("DoseCerta.Domain.Entidades.TarefaDiaSemana", b =>
-                {
-                    b.HasOne("DoseCerta.Domain.Entidades.TarefaRecorrente", null)
-                        .WithMany()
-                        .HasForeignKey("TarefaId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_TarefaDiaSemana_TarefaId");
-                });
-
-            modelBuilder.Entity("DoseCerta.Domain.Entidades.TarefaRecorrente", b =>
-                {
-                    b.HasOne("DoseCerta.Domain.Entidades.Utilizador", null)
-                        .WithMany()
-                        .HasForeignKey("CriadaPorId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired()
-                        .HasConstraintName("FK_TarefaRecorrente_CriadaPorId");
-
-                    b.HasOne("DoseCerta.Domain.Entidades.Ficha", null)
-                        .WithMany()
-                        .HasForeignKey("FichaId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired()
-                        .HasConstraintName("FK_TarefaRecorrente_FichaId");
                 });
 
             modelBuilder.Entity("DoseCerta.Domain.Entidades.Toma", b =>
@@ -1413,6 +1204,11 @@ namespace DoseCerta.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("DoseCerta.Domain.Entidades.Ficha", b =>
                 {
                     b.Navigation("Associacoes");
+                });
+
+            modelBuilder.Entity("DoseCerta.Domain.Entidades.Tratamento", b =>
+                {
+                    b.Navigation("Horarios");
                 });
 #pragma warning restore 612, 618
         }
