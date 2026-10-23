@@ -173,6 +173,46 @@ public class Ficha
     }
 
     /// <summary>
+    /// Indica se o Utilizador é o titular desta ficha, ou seja, se a ficha é a sua ficha própria (F003).
+    /// </summary>
+    /// <param name="utilizadorId">Identificador do Utilizador.</param>
+    /// <returns><see langword="true"/> se a ficha for própria e pertencer ao Utilizador.</returns>
+    public bool ETitular(Guid utilizadorId)
+    {
+        return this.EProprio() && this.UtilizadorProprioId == utilizadorId;
+    }
+
+    /// <summary>
+    /// Recusa despromover ou remover o titular da ficha própria, mesmo a pedido do próprio (RF-033).
+    /// Usada por <c>AlterarPapel</c> e <c>RemoverAcesso</c> depois de confirmar que a pessoa está associada.
+    /// </summary>
+    /// <param name="utilizadorId">Pessoa visada pela operação.</param>
+    /// <exception cref="DominioException">Com <see cref="CodigosErro.CuidadorPrincipalProtegido"/>, se a pessoa for o titular.</exception>
+    public void ExigirQueNaoETitular(Guid utilizadorId)
+    {
+        if (this.ETitular(utilizadorId))
+        {
+            throw new DominioException(
+                CodigosErro.CuidadorPrincipalProtegido,
+                "O titular da ficha própria é sempre o Cuidador principal e não pode ser despromovido nem removido.");
+        }
+    }
+
+    /// <summary>
+    /// Recusa transferir o papel de Cuidador principal, ou convidar alguém para esse papel, numa ficha própria (RF-034).
+    /// </summary>
+    /// <exception cref="DominioException">Com <see cref="CodigosErro.CuidadorPrincipalProtegido"/>, se a ficha for própria.</exception>
+    public void ExigirPrincipalTransferivel()
+    {
+        if (this.EProprio())
+        {
+            throw new DominioException(
+                CodigosErro.CuidadorPrincipalProtegido,
+                "Na ficha própria o titular é sempre o Cuidador principal; o papel não se transfere.");
+        }
+    }
+
+    /// <summary>
     /// Obtém a associação de um Utilizador à ficha.
     /// </summary>
     /// <param name="utilizadorId">Identificador do Utilizador.</param>

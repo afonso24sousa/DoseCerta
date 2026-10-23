@@ -73,6 +73,11 @@ public static class CodigosErro
     public const string FichaPropriaJaExiste = "FICHA_PROPRIA_JA_EXISTE";
 
     /// <summary>
+    /// O titular da ficha própria é sempre o Cuidador principal: não é despromovido, removido nem substituído (403, RF-033, RF-034).
+    /// </summary>
+    public const string CuidadorPrincipalProtegido = "CUIDADOR_PRINCIPAL_PROTEGIDO";
+
+    /// <summary>
     /// Ficheiro com mais de 10 MB (413, RNF-008).
     /// </summary>
     public const string FicheiroDemasiadoGrande = "FICHEIRO_DEMASIADO_GRANDE";
