@@ -121,7 +121,7 @@ O merge na `main` só é possível com a pipeline concluída com sucesso. As reg
 - *Do not allow bypassing the above settings* (as regras aplicam-se também aos administradores);
 - sem push direto para a `main`.
 
-Limitação conhecida: um check obrigatório que não corre fica pendente. Como a pipeline do backend só é ativada por alterações em `backend/**`, um Pull Request que não altere o backend não executa o check `qualidade-backend`. O grupo decide, em reunião formal, a solução a adotar para esses Pull Requests, por exemplo um workflow complementar com o mesmo nome de check que corre quando os caminhos do backend não são alterados (solução descrita na documentação do GitHub para checks obrigatórios ignorados).
+Pull Requests sem alterações no backend: um check obrigatório que não corre fica pendente e bloquearia o merge. Por isso existe o workflow complementar `.github/workflows/backend-ci-sem-alteracoes.yml`, com um job com o mesmo nome (`qualidade-backend`), que corre apenas em Pull Requests para a `main` que não alteram `backend/**` nem a `backend-ci` e termina com sucesso sem compilar nem testar. Os Pull Requests que alteram o backend continuam a executar a `backend-ci` completa (QG-01 a QG-05). Solução descrita na documentação do GitHub para checks obrigatórios ignorados por filtros de caminhos.
 
 ## 7. Tratamento de falhas
 

@@ -1,0 +1,24 @@
+# Check complementar da backend-ci (Issue I031; descrição da pipeline, secção 6).
+# Corre apenas em Pull Requests para a main que não alteram backend/** nem a backend-ci, para que o
+# check obrigatório qualidade-backend não fique pendente (Regulamento Interno do Grupo, secção 10.1).
+# Não compila nem testa: nesses Pull Requests os quality gates QG-01 a QG-05 não se aplicam.
+name: backend-ci-sem-alteracoes
+
+on:
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  qualidade-backend:
+    name: qualidade-backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Sem alterações no backend
+        run: echo "Este Pull Request não altera backend/** nem a backend-ci; os quality gates QG-01 a QG-05 não se aplicam."
