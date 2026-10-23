@@ -139,15 +139,14 @@ public class Ficha
     public IReadOnlyCollection<Alergia> Alergias => this.alergias;
 
     /// <summary>
-    /// Indica se a ficha pode ser eliminada: só sem medicação, tarefas nem histórico (tomas, execuções, ocorrências e notas) (RF-123).
+    /// Indica se a ficha pode ser eliminada: só sem medicação nem histórico (tomas, ocorrências e notas) (RF-123).
     /// </summary>
     /// <param name="temMedicacao">Indica se a ficha tem medicação registada.</param>
-    /// <param name="temTarefas">Indica se a ficha tem tarefas registadas.</param>
-    /// <param name="temHistorico">Indica se a ficha tem tomas, execuções, ocorrências ou notas.</param>
+    /// <param name="temHistorico">Indica se a ficha tem tomas, ocorrências ou notas.</param>
     /// <returns><see langword="true"/> se a ficha puder ser eliminada.</returns>
-    public static bool PodeSerEliminada(bool temMedicacao, bool temTarefas, bool temHistorico)
+    public static bool PodeSerEliminada(bool temMedicacao, bool temHistorico)
     {
-        return !temMedicacao && !temTarefas && !temHistorico;
+        return !temMedicacao && !temHistorico;
     }
 
     /// <summary>

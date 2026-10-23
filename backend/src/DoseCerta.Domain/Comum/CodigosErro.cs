@@ -48,6 +48,11 @@ public static class CodigosErro
     public const string DocumentoNaoEncontrado = "DOCUMENTO_NAO_ENCONTRADO";
 
     /// <summary>
+    /// O recurso não existe ou pertence a uma ficha a que o Utilizador não está associado (404, RNF-005).
+    /// </summary>
+    public const string RecursoNaoEncontrado = "RECURSO_NAO_ENCONTRADO";
+
+    /// <summary>
     /// A ficha está arquivada; a operação só é possível depois de a reativar (409, RF-120).
     /// </summary>
     public const string FichaArquivada = "FICHA_ARQUIVADA";
@@ -63,7 +68,7 @@ public static class CodigosErro
     public const string FichaNaoArquivada = "FICHA_NAO_ARQUIVADA";
 
     /// <summary>
-    /// A ficha tem medicação, tarefas ou histórico e só pode ser arquivada (409, RF-123).
+    /// A ficha tem medicação ou histórico e só pode ser arquivada (409, RF-123).
     /// </summary>
     public const string FichaComHistorico = "FICHA_COM_HISTORICO";
 
@@ -71,6 +76,16 @@ public static class CodigosErro
     /// O Utilizador já tem uma ficha própria (409, RF-031).
     /// </summary>
     public const string FichaPropriaJaExiste = "FICHA_PROPRIA_JA_EXISTE";
+
+    /// <summary>
+    /// Um tratamento terminado não pode ser alterado (409, RF-055).
+    /// </summary>
+    public const string TratamentoTerminado = "TRATAMENTO_TERMINADO";
+
+    /// <summary>
+    /// O tratamento já está terminado (409, OP-31).
+    /// </summary>
+    public const string TratamentoJaTerminado = "TRATAMENTO_JA_TERMINADO";
 
     /// <summary>
     /// O titular da ficha própria é sempre o Cuidador principal: não é despromovido, removido nem substituído (403, RF-033, RF-034).

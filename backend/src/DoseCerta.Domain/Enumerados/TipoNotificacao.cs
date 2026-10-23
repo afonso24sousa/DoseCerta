@@ -3,7 +3,7 @@
 namespace DoseCerta.Domain.Enumerados;
 
 /// <summary>
-/// Tipo de notificação (RF-110 a RF-117, RF-041).
+/// Tipo de notificação (RF-110 a RF-113, RF-115 a RF-117, RF-041).
 /// </summary>
 public enum TipoNotificacao
 {
@@ -16,11 +16,6 @@ public enum TipoNotificacao
     /// Toma grave sem confirmação 60 minutos depois.
     /// </summary>
     TomaGraveFamiliares,
-
-    /// <summary>
-    /// Execução por confirmar depois da tolerância.
-    /// </summary>
-    TarefaNaoConfirmada,
 
     /// <summary>
     /// Nova ocorrência registada.

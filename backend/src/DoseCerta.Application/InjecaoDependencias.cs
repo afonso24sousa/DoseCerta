@@ -6,6 +6,8 @@ using DoseCerta.Application.Documentos;
 using DoseCerta.Application.Emails;
 using DoseCerta.Application.Fichas;
 using DoseCerta.Application.Pessoas;
+using DoseCerta.Application.Tomas;
+using DoseCerta.Application.Tratamentos;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DoseCerta.Application;
@@ -31,6 +33,8 @@ public static class InjecaoDependencias
         servicos.AddScoped<PessoasService>();
         servicos.AddScoped<ConviteService>();
         servicos.AddScoped<EnvioEmailService>();
+        servicos.AddScoped<TomaService>();
+        servicos.AddScoped<TratamentoService>();
         return servicos;
     }
 }

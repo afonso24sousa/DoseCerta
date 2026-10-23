@@ -18,6 +18,11 @@ public static class ParametrosDeNegocio
     public const int TamanhoMaximoDocumento = 10 * 1024 * 1024;
 
     /// <summary>
+    /// Dias da janela móvel em que se geram as tomas de um tratamento sem data de fim (RF-060).
+    /// </summary>
+    public const int JanelaMovelDias = 30;
+
+    /// <summary>
     /// Número máximo de reenvios de um e-mail depois da primeira tentativa falhada (RF-118, RF-136).
     /// </summary>
     public const int ReenviosMaximos = 3;

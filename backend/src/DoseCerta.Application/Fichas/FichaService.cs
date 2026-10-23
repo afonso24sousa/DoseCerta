@@ -144,7 +144,7 @@ public sealed class FichaService
 
                 foreach (var ficheiro in ficheiros)
                 {
-                    await this.documentoService.GuardarNaTransacaoAsync(ficha.Id, ficheiro, criadorId, agora, cancelamento).ConfigureAwait(false);
+                    await this.documentoService.GuardarNaTransacaoAsync(ficha.Id, null, ficheiro, criadorId, agora, cancelamento).ConfigureAwait(false);
                 }
 
                 return new AcessoFicha(ficha, associacao);
@@ -214,7 +214,7 @@ public sealed class FichaService
                 var agora = this.relogio.AgoraUtc();
                 foreach (var ficheiro in ficheiros)
                 {
-                    await this.documentoService.GuardarNaTransacaoAsync(fichaId, ficheiro, utilizadorId, agora, cancelamento).ConfigureAwait(false);
+                    await this.documentoService.GuardarNaTransacaoAsync(fichaId, null, ficheiro, utilizadorId, agora, cancelamento).ConfigureAwait(false);
                 }
 
                 acesso.Ficha.AtualizarDados(validados.NomeCompleto, validados.DataNascimento, validados.ContactoEmergencia);
@@ -225,7 +225,7 @@ public sealed class FichaService
     }
 
     /// <summary>
-    /// OP-12: arquiva a ficha, preservando o histórico, e apaga as tomas e as execuções futuras ainda por confirmar (RF-120, RF-122).
+    /// OP-12: arquiva a ficha, preservando o histórico, e apaga as tomas futuras ainda por confirmar (RF-120, RF-122).
     /// </summary>
     /// <param name="utilizadorId">Utilizador autenticado.</param>
     /// <param name="fichaId">Ficha a arquivar.</param>
@@ -265,7 +265,7 @@ public sealed class FichaService
     }
 
     /// <summary>
-    /// OP-14: elimina uma ficha sem medicação, tarefas nem histórico. As notificações são apagadas na mesma transação e os ficheiros
+    /// OP-14: elimina uma ficha sem medicação nem histórico. As notificações são apagadas na mesma transação e os ficheiros
     /// dos documentos são removidos depois de a transação ser confirmada (RF-123, RNF-046).
     /// </summary>
     /// <param name="utilizadorId">Utilizador autenticado.</param>
@@ -279,13 +279,12 @@ public sealed class FichaService
             {
                 var acesso = await this.autorizacao.ExigirCuidadorAsync(utilizadorId, fichaId, cancelamento).ConfigureAwait(false);
                 var temMedicacao = await this.fichas.TemMedicacaoAsync(fichaId, cancelamento).ConfigureAwait(false);
-                var temTarefas = await this.fichas.TemTarefasAsync(fichaId, cancelamento).ConfigureAwait(false);
                 var temHistorico = await this.fichas.TemHistoricoAsync(fichaId, cancelamento).ConfigureAwait(false);
-                if (!Ficha.PodeSerEliminada(temMedicacao, temTarefas, temHistorico))
+                if (!Ficha.PodeSerEliminada(temMedicacao, temHistorico))
                 {
                     throw new DominioException(
                         CodigosErro.FichaComHistorico,
-                        "A ficha tem medicação, tarefas ou histórico registados e não pode ser eliminada; só pode ser arquivada.");
+                        "A ficha tem medicação ou histórico registados e não pode ser eliminada; só pode ser arquivada.");
                 }
 
                 var ficheiros = await this.documentos.DaFichaAsync(fichaId, cancelamento).ConfigureAwait(false);

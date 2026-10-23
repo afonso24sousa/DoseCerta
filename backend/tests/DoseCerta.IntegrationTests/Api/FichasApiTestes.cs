@@ -286,7 +286,7 @@ public class FichasApiTestes
         var agora = DadosTeste.Agora();
         var tomaPassada = await this.fabrica.ComContextoAsync(async c =>
         {
-            var tratamento = new Tratamento(fichaId, "Metformina", "500 mg", GrauImportancia.Moderado, DateOnly.FromDateTime(agora), null, id, agora);
+            var tratamento = new Tratamento(fichaId, "Metformina", "500 mg", GrauImportancia.Moderado, DateOnly.FromDateTime(agora), null, new[] { new TimeOnly(8, 0) }, id, agora);
             c.Tratamentos.Add(tratamento);
             var passada = new Toma(tratamento.Id, agora.AddHours(-2), "Metformina", "500 mg", GrauImportancia.Moderado);
             c.Tomas.Add(passada);
@@ -370,7 +370,7 @@ public class FichasApiTestes
         await this.fabrica.ComContextoAsync(c =>
         {
             var agora = DadosTeste.Agora();
-            c.Tratamentos.Add(new Tratamento(fichaId, "Metformina", "500 mg", GrauImportancia.Leve, DateOnly.FromDateTime(agora), null, id, agora));
+            c.Tratamentos.Add(new Tratamento(fichaId, "Metformina", "500 mg", GrauImportancia.Leve, DateOnly.FromDateTime(agora), null, new[] { new TimeOnly(8, 0) }, id, agora));
             return c.SaveChangesAsync();
         });
 

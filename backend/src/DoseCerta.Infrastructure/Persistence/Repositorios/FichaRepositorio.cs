@@ -89,38 +89,23 @@ public sealed class FichaRepositorio : IFichaRepositorio
     }
 
     /// <inheritdoc/>
-    public Task<bool> TemTarefasAsync(Guid fichaId, CancellationToken cancelamento)
-    {
-        return this.contexto.Tarefas.AnyAsync(t => t.FichaId == fichaId, cancelamento);
-    }
-
-    /// <inheritdoc/>
     public async Task<bool> TemHistoricoAsync(Guid fichaId, CancellationToken cancelamento)
     {
         var tratamentos = this.contexto.Tratamentos.Where(t => t.FichaId == fichaId).Select(t => t.Id);
-        var tarefas = this.contexto.Tarefas.Where(t => t.FichaId == fichaId).Select(t => t.Id);
 
         return await this.contexto.Tomas.AnyAsync(t => tratamentos.Contains(t.TratamentoId), cancelamento).ConfigureAwait(false)
-            || await this.contexto.ExecucoesTarefa.AnyAsync(e => tarefas.Contains(e.TarefaId), cancelamento).ConfigureAwait(false)
             || await this.contexto.Ocorrencias.AnyAsync(o => o.FichaId == fichaId, cancelamento).ConfigureAwait(false)
             || await this.contexto.Notas.AnyAsync(n => n.FichaId == fichaId, cancelamento).ConfigureAwait(false);
     }
 
     /// <inheritdoc/>
-    public async Task<int> EliminarFuturasPorConfirmarAsync(Guid fichaId, DateTime aPartirDeUtc, CancellationToken cancelamento)
+    public Task<int> EliminarFuturasPorConfirmarAsync(Guid fichaId, DateTime aPartirDeUtc, CancellationToken cancelamento)
     {
         var tratamentos = this.contexto.Tratamentos.Where(t => t.FichaId == fichaId).Select(t => t.Id);
-        var tarefas = this.contexto.Tarefas.Where(t => t.FichaId == fichaId).Select(t => t.Id);
 
-        var tomas = await this.contexto.Tomas
+        return this.contexto.Tomas
             .Where(t => tratamentos.Contains(t.TratamentoId) && t.Estado == EstadoToma.Pendente && t.PrevistaEmUtc > aPartirDeUtc)
-            .ExecuteDeleteAsync(cancelamento)
-            .ConfigureAwait(false);
-        var execucoes = await this.contexto.ExecucoesTarefa
-            .Where(e => tarefas.Contains(e.TarefaId) && e.Estado == EstadoExecucaoTarefa.PorConfirmar && e.PrevistaEmUtc > aPartirDeUtc)
-            .ExecuteDeleteAsync(cancelamento)
-            .ConfigureAwait(false);
-        return tomas + execucoes;
+            .ExecuteDeleteAsync(cancelamento);
     }
 
     /// <inheritdoc/>

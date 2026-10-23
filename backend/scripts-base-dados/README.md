@@ -1,10 +1,11 @@
 # DoseCerta: scripts da base de dados (SQL Server 2022)
 
-Issue I030. Modelo de dados: `m2-modelo-de-dados-dosecerta-v01.md` (secções 6 a 8 e 13).
+Issues I030 e I037. Modelo de dados: `m3-modelo-de-dados-dosecerta-v02.md` (secções 6 a 8, 13 e 15). A F007 (tarefas de
+cuidados recorrentes) foi retirada do âmbito: os scripts já não criam as suas quatro tabelas nem o seu gatilho.
 
 | Script | Finalidade |
 |---|---|
-| `01-criar-base-dados.sql` | Cria as 23 tabelas, as restrições, os índices, os 4 gatilhos e os valores predefinidos das listas fechadas (script T-SQL da secção 13.2 do modelo de dados) |
+| `01-criar-base-dados.sql` | Cria as 19 tabelas, as restrições, os índices, os 3 gatilhos e os valores predefinidos das listas fechadas (script T-SQL da secção 13.2 do modelo de dados) |
 | `02-dados-iniciais-ficticios.sql` | Insere dados exclusivamente fictícios para desenvolvimento e demonstração (RNF-050): 4 contas, 3 fichas (uma própria), associações e convites |
 | `03-repor-base-dados.sql` | Remove os gatilhos e todas as tabelas, incluindo o histórico de migrações do EF Core, deixando a base de dados vazia |
 | `repor-base-dados.sh` | Executa 03, 01 e 02 por esta ordem com o `sqlcmd` |
@@ -56,8 +57,16 @@ for regenerada):
 - no fim do método `Up`: `migrationBuilder.CriarGatilhosDoseCerta();`
 - no início do método `Down`: `migrationBuilder.RemoverGatilhosDoseCerta();`
 
-(com `using DoseCerta.Infrastructure.Persistence;`). O teste de integração `MigracaoCriaOsQuatroGatilhos` falha se este
-passo for esquecido. Para obter o SQL gerado pelas migrações e compará-lo com o `01`:
+(com `using DoseCerta.Infrastructure.Persistence;`).
+
+## Migração `RetirarTarefasRecorrentes` (I037)
+
+Retira a F007 de uma base de dados já criada pela migração inicial, sem a alterar (modelo de dados v02, secção 15): remove
+o gatilho `TR_ExecucaoTarefa_Historico` (acrescentado à mão no início do `Up`, porque o EF Core não gera gatilhos), as
+tabelas `ExecucaoTarefa`, `TarefaDiaSemana`, `HorarioTarefa` e `TarefaRecorrente`, e recria `CK_Notificacao_Tipo` e
+`CK_Notificacao_Referencia` sem `TarefaNaoConfirmada` e `ExecucaoTarefa`. O `Down` volta a criar as tabelas e, no fim, o
+gatilho. Depois das duas migrações, a base de dados tem as 19 tabelas e os 3 gatilhos do `01`; os testes de integração
+`MigracoesDeixamAsDezanoveTabelas` e `MigracoesDeixamOsTresGatilhos` verificam-no. Para obter o SQL gerado pelas migrações e compará-lo com o `01`:
 
 ```bash
 dotnet ef migrations script --idempotent --project src/DoseCerta.Infrastructure --startup-project src/DoseCerta.Infrastructure --output artefactos/esquema-migracoes.sql

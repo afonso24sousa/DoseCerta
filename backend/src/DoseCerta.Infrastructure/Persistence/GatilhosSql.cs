@@ -8,6 +8,8 @@ namespace DoseCerta.Infrastructure.Persistence;
 /// Gatilhos de imutabilidade do histórico (modelo de dados, secção 13.2; DM-18; RNF-049).
 /// O EF Core não gera gatilhos: as entidades declaram-nos com <c>HasTrigger</c> e a migração inicial
 /// cria-os com <see cref="CriarGatilhosDoseCerta"/> e remove-os com <see cref="RemoverGatilhosDoseCerta"/>.
+/// O gatilho da F007 (<see cref="NomeGatilhoExecucaoTarefa"/>) foi retirado pela migração <c>RetirarTarefasRecorrentes</c>;
+/// o seu SQL mantém-se só para as migrações já integradas (modelo de dados, secção 15).
 /// </summary>
 public static class GatilhosSql
 {
@@ -17,7 +19,7 @@ public static class GatilhosSql
     public const string NomeGatilhoToma = "TR_Toma_Historico";
 
     /// <summary>
-    /// Nome do gatilho que protege as execuções realizadas.
+    /// Nome do gatilho que protegia as execuções realizadas da F007, retirada do âmbito.
     /// </summary>
     public const string NomeGatilhoExecucaoTarefa = "TR_ExecucaoTarefa_Historico";
 
@@ -49,7 +51,8 @@ public static class GatilhosSql
         """;
 
     /// <summary>
-    /// Criação do gatilho da tabela ExecucaoTarefa.
+    /// Criação do gatilho da tabela ExecucaoTarefa da F007, retirada do âmbito; usada só pela migração inicial e para
+    /// reverter a migração <c>RetirarTarefasRecorrentes</c>.
     /// </summary>
     public const string CriarGatilhoExecucaoTarefa = """
         CREATE TRIGGER dbo.TR_ExecucaoTarefa_Historico ON dbo.ExecucaoTarefa
@@ -92,16 +95,17 @@ public static class GatilhosSql
         """;
 
     /// <summary>
-    /// Obtém os nomes dos quatro gatilhos do modelo de dados.
+    /// Obtém os nomes dos três gatilhos do modelo de dados (modelo de dados v02, secção 7).
     /// </summary>
     /// <returns>Os nomes dos gatilhos.</returns>
     public static IReadOnlyList<string> Nomes()
     {
-        return new[] { NomeGatilhoToma, NomeGatilhoExecucaoTarefa, NomeGatilhoOcorrencia, NomeGatilhoNota };
+        return new[] { NomeGatilhoToma, NomeGatilhoOcorrencia, NomeGatilhoNota };
     }
 
     /// <summary>
-    /// Cria os quatro gatilhos. Deve ser chamado no fim do método <c>Up</c> da migração inicial.
+    /// Cria os quatro gatilhos da migração inicial, incluindo o da F007, que a migração <c>RetirarTarefasRecorrentes</c> remove.
+    /// Deve ser chamado no fim do método <c>Up</c> da migração inicial.
     /// </summary>
     /// <param name="migrationBuilder">Construtor da migração.</param>
     public static void CriarGatilhosDoseCerta(this MigrationBuilder migrationBuilder)
@@ -114,13 +118,13 @@ public static class GatilhosSql
     }
 
     /// <summary>
-    /// Remove os quatro gatilhos. Deve ser chamado no início do método <c>Down</c> da migração inicial.
+    /// Remove os quatro gatilhos da migração inicial. Deve ser chamado no início do método <c>Down</c> da migração inicial.
     /// </summary>
     /// <param name="migrationBuilder">Construtor da migração.</param>
     public static void RemoverGatilhosDoseCerta(this MigrationBuilder migrationBuilder)
     {
         ArgumentNullException.ThrowIfNull(migrationBuilder);
-        foreach (var nome in Nomes())
+        foreach (var nome in Nomes().Append(NomeGatilhoExecucaoTarefa))
         {
             migrationBuilder.Sql($"DROP TRIGGER IF EXISTS dbo.{nome};");
         }

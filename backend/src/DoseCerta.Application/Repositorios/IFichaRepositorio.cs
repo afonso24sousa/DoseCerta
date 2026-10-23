@@ -53,15 +53,7 @@ public interface IFichaRepositorio
     Task<bool> TemMedicacaoAsync(Guid fichaId, CancellationToken cancelamento);
 
     /// <summary>
-    /// Indica se a ficha tem tarefas recorrentes registadas, incluindo as eliminadas (inativas) (RF-123).
-    /// </summary>
-    /// <param name="fichaId">Identificador da ficha.</param>
-    /// <param name="cancelamento">Token de cancelamento.</param>
-    /// <returns><see langword="true"/> se existir pelo menos uma tarefa.</returns>
-    Task<bool> TemTarefasAsync(Guid fichaId, CancellationToken cancelamento);
-
-    /// <summary>
-    /// Indica se a ficha tem histórico: tomas, execuções de tarefas, ocorrências ou notas (RF-123).
+    /// Indica se a ficha tem histórico: tomas, ocorrências ou notas (RF-123).
     /// </summary>
     /// <param name="fichaId">Identificador da ficha.</param>
     /// <param name="cancelamento">Token de cancelamento.</param>
@@ -69,7 +61,7 @@ public interface IFichaRepositorio
     Task<bool> TemHistoricoAsync(Guid fichaId, CancellationToken cancelamento);
 
     /// <summary>
-    /// Apaga as tomas e as execuções de tarefas futuras ainda por confirmar da ficha, ao arquivar (RF-122).
+    /// Apaga as tomas futuras ainda por confirmar da ficha, ao arquivar (RF-122).
     /// </summary>
     /// <param name="fichaId">Identificador da ficha.</param>
     /// <param name="aPartirDeUtc">Instante do arquivo, em UTC.</param>
