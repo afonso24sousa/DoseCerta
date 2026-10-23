@@ -1,5 +1,6 @@
 // Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
 
+using DoseCerta.Application.Pessoas;
 using DoseCerta.Domain.Entidades;
 using DoseCerta.Domain.Enumerados;
 
@@ -28,6 +29,14 @@ public interface IFichaRepositorio
     Task<IReadOnlyList<Ficha>> ListarDoUtilizadorAsync(Guid utilizadorId, EstadoFicha? estado, CancellationToken cancelamento);
 
     /// <summary>
+    /// Lista as pessoas associadas a uma ficha, com o nome e o e-mail da conta: o Cuidador principal primeiro e depois por nome (OP-18).
+    /// </summary>
+    /// <param name="fichaId">Identificador da ficha.</param>
+    /// <param name="cancelamento">Token de cancelamento.</param>
+    /// <returns>As pessoas associadas.</returns>
+    Task<IReadOnlyList<PessoaAssociada>> ListarPessoasAsync(Guid fichaId, CancellationToken cancelamento);
+
+    /// <summary>
     /// Indica se o Utilizador já tem uma ficha própria (RF-031).
     /// </summary>
     /// <param name="utilizadorId">Identificador do Utilizador.</param>
@@ -44,15 +53,7 @@ public interface IFichaRepositorio
     Task<bool> TemMedicacaoAsync(Guid fichaId, CancellationToken cancelamento);
 
     /// <summary>
-    /// Indica se a ficha tem tarefas recorrentes registadas, incluindo as eliminadas (inativas) (RF-123).
-    /// </summary>
-    /// <param name="fichaId">Identificador da ficha.</param>
-    /// <param name="cancelamento">Token de cancelamento.</param>
-    /// <returns><see langword="true"/> se existir pelo menos uma tarefa.</returns>
-    Task<bool> TemTarefasAsync(Guid fichaId, CancellationToken cancelamento);
-
-    /// <summary>
-    /// Indica se a ficha tem histórico: tomas, execuções de tarefas, ocorrências ou notas (RF-123).
+    /// Indica se a ficha tem histórico: tomas, ocorrências ou notas (RF-123).
     /// </summary>
     /// <param name="fichaId">Identificador da ficha.</param>
     /// <param name="cancelamento">Token de cancelamento.</param>
@@ -60,7 +61,7 @@ public interface IFichaRepositorio
     Task<bool> TemHistoricoAsync(Guid fichaId, CancellationToken cancelamento);
 
     /// <summary>
-    /// Apaga as tomas e as execuções de tarefas futuras ainda por confirmar da ficha, ao arquivar (RF-122).
+    /// Apaga as tomas futuras ainda por confirmar da ficha, ao arquivar (RF-122).
     /// </summary>
     /// <param name="fichaId">Identificador da ficha.</param>
     /// <param name="aPartirDeUtc">Instante do arquivo, em UTC.</param>

@@ -6,7 +6,7 @@ using DoseCerta.Domain.Entidades;
 namespace DoseCerta.UnitTests.Suporte;
 
 /// <summary>
-/// Unidade de trabalho em memória que, quando a operação falha, repõe as fichas, os documentos e os convites
+/// Unidade de trabalho em memória que, quando a operação falha, repõe as fichas, os documentos, os convites, os tratamentos e as tomas
 /// como estavam antes e executa as compensações, como a transação da base de dados (RNF-046).
 /// </summary>
 public sealed class UnidadeDeTrabalhoComReversao : IUnidadeDeTrabalho
@@ -31,6 +31,8 @@ public sealed class UnidadeDeTrabalhoComReversao : IUnidadeDeTrabalho
         var fichas = new List<Ficha>(this.repositorios.Fichas);
         var documentos = new List<Documento>(this.repositorios.Documentos);
         var convites = new List<Convite>(this.repositorios.Convites);
+        var tratamentos = new List<Tratamento>(this.repositorios.Tratamentos);
+        var tomas = new List<Toma>(this.repositorios.Tomas);
         try
         {
             return await operacao();
@@ -40,6 +42,8 @@ public sealed class UnidadeDeTrabalhoComReversao : IUnidadeDeTrabalho
             Repor(this.repositorios.Fichas, fichas);
             Repor(this.repositorios.Documentos, documentos);
             Repor(this.repositorios.Convites, convites);
+            Repor(this.repositorios.Tratamentos, tratamentos);
+            Repor(this.repositorios.Tomas, tomas);
             this.compensacoes.ForEach(c => c());
             throw;
         }

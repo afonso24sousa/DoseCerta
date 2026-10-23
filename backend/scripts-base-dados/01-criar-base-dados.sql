@@ -1,8 +1,8 @@
 -- =====================================================================
 -- DoseCerta (G07) - Script de criação da base de dados (SQL Server 2022)
--- Issue I030 | Modelo de dados m2-modelo-de-dados-dosecerta-v01.md, secção 13.2
+-- Issues I030 e I037 | Modelo de dados m3-modelo-de-dados-dosecerta-v02.md, secção 13.2
 --
--- Cria as 23 tabelas, as restrições, os índices e os 4 gatilhos do modelo de dados
+-- Cria as 19 tabelas, as restrições, os índices e os 3 gatilhos do modelo de dados
 -- e os valores predefinidos das listas fechadas (secção 8). Executar numa base de
 -- dados vazia, por exemplo:
 --   sqlcmd -S localhost,1433 -U sa -C -I -d DoseCerta -i 01-criar-base-dados.sql
@@ -223,64 +223,6 @@ CREATE TABLE dbo.Toma (
 );
 CREATE INDEX IX_Toma_PendentePrevista ON dbo.Toma (PrevistaEmUtc) WHERE Estado = 'Pendente';
 
-CREATE TABLE dbo.TarefaRecorrente (
-  Id uniqueidentifier NOT NULL CONSTRAINT DF_TarefaRecorrente_Id DEFAULT NEWSEQUENTIALID(),
-  FichaId uniqueidentifier NOT NULL,
-  Designacao nvarchar(200) NOT NULL,
-  PeriodicidadeTipo nvarchar(10) NOT NULL,
-  IntervaloDias tinyint NULL,
-  DataInicio date NOT NULL,
-  ToleranciaMinutos smallint NOT NULL,
-  Ativa bit NOT NULL CONSTRAINT DF_TarefaRecorrente_Ativa DEFAULT 1,
-  CriadaPorId uniqueidentifier NOT NULL,
-  CriadaEmUtc datetime2(0) NOT NULL CONSTRAINT DF_TarefaRecorrente_CriadaEmUtc DEFAULT SYSUTCDATETIME(),
-  CONSTRAINT PK_TarefaRecorrente PRIMARY KEY (Id),
-  CONSTRAINT FK_TarefaRecorrente_FichaId FOREIGN KEY (FichaId) REFERENCES dbo.Ficha (Id),
-  CONSTRAINT FK_TarefaRecorrente_CriadaPorId FOREIGN KEY (CriadaPorId) REFERENCES dbo.Utilizador (Id),
-  CONSTRAINT CK_Tarefa_Periodicidade CHECK (PeriodicidadeTipo IN ('Diaria','DiasSemana','CadaNDias')),
-  CONSTRAINT CK_Tarefa_Intervalo CHECK ((PeriodicidadeTipo = 'CadaNDias' AND IntervaloDias BETWEEN 2 AND 30) OR (PeriodicidadeTipo <> 'CadaNDias' AND IntervaloDias IS NULL)),
-  CONSTRAINT CK_Tarefa_Tolerancia CHECK (ToleranciaMinutos BETWEEN 15 AND 1440)
-);
-CREATE INDEX IX_Tarefa_FichaAtiva ON dbo.TarefaRecorrente (FichaId, Ativa);
-
-CREATE TABLE dbo.HorarioTarefa (
-  Id uniqueidentifier NOT NULL CONSTRAINT DF_HorarioTarefa_Id DEFAULT NEWSEQUENTIALID(),
-  TarefaId uniqueidentifier NOT NULL,
-  HoraLocal time(0) NOT NULL,
-  CONSTRAINT PK_HorarioTarefa PRIMARY KEY (Id),
-  CONSTRAINT FK_HorarioTarefa_TarefaId FOREIGN KEY (TarefaId) REFERENCES dbo.TarefaRecorrente (Id) ON DELETE CASCADE,
-  CONSTRAINT UQ_HorarioTarefa_TarefaHora UNIQUE (TarefaId, HoraLocal)
-);
-
-CREATE TABLE dbo.TarefaDiaSemana (
-  TarefaId uniqueidentifier NOT NULL,
-  DiaSemana tinyint NOT NULL,
-  CONSTRAINT PK_TarefaDiaSemana PRIMARY KEY (TarefaId, DiaSemana),
-  CONSTRAINT FK_TarefaDiaSemana_TarefaId FOREIGN KEY (TarefaId) REFERENCES dbo.TarefaRecorrente (Id) ON DELETE CASCADE,
-  CONSTRAINT CK_TarefaDiaSemana_Dia CHECK (DiaSemana BETWEEN 1 AND 7)
-);
-
-CREATE TABLE dbo.ExecucaoTarefa (
-  Id uniqueidentifier NOT NULL CONSTRAINT DF_ExecucaoTarefa_Id DEFAULT NEWSEQUENTIALID(),
-  TarefaId uniqueidentifier NOT NULL,
-  PrevistaEmUtc datetime2(0) NOT NULL,
-  Designacao nvarchar(200) NOT NULL,
-  ToleranciaMinutos smallint NOT NULL,
-  Estado nvarchar(12) NOT NULL CONSTRAINT DF_ExecucaoTarefa_Estado DEFAULT 'PorConfirmar',
-  ConfirmadaPorId uniqueidentifier NULL,
-  ConfirmadaEmUtc datetime2(0) NULL,
-  CuidadoresNotificadosEmUtc datetime2(0) NULL,
-  Versao rowversion NOT NULL,
-  CONSTRAINT PK_ExecucaoTarefa PRIMARY KEY (Id),
-  CONSTRAINT FK_ExecucaoTarefa_TarefaId FOREIGN KEY (TarefaId) REFERENCES dbo.TarefaRecorrente (Id),
-  CONSTRAINT FK_ExecucaoTarefa_ConfirmadaPorId FOREIGN KEY (ConfirmadaPorId) REFERENCES dbo.Utilizador (Id),
-  CONSTRAINT CK_ExecucaoTarefa_Estado CHECK (Estado IN ('PorConfirmar','Realizada')),
-  CONSTRAINT CK_ExecucaoTarefa_Confirmacao CHECK ((Estado = 'Realizada' AND ConfirmadaPorId IS NOT NULL AND ConfirmadaEmUtc IS NOT NULL) OR (Estado = 'PorConfirmar' AND ConfirmadaPorId IS NULL AND ConfirmadaEmUtc IS NULL)),
-  CONSTRAINT CK_ExecucaoTarefa_Tolerancia CHECK (ToleranciaMinutos BETWEEN 15 AND 1440),
-  CONSTRAINT UQ_ExecucaoTarefa_TarefaInstante UNIQUE (TarefaId, PrevistaEmUtc)
-);
-CREATE INDEX IX_ExecucaoTarefa_PorConfirmar ON dbo.ExecucaoTarefa (PrevistaEmUtc) WHERE Estado = 'PorConfirmar' AND CuidadoresNotificadosEmUtc IS NULL;
-
 CREATE TABLE dbo.Compromisso (
   Id uniqueidentifier NOT NULL CONSTRAINT DF_Compromisso_Id DEFAULT NEWSEQUENTIALID(),
   FichaId uniqueidentifier NOT NULL,
@@ -337,8 +279,8 @@ CREATE TABLE dbo.Notificacao (
   CONSTRAINT PK_Notificacao PRIMARY KEY (Id),
   CONSTRAINT FK_Notificacao_DestinatarioId FOREIGN KEY (DestinatarioId) REFERENCES dbo.Utilizador (Id),
   CONSTRAINT FK_Notificacao_FichaId FOREIGN KEY (FichaId) REFERENCES dbo.Ficha (Id),
-  CONSTRAINT CK_Notificacao_Tipo CHECK (Tipo IN ('TomaEmAtraso','TomaGraveFamiliares','TarefaNaoConfirmada','NovaOcorrencia','ProximoCompromisso','ConviteRecebido')),
-  CONSTRAINT CK_Notificacao_Referencia CHECK ((Tipo IN ('TomaEmAtraso','TomaGraveFamiliares') AND ReferenciaTipo = 'Toma') OR (Tipo = 'TarefaNaoConfirmada' AND ReferenciaTipo = 'ExecucaoTarefa') OR (Tipo = 'NovaOcorrencia' AND ReferenciaTipo = 'Ocorrencia') OR (Tipo = 'ProximoCompromisso' AND ReferenciaTipo = 'Compromisso') OR (Tipo = 'ConviteRecebido' AND ReferenciaTipo = 'Convite')),
+  CONSTRAINT CK_Notificacao_Tipo CHECK (Tipo IN ('TomaEmAtraso','TomaGraveFamiliares','NovaOcorrencia','ProximoCompromisso','ConviteRecebido')),
+  CONSTRAINT CK_Notificacao_Referencia CHECK ((Tipo IN ('TomaEmAtraso','TomaGraveFamiliares') AND ReferenciaTipo = 'Toma') OR (Tipo = 'NovaOcorrencia' AND ReferenciaTipo = 'Ocorrencia') OR (Tipo = 'ProximoCompromisso' AND ReferenciaTipo = 'Compromisso') OR (Tipo = 'ConviteRecebido' AND ReferenciaTipo = 'Convite')),
   CONSTRAINT UQ_Notificacao_Origem UNIQUE (DestinatarioId, Tipo, ReferenciaId, InstanteLimiteUtc)
 );
 CREATE INDEX IX_Notificacao_DestinatarioData ON dbo.Notificacao (DestinatarioId, CriadaEmUtc DESC);
@@ -377,19 +319,6 @@ BEGIN
   BEGIN
     ROLLBACK TRANSACTION;
     THROW 51001, N'Uma toma confirmada ou não confirmada faz parte do histórico e não pode ser alterada nem eliminada.', 1;
-  END;
-END;
-GO
-
-CREATE TRIGGER dbo.TR_ExecucaoTarefa_Historico ON dbo.ExecucaoTarefa
-AFTER UPDATE, DELETE
-AS
-BEGIN
-  SET NOCOUNT ON;
-  IF EXISTS (SELECT 1 FROM deleted WHERE Estado <> 'PorConfirmar')
-  BEGIN
-    ROLLBACK TRANSACTION;
-    THROW 51002, N'Uma execução realizada faz parte do histórico e não pode ser alterada nem eliminada.', 1;
   END;
 END;
 GO

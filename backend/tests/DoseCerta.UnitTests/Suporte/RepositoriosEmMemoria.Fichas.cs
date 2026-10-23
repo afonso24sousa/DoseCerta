@@ -1,5 +1,6 @@
 // Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
 
+using DoseCerta.Application.Pessoas;
 using DoseCerta.Application.Repositorios;
 using DoseCerta.Domain.Entidades;
 using DoseCerta.Domain.Enumerados;
@@ -42,17 +43,12 @@ public partial class RepositoriosEmMemoria : IFichaRepositorio, IDominiosReposit
     public HashSet<Guid> FichasComMedicacao { get; } = new();
 
     /// <summary>
-    /// Gets as fichas simuladas com tarefas registadas.
-    /// </summary>
-    public HashSet<Guid> FichasComTarefas { get; } = new();
-
-    /// <summary>
-    /// Gets as fichas simuladas com histórico (tomas, execuções, ocorrências ou notas).
+    /// Gets as fichas simuladas com histórico (tomas, ocorrências ou notas).
     /// </summary>
     public HashSet<Guid> FichasComHistorico { get; } = new();
 
     /// <summary>
-    /// Gets os pedidos de remoção das tomas e execuções futuras (ficha e instante).
+    /// Gets os pedidos de remoção das tomas futuras (ficha e instante).
     /// </summary>
     public List<(Guid FichaId, DateTime APartirDeUtc)> FuturasEliminadas { get; } = new();
 
@@ -65,6 +61,19 @@ public partial class RepositoriosEmMemoria : IFichaRepositorio, IDominiosReposit
     public Task<Ficha?> ObterCompletaAsync(Guid id, CancellationToken cancelamento)
     {
         return Task.FromResult(this.Fichas.FirstOrDefault(f => f.Id == id));
+    }
+
+    /// <inheritdoc/>
+    public Task<IReadOnlyList<PessoaAssociada>> ListarPessoasAsync(Guid fichaId, CancellationToken cancelamento)
+    {
+        var associacoes = this.Fichas.FirstOrDefault(f => f.Id == fichaId)?.Associacoes ?? Array.Empty<Associacao>();
+        IReadOnlyList<PessoaAssociada> pessoas = associacoes
+            .Join(this.Utilizadores, a => a.UtilizadorId, u => u.Id, (a, u) => new PessoaAssociada(u.Id, u.Nome, u.Email, a.Papel, a.EPrincipal, a.EProvisorio))
+            .OrderByDescending(p => p.Principal)
+            .ThenBy(p => p.Nome, StringComparer.Ordinal)
+            .ThenBy(p => p.UtilizadorId)
+            .ToList();
+        return Task.FromResult(pessoas);
     }
 
     /// <inheritdoc/>
@@ -87,12 +96,6 @@ public partial class RepositoriosEmMemoria : IFichaRepositorio, IDominiosReposit
     public Task<bool> TemMedicacaoAsync(Guid fichaId, CancellationToken cancelamento)
     {
         return Task.FromResult(this.FichasComMedicacao.Contains(fichaId));
-    }
-
-    /// <inheritdoc/>
-    public Task<bool> TemTarefasAsync(Guid fichaId, CancellationToken cancelamento)
-    {
-        return Task.FromResult(this.FichasComTarefas.Contains(fichaId));
     }
 
     /// <inheritdoc/>

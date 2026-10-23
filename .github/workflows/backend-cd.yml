@@ -1,0 +1,154 @@
+# Pipeline de publicação contínua do backend no ambiente de demonstração (Issue I040).
+# Publica em https://dosecerta.spaincentral.cloudapp.azure.com depois de cada execução da backend-ci
+# concluída com sucesso sobre a main. Se a backend-ci falhar (ou for cancelada), este job não corre.
+# Também pode ser lançada à mão (workflow_dispatch), só sobre a main.
+# Segredos no environment "demonstracao" (GitHub Secrets). Descrição: docs/ci-cd/m3-descricao-pipeline-ci-cd-v02.md.
+name: backend-cd
+
+on:
+  workflow_run:
+    workflows: [backend-ci]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Uma publicação de cada vez; uma nova espera pela que está a correr, em vez de a interromper.
+concurrency:
+  group: backend-cd
+  cancel-in-progress: false
+
+env:
+  DOMINIO: dosecerta.spaincentral.cloudapp.azure.com
+  UTILIZADOR_SSH: dosecerta
+  PASTA_APP: /srv/dosecerta/app
+
+jobs:
+  publicar-demonstracao:
+    name: publicar-demonstracao
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # workflow_run: só a backend-ci concluída com sucesso, na main, e nunca a de um Pull Request.
+    if: >-
+      (github.event_name == 'workflow_run'
+        && github.event.workflow_run.conclusion == 'success'
+        && github.event.workflow_run.head_branch == 'main'
+        && github.event.workflow_run.event != 'pull_request')
+      || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    environment:
+      name: demonstracao
+      url: https://dosecerta.spaincentral.cloudapp.azure.com
+
+    steps:
+      - name: Obter o código verificado pela backend-ci
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          persist-credentials: false
+
+      - name: Verificar os segredos
+        env:
+          SSH_CHAVE_PRIVADA: ${{ secrets.SSH_CHAVE_PRIVADA }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+          MSSQL_SA_PASSWORD: ${{ secrets.MSSQL_SA_PASSWORD }}
+          DOSECERTA_APP_PASSWORD: ${{ secrets.DOSECERTA_APP_PASSWORD }}
+          JWT_CHAVE: ${{ secrets.JWT_CHAVE }}
+        run: |
+          FALTAM=0
+          for NOME in SSH_CHAVE_PRIVADA SSH_KNOWN_HOSTS MSSQL_SA_PASSWORD DOSECERTA_APP_PASSWORD JWT_CHAVE; do
+            if [ -z "${!NOME}" ]; then
+              echo "::error::Falta o GitHub Secret $NOME no environment demonstracao (ver m3-descricao-pipeline-ci-cd-v02.md)."
+              FALTAM=1
+            fi
+          done
+          exit "$FALTAM"
+
+      - name: Configurar o acesso SSH ao servidor
+        env:
+          SSH_CHAVE_PRIVADA: ${{ secrets.SSH_CHAVE_PRIVADA }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_CHAVE_PRIVADA" > ~/.ssh/id_publicacao
+          chmod 600 ~/.ssh/id_publicacao
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host demonstracao
+            HostName $DOMINIO
+            User $UTILIZADOR_SSH
+            IdentityFile ~/.ssh/id_publicacao
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+          EOF
+
+      - name: Escrever o .env a partir dos segredos
+        env:
+          MSSQL_PID: ${{ vars.MSSQL_PID }}
+          MSSQL_SA_PASSWORD: ${{ secrets.MSSQL_SA_PASSWORD }}
+          DOSECERTA_APP_PASSWORD: ${{ secrets.DOSECERTA_APP_PASSWORD }}
+          JWT_CHAVE: ${{ secrets.JWT_CHAVE }}
+          EMAIL_SERVIDOR: ${{ secrets.EMAIL_SERVIDOR }}
+          EMAIL_PORTA: ${{ secrets.EMAIL_PORTA }}
+          EMAIL_UTILIZADOR: ${{ secrets.EMAIL_UTILIZADOR }}
+          EMAIL_PALAVRA_PASSE: ${{ secrets.EMAIL_PALAVRA_PASSE }}
+          EMAIL_REMETENTE: ${{ secrets.EMAIL_REMETENTE }}
+        run: |
+          umask 077
+          {
+            echo "DOMINIO=$DOMINIO"
+            echo "MSSQL_PID=$MSSQL_PID"
+            echo "MSSQL_SA_PASSWORD=$MSSQL_SA_PASSWORD"
+            echo "DOSECERTA_APP_PASSWORD=$DOSECERTA_APP_PASSWORD"
+            echo "JWT_CHAVE=$JWT_CHAVE"
+            echo "EMAIL_SERVIDOR=$EMAIL_SERVIDOR"
+            echo "EMAIL_PORTA=${EMAIL_PORTA:-587}"
+            echo "EMAIL_UTILIZADOR=$EMAIL_UTILIZADOR"
+            echo "EMAIL_PALAVRA_PASSE=$EMAIL_PALAVRA_PASSE"
+            echo "EMAIL_REMETENTE=$EMAIL_REMETENTE"
+          } > deploy/azure/.env
+
+      - name: Enviar backend/ e deploy/azure/ para o servidor
+        run: |
+          rsync -az --delete --relative \
+            --exclude 'bin/' --exclude 'obj/' --exclude 'artefactos/' \
+            ./backend/ ./deploy/azure/ "demonstracao:$PASTA_APP/"
+
+      - name: Publicar no servidor (SQL Server, init-db.sql, API e Caddy)
+        run: ssh demonstracao "bash ${{ env.PASTA_APP }}/deploy/azure/publicar.sh"
+
+      - name: Esperar que /saude responda Saudavel
+        run: |
+          for TENTATIVA in $(seq 1 36); do
+            ESTADO="$(curl -s --max-time 10 "https://$DOMINIO/saude" | jq -r '.estado // empty' 2>/dev/null || true)"
+            if [ "$ESTADO" = "Saudavel" ]; then
+              echo "https://$DOMINIO/saude respondeu Saudavel (tentativa $TENTATIVA)."
+              exit 0
+            fi
+            echo "Tentativa $TENTATIVA: ${ESTADO:-sem resposta}; nova tentativa dentro de 10 s."
+            sleep 10
+          done
+          echo "::error::https://$DOMINIO/saude não respondeu Saudavel em 6 minutos."
+          exit 1
+
+      - name: Aplicar os dados iniciais fictícios (só se ainda não existirem)
+        run: ssh demonstracao "bash ${{ env.PASTA_APP }}/deploy/azure/aplicar-dados-ficticios.sh"
+
+      - name: Resumo da publicação
+        run: |
+          {
+            echo "## Publicação no ambiente de demonstração"
+            echo ""
+            echo "- URL: https://$DOMINIO"
+            echo "- Commit: ${{ github.event.workflow_run.head_sha || github.sha }}"
+            echo "- Gatilho: ${{ github.event_name }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Mostrar os logs da API (em caso de falha)
+        if: failure()
+        run: ssh demonstracao "cd ${{ env.PASTA_APP }}/deploy/azure && docker compose ps && docker compose logs --tail 100 api" || true
+
+      - name: Apagar a chave e o .env do runner
+        if: always()
+        run: rm -f ~/.ssh/id_publicacao deploy/azure/.env

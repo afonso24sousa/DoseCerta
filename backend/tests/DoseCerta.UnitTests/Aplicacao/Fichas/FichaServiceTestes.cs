@@ -37,7 +37,7 @@ public class FichaServiceTestes
         this.servico = new FichaService(
             this.repositorios,
             this.repositorios,
-            this.repositorios,
+            ServicosDeTeste.ConviteService(this.repositorios, this.unidadeDeTrabalho, this.relogio),
             this.repositorios,
             this.repositorios,
             documentos,
@@ -351,7 +351,7 @@ public class FichaServiceTestes
     }
 
     /// <summary>
-    /// RF-120 e RF-122: o Cuidador arquiva a ficha e as tomas e execuções futuras por confirmar são apagadas.
+    /// RF-120 e RF-122: o Cuidador arquiva a ficha e as tomas futuras por confirmar são apagadas.
     /// </summary>
     /// <returns>Uma tarefa assíncrona.</returns>
     [Fact]
@@ -422,23 +422,17 @@ public class FichaServiceTestes
     }
 
     /// <summary>
-    /// RF-123 CA2: com medicação, tarefas ou histórico, a eliminação é recusada e nada é removido.
+    /// RF-123 CA2: com medicação ou histórico, a eliminação é recusada e nada é removido.
     /// </summary>
     /// <param name="registo">Tipo de registo da ficha.</param>
     /// <returns>Uma tarefa assíncrona.</returns>
     [Theory]
     [InlineData("medicacao")]
-    [InlineData("tarefas")]
     [InlineData("historico")]
     public async Task EliminarFichaComRegistosERecusado(string registo)
     {
         var criada = await this.CriarAsync(Dados(), documentos: new[] { FicheirosTeste.Documento(FicheirosTeste.Pdf) });
-        var conjunto = registo switch
-        {
-            "medicacao" => this.repositorios.FichasComMedicacao,
-            "tarefas" => this.repositorios.FichasComTarefas,
-            _ => this.repositorios.FichasComHistorico,
-        };
+        var conjunto = registo == "medicacao" ? this.repositorios.FichasComMedicacao : this.repositorios.FichasComHistorico;
         conjunto.Add(criada.Ficha.Id);
 
         var erro = await Assert.ThrowsAsync<DominioException>(() => this.servico.EliminarAsync(this.criador, criada.Ficha.Id, CancellationToken.None));
@@ -508,7 +502,7 @@ public class FichaServiceTestes
         return new FichaService(
             this.repositorios,
             this.repositorios,
-            this.repositorios,
+            ServicosDeTeste.ConviteService(this.repositorios, unidade, this.relogio),
             this.repositorios,
             this.repositorios,
             documentos,

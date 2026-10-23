@@ -2,6 +2,7 @@
 
 using DoseCerta.Application.Abstracoes;
 using DoseCerta.Application.Comum;
+using DoseCerta.Application.Convites;
 using DoseCerta.Application.Documentos;
 using DoseCerta.Application.Repositorios;
 using DoseCerta.Domain.Comum;
@@ -21,11 +22,16 @@ public sealed class FichaService
     /// </summary>
     public const int ComprimentoMaximoNome = 150;
 
+    /// <summary>
+    /// Mensagem do erro <c>FICHA_PROPRIA_JA_EXISTE</c>, igual na verificação prévia e na violação do índice único (RF-031).
+    /// </summary>
+    public const string MensagemFichaPropriaJaExiste = "Já tem uma ficha própria; pode criar fichas de terceiros.";
+
     private const string RegraListaFechada = "Tem de conter apenas valores das listas de GET /api/v1/dominios/necessidades.";
 
     private readonly IFichaRepositorio fichas;
     private readonly IDominiosRepositorio dominios;
-    private readonly IConviteRepositorio convites;
+    private readonly ConviteService conviteService;
     private readonly IDocumentoRepositorio documentos;
     private readonly INotificacaoRepositorio notificacoes;
     private readonly DocumentoService documentoService;
@@ -38,7 +44,7 @@ public sealed class FichaService
     /// </summary>
     /// <param name="fichas">Repositório das fichas.</param>
     /// <param name="dominios">Repositório das listas fechadas.</param>
-    /// <param name="convites">Repositório dos convites.</param>
+    /// <param name="conviteService">Serviço dos convites, que regista o convite para Cuidador principal.</param>
     /// <param name="documentos">Repositório dos documentos.</param>
     /// <param name="notificacoes">Repositório das notificações.</param>
     /// <param name="documentoService">Serviço dos documentos.</param>
@@ -48,7 +54,7 @@ public sealed class FichaService
     public FichaService(
         IFichaRepositorio fichas,
         IDominiosRepositorio dominios,
-        IConviteRepositorio convites,
+        ConviteService conviteService,
         IDocumentoRepositorio documentos,
         INotificacaoRepositorio notificacoes,
         DocumentoService documentoService,
@@ -58,7 +64,7 @@ public sealed class FichaService
     {
         this.fichas = fichas;
         this.dominios = dominios;
-        this.convites = convites;
+        this.conviteService = conviteService;
         this.documentos = documentos;
         this.notificacoes = notificacoes;
         this.documentoService = documentoService;
@@ -70,7 +76,7 @@ public sealed class FichaService
     /// <summary>
     /// OP-09: cria uma ficha de terceiro ou a ficha própria. O criador fica associado como Cuidador principal; numa ficha de terceiro
     /// com <c>eu=false</c> fica Cuidador principal provisório e o convite para Cuidador principal fica pendente (RF-020 a RF-025, RF-030, RF-031).
-    /// O envio do convite e a resposta a ele são implementados com a F004.
+    /// O convite é registado pelo <see cref="ConviteService"/>, como os convites de OP-19 (F004).
     /// </summary>
     /// <param name="criadorId">Utilizador autenticado.</param>
     /// <param name="dados">Dados de identificação e necessidades.</param>
@@ -116,9 +122,7 @@ public sealed class FichaService
             {
                 if (propria && await this.fichas.ExistePropriaDeAsync(criadorId, cancelamento).ConfigureAwait(false))
                 {
-                    throw new DominioException(
-                        CodigosErro.FichaPropriaJaExiste,
-                        "Já tem uma ficha própria; pode criar fichas de terceiros.");
+                    throw new DominioException(CodigosErro.FichaPropriaJaExiste, MensagemFichaPropriaJaExiste);
                 }
 
                 var agora = this.relogio.AgoraUtc();
@@ -135,12 +139,12 @@ public sealed class FichaService
 
                 if (emailConvidado is not null)
                 {
-                    this.convites.Adicionar(new Convite(ficha.Id, emailConvidado, Papel.Cuidador, paraPrincipal: true, criadorId, agora));
+                    await this.conviteService.ConvidarParaPrincipalAsync(ficha, criadorId, emailConvidado, agora, cancelamento).ConfigureAwait(false);
                 }
 
                 foreach (var ficheiro in ficheiros)
                 {
-                    await this.documentoService.GuardarNaTransacaoAsync(ficha.Id, ficheiro, criadorId, agora, cancelamento).ConfigureAwait(false);
+                    await this.documentoService.GuardarNaTransacaoAsync(ficha.Id, null, ficheiro, criadorId, agora, cancelamento).ConfigureAwait(false);
                 }
 
                 return new AcessoFicha(ficha, associacao);
@@ -210,7 +214,7 @@ public sealed class FichaService
                 var agora = this.relogio.AgoraUtc();
                 foreach (var ficheiro in ficheiros)
                 {
-                    await this.documentoService.GuardarNaTransacaoAsync(fichaId, ficheiro, utilizadorId, agora, cancelamento).ConfigureAwait(false);
+                    await this.documentoService.GuardarNaTransacaoAsync(fichaId, null, ficheiro, utilizadorId, agora, cancelamento).ConfigureAwait(false);
                 }
 
                 acesso.Ficha.AtualizarDados(validados.NomeCompleto, validados.DataNascimento, validados.ContactoEmergencia);
@@ -221,7 +225,7 @@ public sealed class FichaService
     }
 
     /// <summary>
-    /// OP-12: arquiva a ficha, preservando o histórico, e apaga as tomas e as execuções futuras ainda por confirmar (RF-120, RF-122).
+    /// OP-12: arquiva a ficha, preservando o histórico, e apaga as tomas futuras ainda por confirmar (RF-120, RF-122).
     /// </summary>
     /// <param name="utilizadorId">Utilizador autenticado.</param>
     /// <param name="fichaId">Ficha a arquivar.</param>
@@ -261,7 +265,7 @@ public sealed class FichaService
     }
 
     /// <summary>
-    /// OP-14: elimina uma ficha sem medicação, tarefas nem histórico. As notificações são apagadas na mesma transação e os ficheiros
+    /// OP-14: elimina uma ficha sem medicação nem histórico. As notificações são apagadas na mesma transação e os ficheiros
     /// dos documentos são removidos depois de a transação ser confirmada (RF-123, RNF-046).
     /// </summary>
     /// <param name="utilizadorId">Utilizador autenticado.</param>
@@ -275,13 +279,12 @@ public sealed class FichaService
             {
                 var acesso = await this.autorizacao.ExigirCuidadorAsync(utilizadorId, fichaId, cancelamento).ConfigureAwait(false);
                 var temMedicacao = await this.fichas.TemMedicacaoAsync(fichaId, cancelamento).ConfigureAwait(false);
-                var temTarefas = await this.fichas.TemTarefasAsync(fichaId, cancelamento).ConfigureAwait(false);
                 var temHistorico = await this.fichas.TemHistoricoAsync(fichaId, cancelamento).ConfigureAwait(false);
-                if (!Ficha.PodeSerEliminada(temMedicacao, temTarefas, temHistorico))
+                if (!Ficha.PodeSerEliminada(temMedicacao, temHistorico))
                 {
                     throw new DominioException(
                         CodigosErro.FichaComHistorico,
-                        "A ficha tem medicação, tarefas ou histórico registados e não pode ser eliminada; só pode ser arquivada.");
+                        "A ficha tem medicação ou histórico registados e não pode ser eliminada; só pode ser arquivada.");
                 }
 
                 var ficheiros = await this.documentos.DaFichaAsync(fichaId, cancelamento).ConfigureAwait(false);

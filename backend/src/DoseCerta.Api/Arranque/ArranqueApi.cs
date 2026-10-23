@@ -3,6 +3,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DoseCerta.Api.Erros;
+using DoseCerta.Api.Processos;
 using DoseCerta.Api.Saude;
 using DoseCerta.Api.Seguranca;
 using DoseCerta.Application;
@@ -41,6 +42,10 @@ public static class ArranqueApi
 
         servicos.AddAplicacao();
         servicos.AddInfraestrutura(builder.Configuration);
+
+        // Processo periódico (passo 7: envio e reenvios dos e-mails de convite, RF-136).
+        servicos.Configure<OpcoesProcessoPeriodico>(builder.Configuration.GetSection(OpcoesProcessoPeriodico.Seccao));
+        servicos.AddHostedService<ProcessoPeriodico>();
 
         // Autenticação JWT e exigência de sessão em todos os endpoints, exceto os marcados como públicos (RF-017).
         servicos.ConfigureOptions<ConfiguracaoJwtBearer>();

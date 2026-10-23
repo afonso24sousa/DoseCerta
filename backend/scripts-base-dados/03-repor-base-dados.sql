@@ -1,6 +1,6 @@
 -- =====================================================================
 -- DoseCerta (G07) - Script de reposição da base de dados (SQL Server 2022)
--- Issue I030
+-- Issues I030 e I037 (sem as tabelas da F007, retirada do âmbito)
 --
 -- Remove os gatilhos e todas as tabelas do DoseCerta (incluindo o histórico de
 -- migrações do EF Core, se existir), deixando a base de dados vazia. Para repor o
@@ -13,7 +13,6 @@ SET XACT_ABORT ON;
 GO
 
 DROP TRIGGER IF EXISTS dbo.TR_Toma_Historico;
-DROP TRIGGER IF EXISTS dbo.TR_ExecucaoTarefa_Historico;
 DROP TRIGGER IF EXISTS dbo.TR_Ocorrencia_Imutavel;
 DROP TRIGGER IF EXISTS dbo.TR_Nota_Imutavel;
 GO
@@ -24,10 +23,6 @@ DROP TABLE IF EXISTS dbo.Notificacao;
 DROP TABLE IF EXISTS dbo.Nota;
 DROP TABLE IF EXISTS dbo.Ocorrencia;
 DROP TABLE IF EXISTS dbo.Compromisso;
-DROP TABLE IF EXISTS dbo.ExecucaoTarefa;
-DROP TABLE IF EXISTS dbo.TarefaDiaSemana;
-DROP TABLE IF EXISTS dbo.HorarioTarefa;
-DROP TABLE IF EXISTS dbo.TarefaRecorrente;
 DROP TABLE IF EXISTS dbo.Toma;
 DROP TABLE IF EXISTS dbo.Documento;
 DROP TABLE IF EXISTS dbo.HorarioToma;

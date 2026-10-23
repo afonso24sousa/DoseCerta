@@ -48,6 +48,11 @@ public static class CodigosErro
     public const string DocumentoNaoEncontrado = "DOCUMENTO_NAO_ENCONTRADO";
 
     /// <summary>
+    /// O recurso não existe ou pertence a uma ficha a que o Utilizador não está associado (404, RNF-005).
+    /// </summary>
+    public const string RecursoNaoEncontrado = "RECURSO_NAO_ENCONTRADO";
+
+    /// <summary>
     /// A ficha está arquivada; a operação só é possível depois de a reativar (409, RF-120).
     /// </summary>
     public const string FichaArquivada = "FICHA_ARQUIVADA";
@@ -63,7 +68,7 @@ public static class CodigosErro
     public const string FichaNaoArquivada = "FICHA_NAO_ARQUIVADA";
 
     /// <summary>
-    /// A ficha tem medicação, tarefas ou histórico e só pode ser arquivada (409, RF-123).
+    /// A ficha tem medicação ou histórico e só pode ser arquivada (409, RF-123).
     /// </summary>
     public const string FichaComHistorico = "FICHA_COM_HISTORICO";
 
@@ -71,6 +76,61 @@ public static class CodigosErro
     /// O Utilizador já tem uma ficha própria (409, RF-031).
     /// </summary>
     public const string FichaPropriaJaExiste = "FICHA_PROPRIA_JA_EXISTE";
+
+    /// <summary>
+    /// Um tratamento terminado não pode ser alterado (409, RF-055).
+    /// </summary>
+    public const string TratamentoTerminado = "TRATAMENTO_TERMINADO";
+
+    /// <summary>
+    /// O tratamento já está terminado (409, OP-31).
+    /// </summary>
+    public const string TratamentoJaTerminado = "TRATAMENTO_JA_TERMINADO";
+
+    /// <summary>
+    /// O titular da ficha própria é sempre o Cuidador principal: não é despromovido, removido nem substituído (403, RF-033, RF-034).
+    /// </summary>
+    public const string CuidadorPrincipalProtegido = "CUIDADOR_PRINCIPAL_PROTEGIDO";
+
+    /// <summary>
+    /// Já existe um convite pendente para o mesmo e-mail e a mesma ficha (409, RF-043).
+    /// </summary>
+    public const string ConvitePendenteExiste = "CONVITE_PENDENTE_EXISTE";
+
+    /// <summary>
+    /// O e-mail pertence a uma pessoa já associada à ficha (409, OP-19).
+    /// </summary>
+    public const string PessoaJaAssociada = "PESSOA_JA_ASSOCIADA";
+
+    /// <summary>
+    /// O convite não existe ou não é dirigido ao e-mail do Utilizador (404, OP-21, OP-22).
+    /// </summary>
+    public const string ConviteNaoEncontrado = "CONVITE_NAO_ENCONTRADO";
+
+    /// <summary>
+    /// O convite já foi aceite ou recusado (409, OP-21, OP-22).
+    /// </summary>
+    public const string ConviteJaRespondido = "CONVITE_JA_RESPONDIDO";
+
+    /// <summary>
+    /// A pessoa não está associada à ficha (404, OP-23 a OP-25).
+    /// </summary>
+    public const string PessoaNaoEncontrada = "PESSOA_NAO_ENCONTRADA";
+
+    /// <summary>
+    /// O Cuidador principal só é despromovido ou removido depois de outro Cuidador assumir o papel (409, RF-133).
+    /// </summary>
+    public const string CuidadorPrincipalSemSubstituto = "CUIDADOR_PRINCIPAL_SEM_SUBSTITUTO";
+
+    /// <summary>
+    /// A operação deixaria a ficha sem Cuidador (409, RF-134).
+    /// </summary>
+    public const string FichaSemCuidador = "FICHA_SEM_CUIDADOR";
+
+    /// <summary>
+    /// A pessoa indicada para Cuidador principal não é Cuidador da ficha (409, RF-132).
+    /// </summary>
+    public const string DestinatarioNaoECuidador = "DESTINATARIO_NAO_E_CUIDADOR";
 
     /// <summary>
     /// Ficheiro com mais de 10 MB (413, RNF-008).
