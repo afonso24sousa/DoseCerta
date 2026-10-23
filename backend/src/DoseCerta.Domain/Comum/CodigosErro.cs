@@ -48,6 +48,11 @@ public static class CodigosErro
     public const string DocumentoNaoEncontrado = "DOCUMENTO_NAO_ENCONTRADO";
 
     /// <summary>
+    /// O recurso não existe ou pertence a uma ficha a que o Utilizador não está associado (404, RNF-005).
+    /// </summary>
+    public const string RecursoNaoEncontrado = "RECURSO_NAO_ENCONTRADO";
+
+    /// <summary>
     /// A ficha está arquivada; a operação só é possível depois de a reativar (409, RF-120).
     /// </summary>
     public const string FichaArquivada = "FICHA_ARQUIVADA";
@@ -63,7 +68,7 @@ public static class CodigosErro
     public const string FichaNaoArquivada = "FICHA_NAO_ARQUIVADA";
 
     /// <summary>
-    /// A ficha tem medicação, tarefas ou histórico e só pode ser arquivada (409, RF-123).
+    /// A ficha tem medicação ou histórico e só pode ser arquivada (409, RF-123).
     /// </summary>
     public const string FichaComHistorico = "FICHA_COM_HISTORICO";
 
@@ -71,6 +76,31 @@ public static class CodigosErro
     /// O Utilizador já tem uma ficha própria (409, RF-031).
     /// </summary>
     public const string FichaPropriaJaExiste = "FICHA_PROPRIA_JA_EXISTE";
+
+    /// <summary>
+    /// Um tratamento terminado não pode ser alterado (409, RF-055).
+    /// </summary>
+    public const string TratamentoTerminado = "TRATAMENTO_TERMINADO";
+
+    /// <summary>
+    /// O tratamento já está terminado (409, OP-31).
+    /// </summary>
+    public const string TratamentoJaTerminado = "TRATAMENTO_JA_TERMINADO";
+
+    /// <summary>
+    /// A toma ainda não pode ser confirmada: a janela abre às 00:00 de Lisboa do dia previsto (409, OP-33, TR-13).
+    /// </summary>
+    public const string TomaForaDaJanela = "TOMA_FORA_DA_JANELA";
+
+    /// <summary>
+    /// A toma já foi confirmada; a resposta inclui quem confirmou e quando (409, OP-33, TR-15).
+    /// </summary>
+    public const string TomaJaConfirmada = "TOMA_JA_CONFIRMADA";
+
+    /// <summary>
+    /// A toma já não pode ser confirmada: passaram 24 horas da hora prevista (409, OP-33, TR-14).
+    /// </summary>
+    public const string TomaNaoConfirmavel = "TOMA_NAO_CONFIRMAVEL";
 
     /// <summary>
     /// Ficheiro com mais de 10 MB (413, RNF-008).

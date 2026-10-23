@@ -103,8 +103,7 @@ public class EntidadesTestes
     }
 
     /// <summary>
-    /// Os registos gerados começam nos estados iniciais do modelo de dados (Toma pendente, execução por confirmar,
-    /// tratamento em curso e tarefa ativa).
+    /// Os registos gerados começam nos estados iniciais do modelo de dados (toma pendente e tratamento em curso).
     /// </summary>
     [Fact]
     public void RegistosNovosComecamNoEstadoInicial()
@@ -112,16 +111,11 @@ public class EntidadesTestes
         var fichaId = Guid.NewGuid();
         var autor = Guid.NewGuid();
 
-        var tratamento = new Tratamento(fichaId, "Medicamento fictício", "1 comprimido", GrauImportancia.Grave, new DateOnly(2026, 10, 1), null, autor, Agora);
+        var tratamento = new Tratamento(fichaId, "Medicamento fictício", "1 comprimido", GrauImportancia.Grave, new DateOnly(2026, 10, 1), null, new[] { new TimeOnly(8, 0) }, autor, Agora);
         var toma = new Toma(tratamento.Id, Agora, tratamento.Medicamento, tratamento.Dose, tratamento.GrauImportancia);
-        var tarefa = new TarefaRecorrente(fichaId, "Tarefa fictícia", PeriodicidadeTipo.Diaria, null, new DateOnly(2026, 10, 1), 30, autor, Agora);
-        var execucao = new ExecucaoTarefa(tarefa.Id, Agora, tarefa.Designacao, tarefa.ToleranciaMinutos);
 
         Assert.Equal(EstadoTratamento.EmCurso, tratamento.Estado);
         Assert.Equal(EstadoToma.Pendente, toma.Estado);
         Assert.Equal("Medicamento fictício", toma.Medicamento);
-        Assert.True(tarefa.Ativa);
-        Assert.Equal(EstadoExecucaoTarefa.PorConfirmar, execucao.Estado);
-        Assert.Null(execucao.ConfirmadaPorId);
     }
 }

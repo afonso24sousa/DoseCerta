@@ -6,13 +6,17 @@ Este ficheiro contém as instruções técnicas para clonar, configurar, compila
 
 Esta versão corresponde à configuração da solução (Issue I029): camadas, autenticação JWT, ligação ao SQL Server,
 verificação do estado da aplicação, serviço de e-mail e testes; e ao modelo de dados (Issue I030): entidades, mapeamento
-EF Core, migração inicial e scripts SQL; à autenticação e gestão de conta (Issue I032, F001: OP-01 a OP-06); e à criação
-e gestão de fichas de utentes (Issue I033, F002 e ficha própria da F003: OP-07 a OP-17), descritas na secção 5.1.
+EF Core, migração inicial e scripts SQL; à autenticação e gestão de conta (Issue I032, F001: OP-01 a OP-06); à criação
+e gestão de fichas de utentes (Issue I033, F002 e ficha própria da F003: OP-07 a OP-17), descritas na secção 5.1; e ao
+registo de medicação (Issue I037, F005: OP-27 a OP-31), descrito na secção 5.2; e aos horários e à confirmação de toma
+(Issue I038, F006: OP-32 a OP-34), descritos na secção 5.3. A F007 (tarefas de cuidados recorrentes)
+foi retirada do âmbito por alteração autorizada (documentação v02); a migração `RetirarTarefasRecorrentes` remove-a do
+esquema (secção 8).
 
 ## 1. Estrutura da solução
 
-A solução segue a arquitetura em camadas da documentação de arquitetura (`m2-documentacao-arquitetura-v01.md`, secção 5)
-e os pacotes do modelo de classes do backend (`m2-modelo-classes-backend-v01.md`, secção 3). As dependências só vão da
+A solução segue a arquitetura em camadas da documentação de arquitetura (`m3-documentacao-arquitetura-v02.md`, secção 5)
+e os pacotes do modelo de classes do backend (`m3-modelo-classes-backend-v02.md`, secção 3). As dependências só vão da
 apresentação para a persistência.
 
 | Projeto | Camada | Conteúdo nesta versão |
@@ -20,7 +24,7 @@ apresentação para a persistência.
 | `src/DoseCerta.Api` | API REST e raiz de composição | arranque (`Arranque/`), erros (`Erros/`), `GET /saude` (`Saude/`), validação JWT (`Seguranca/`), controllers (`Controllers/`) e contratos dos pedidos e respostas (`Contratos/`) |
 | `src/DoseCerta.Application` | Serviços de aplicação | contas (`Contas/`), fichas e autorização por papel (`Fichas/`, `AutorizacaoFichaService`), documentos (`Documentos/`), interfaces dos repositórios (`Repositorios/`) e abstrações (`IArmazenamentoDocumentos`, `IEmailSender`, `IRelogio`, `IUnidadeDeTrabalho`, ...) |
 | `src/DoseCerta.Domain` | Domínio | entidades do modelo de dados (`Entidades/`), listas de valores (`Enumerados/`), exceções e códigos de erro (`Comum/`), calendário de Lisboa (`Tempo/`) |
-| `src/DoseCerta.Infrastructure` | Infraestrutura | `DoseCertaDbContext` com as 23 tabelas, mapeamento (`Persistence/Configuracoes/`), gatilhos (`Persistence/GatilhosSql.cs`), migrações (`Persistence/Migrations/`), repositórios (`Persistence/Repositorios/`), unidade de trabalho, armazenamento de documentos no sistema de ficheiros (`Documentos/`), e-mail SMTP, segurança (hash e JWT), relógio |
+| `src/DoseCerta.Infrastructure` | Infraestrutura | `DoseCertaDbContext` com as 19 tabelas, mapeamento (`Persistence/Configuracoes/`), gatilhos (`Persistence/GatilhosSql.cs`), migrações (`Persistence/Migrations/`), repositórios (`Persistence/Repositorios/`), unidade de trabalho, armazenamento de documentos no sistema de ficheiros (`Documentos/`), e-mail SMTP, segurança (hash e JWT), relógio |
 | `scripts-base-dados` | Base de dados | scripts SQL de criação, dados fictícios e reposição (ver secção 9) |
 | `tests/DoseCerta.UnitTests` | Testes unitários (QG-02) | sem base de dados nem rede |
 | `tests/DoseCerta.IntegrationTests` | Testes de integração (QG-03) | API em memória contra um SQL Server real |
@@ -62,14 +66,20 @@ cd src/DoseCerta.Api
 dotnet user-secrets set "ConnectionStrings:DoseCerta" "Server=localhost,1433;Database=DoseCerta;User Id=sa;Password=<palavra-passe-local>;TrustServerCertificate=true;Encrypt=true"
 dotnet user-secrets set "Jwt:Chave" "<segredo-local-com-pelo-menos-32-carateres>"
 dotnet user-secrets set "BaseDados:AplicarMigracoesNoArranque" "true"
-# Serviço de e-mail transacional (endereço dedicado ao projeto, RNF-052)
-dotnet user-secrets set "Email:Servidor" "<servidor-smtp>"
+# Serviço de e-mail transacional: Mailtrap Email Sending (endereço dedicado ao projeto, RNF-052)
+dotnet user-secrets set "Email:Servidor" "live.smtp.mailtrap.io"
 dotnet user-secrets set "Email:Porta" "587"
-dotnet user-secrets set "Email:Utilizador" "<utilizador-smtp>"
-dotnet user-secrets set "Email:PalavraPasse" "<chave-smtp>"
-dotnet user-secrets set "Email:Remetente" "<endereco-dedicado-do-projeto>"
+dotnet user-secrets set "Email:Utilizador" "api"
+dotnet user-secrets set "Email:PalavraPasse" "<token-api-do-mailtrap>"
+dotnet user-secrets set "Email:Remetente" "dosecerta@zemiguel.dev"
 cd ../..
 ```
+
+O envio usa o Mailtrap Email Sending com o domínio `zemiguel.dev`, verificado no Mailtrap (DKIM e DMARC configurados no
+DNS, RNF-048). O docente autorizou o uso de domínios pessoais; o endereço `dosecerta@zemiguel.dev` é usado só pelo projeto
+(RNF-052). O token da API do Mailtrap é partilhado no grupo fora do repositório e nunca é versionado. Para desenvolver sem
+entregar e-mails reais, pode usar-se o Mailtrap Sandbox (`sandbox.smtp.mailtrap.io`, com o utilizador e a palavra-passe da
+caixa de teste).
 
 Também são aceites variáveis de ambiente com `__` como separador, por exemplo `Jwt__Chave`, `ConnectionStrings__DoseCerta`
 e `Email__Servidor`. Os user-secrets só são lidos no ambiente `Development` (o perfil `https` do `launchSettings.json`).
@@ -85,7 +95,7 @@ e `Email__Servidor`. Os user-secrets só são lidos no ambiente `Development` (o
 | `Documentos:PastaRaiz` | não | Pasta onde ficam os ficheiros dos documentos (RNF-006), fora do conteúdo servido pela API (RNF-007). Vazia: `%LOCALAPPDATA%\DoseCerta\documentos` no Windows ou `~/.local/share/DoseCerta/documentos` em Linux. As cópias de segurança têm de incluir esta pasta (RNF-045). |
 
 Com `BaseDados:AplicarMigracoesNoArranque` a `true`, a API aplica as migrações do EF Core ao arrancar e cria a base de dados
-`DoseCerta` se ainda não existir, com as 23 tabelas, os 4 gatilhos e os valores predefinidos das listas fechadas (secção 8).
+`DoseCerta` se ainda não existir, com as 19 tabelas, os 3 gatilhos e os valores predefinidos das listas fechadas (secção 8).
 O utilizador da connection string precisa de permissão para criar bases de dados.
 
 ## 5. Compilar e executar
@@ -108,8 +118,8 @@ Em desenvolvimento, a documentação interativa da API fica em `https://localhos
 
 ### 5.1 Fichas e documentos (F002)
 
-Os endpoints seguem a documentação da API (`m2-documentacao-api-v01.md`, secção 5.2) e a matriz de permissões
-(`m2-matriz-permissoes-ficha-v01.md`). O papel é verificado em cada pedido por `AutorizacaoFichaService`, lido da base de dados:
+Os endpoints seguem a documentação da API (`m3-documentacao-api-v02.md`, secção 5.2) e a matriz de permissões
+(`m3-matriz-permissoes-ficha-v02.md`). O papel é verificado em cada pedido por `AutorizacaoFichaService`, lido da base de dados:
 quem não está associado à ficha recebe 404, o Familiar recebe 403 nas operações de Cuidador e uma ficha arquivada recebe 409
 `FICHA_ARQUIVADA` nas escritas que exigem ficha ativa.
 
@@ -135,8 +145,58 @@ ser guardado, a operação responde 503 `DOCUMENTO_NAO_GUARDADO` e nada é grava
 
 Na ficha de terceiro com `cuidadorPrincipal.eu=false`, o criador fica Cuidador principal provisório e o convite para Cuidador
 principal fica pendente; o envio do convite por e-mail e a resposta a ele são implementados com a F004 (Issue I035). A eliminação
-(OP-14) verifica as tabelas de tratamentos, tarefas, tomas, execuções, ocorrências e notas; a verificação volta a ser testada
-quando a medicação (F005) e as tarefas (F007) forem implementadas.
+(OP-14) só é possível sem medicação, tomas, ocorrências nem notas (RF-123).
+
+### 5.2 Tratamentos (F005)
+
+Os endpoints seguem a documentação da API (`m3-documentacao-api-v02.md`, secção 5.4) e a matriz de permissões: só um Cuidador
+regista, altera e termina; Cuidadores e Familiares consultam. Nas operações sobre um tratamento, quem não está associado à ficha
+recebe 404 `RECURSO_NAO_ENCONTRADO`.
+
+| Operação | Método e caminho |
+|---|---|
+| OP-27 Registar tratamento | `POST /api/v1/fichas/{fichaId}/tratamentos` |
+| OP-28 Listar tratamentos da ficha | `GET /api/v1/fichas/{fichaId}/tratamentos?estado=EmCurso\|Terminado` |
+| OP-29 Consultar tratamento | `GET /api/v1/tratamentos/{tratamentoId}` |
+| OP-30 Atualizar tratamento | `PUT /api/v1/tratamentos/{tratamentoId}` |
+| OP-31 Terminar tratamento antecipadamente | `POST /api/v1/tratamentos/{tratamentoId}/termino` |
+
+O registo e a atualização aceitam `application/json` ou, com receita, `multipart/form-data` com a parte `dados` (o mesmo JSON)
+e a parte `receita` (PDF, JPG ou PNG até 10 MB). A receita fica na categoria `ReceitaMedica`, associada ao tratamento, e
+obtém-se com OP-17 (`receitaDocumentoId`). Se não puder ser guardada, a operação responde 503 `DOCUMENTO_NAO_GUARDADO` e nada
+é gravado (RF-053, RNF-046). Na atualização, um campo em falta mantém o valor; a data de início não muda e a data de fim não
+pode ser removida (um tratamento contínuo termina-se com OP-31).
+
+Ao registar, o servidor gera uma toma `Pendente` por horário e por dia entre a data de início e a data de fim (hora de Lisboa,
+guardada em UTC); sem data de fim, só até 30 dias depois do registo. Não se geram tomas anteriores ao instante em que a ficha
+ficou ativa (DM-19). Alterar o tratamento apaga as tomas pendentes futuras e gera-as de novo com os dados novos; terminar
+apaga-as; as anteriores mantêm a hora e o estado (RF-055, RF-056, RF-060). Numa ficha arquivada só é possível terminar o
+tratamento (RF-120). O prolongamento da janela de 30 dias pertence ao processo periódico (secção 5.3) e o término automático
+depois da data de fim à F011.
+
+### 5.3 Tomas (F006)
+
+Os endpoints seguem a documentação da API (`m3-documentacao-api-v02.md`, OP-32 a OP-34) e o diagrama de estados da toma
+(`m3-diagrama-estados-toma-v02.md`). As datas das respostas vêm em hora de Lisboa, com o desvio (`2026-10-07T08:00:00+01:00`).
+
+| Operação | Método e caminho |
+|---|---|
+| OP-32 Listar tomas da ficha | `GET /api/v1/fichas/{fichaId}/tomas?de=AAAA-MM-DD&ate=AAAA-MM-DD[&estado=...][&tratamentoId=...]` |
+| OP-33 Confirmar toma | `POST /api/v1/tomas/{tomaId}/confirmacao` (sem corpo) |
+| OP-34 Sincronizar o calendário de tomas | `GET /api/v1/calendario/tomas` |
+
+- OP-32: `de` e `ate` são dias de Lisboa, obrigatórios, com no máximo 31 dias contando os dois. Cuidadores e Familiares
+  consultam, também numa ficha arquivada; quem não está associado recebe 404 `FICHA_NAO_ENCONTRADA`.
+- OP-33: só um Cuidador confirma (o Familiar recebe 403), também numa ficha arquivada. A janela abre às 00:00 de Lisboa do dia
+  da toma (antes disso, 409 `TOMA_FORA_DA_JANELA`). Até ao fim da tolerância (Leve 2 h, Moderado 1 h, Grave 30 min, inclusive)
+  fica `Confirmada`; depois, e antes das 24 horas, fica `ConfirmadaComAtraso`; a partir das 24 horas responde 409
+  `TOMA_NAO_CONFIRMAVEL`. A segunda confirmação responde 409 `TOMA_JA_CONFIRMADA` com o campo `confirmacao` (quem e quando).
+  Duas confirmações em simultâneo são resolvidas pela coluna `Versao` (RNF-044): uma responde 200 e a outra 409.
+- OP-34: tomas `Pendente` das próximas 48 horas das fichas ativas em que o Utilizador é Cuidador, para os alarmes locais do
+  telemóvel; lista vazia se não houver.
+- Reativar uma ficha (OP-13) volta a gerar as tomas dos tratamentos em curso a partir desse instante (TR-10).
+- Os passos do processo periódico estão no `TomaService`: `PrologarJanelaMovelAsync` (passo 1, janela móvel de 30 dias) e
+  `ConcluirNaoConfirmadasAsync` (passo 5, passagem a `NaoConfirmada` 24 horas depois da hora prevista, sem notificação).
 
 ## 6. Enviar uma mensagem de teste pelo serviço de e-mail
 
@@ -177,7 +237,10 @@ termina sem sucesso se existirem diferenças de formatação. A pasta `artefacto
 As migrações ficam em `src/DoseCerta.Infrastructure/Persistence/Migrations` (código gerado, excluído da análise estática e
 da cobertura). A migração inicial (`Inicial`) cria as 23 tabelas, as chaves, as restrições `CHECK`, os índices, os valores
 predefinidos das listas fechadas e, no fim do `Up`, os 4 gatilhos (`migrationBuilder.CriarGatilhosDoseCerta()`; o `Down`
-começa por `migrationBuilder.RemoverGatilhosDoseCerta()`), porque o EF Core não gera gatilhos.
+começa por `migrationBuilder.RemoverGatilhosDoseCerta()`), porque o EF Core não gera gatilhos. A migração
+`RetirarTarefasRecorrentes` (Issue I037) remove a F007, retirada do âmbito: o gatilho `TR_ExecucaoTarefa_Historico`, as quatro
+tabelas das tarefas e os valores da F007 nas restrições das notificações; depois dela ficam as 19 tabelas e os 3 gatilhos do
+modelo de dados v02 (secção 15).
 
 Aplicar as migrações sem arrancar a API (com a variável `ConnectionStrings__DoseCerta` definida):
 

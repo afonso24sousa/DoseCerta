@@ -2,6 +2,7 @@
 
 using DoseCerta.Application.Documentos;
 using DoseCerta.Application.Fichas;
+using DoseCerta.Application.Tomas;
 using DoseCerta.Domain.Comum;
 using DoseCerta.Domain.Entidades;
 using DoseCerta.Domain.Enumerados;
@@ -18,6 +19,7 @@ public class FichaServiceTestes
     private static readonly DefinicaoPrincipal Eu = new(true, null);
     private static readonly string[] CamposObrigatorios = { "nomeCompleto", "dataNascimento", "contactoEmergencia", "cuidadorPrincipal" };
     private static readonly string[] CamposDataEContacto = { "dataNascimento", "contactoEmergencia" };
+    private static readonly TimeOnly[] AsOito = { new(8, 0) };
     private static readonly string[] CamposDasListas = { "grauAutonomiaId", "condicoesSaudeIds", "alergiasIds" };
 
     private readonly RepositoriosEmMemoria repositorios = new();
@@ -34,6 +36,14 @@ public class FichaServiceTestes
     {
         var autorizacao = new AutorizacaoFichaService(this.repositorios);
         var documentos = new DocumentoService(this.repositorios, this.armazenamento, autorizacao, this.unidadeDeTrabalho, this.relogio);
+        var tomas = new TomaService(
+            this.repositorios,
+            this.repositorios,
+            this.repositorios,
+            this.repositorios,
+            autorizacao,
+            this.unidadeDeTrabalho,
+            this.relogio);
         this.servico = new FichaService(
             this.repositorios,
             this.repositorios,
@@ -41,6 +51,7 @@ public class FichaServiceTestes
             this.repositorios,
             this.repositorios,
             documentos,
+            tomas,
             autorizacao,
             this.unidadeDeTrabalho,
             this.relogio);
@@ -351,7 +362,7 @@ public class FichaServiceTestes
     }
 
     /// <summary>
-    /// RF-120 e RF-122: o Cuidador arquiva a ficha e as tomas e execuções futuras por confirmar são apagadas.
+    /// RF-120 e RF-122: o Cuidador arquiva a ficha e as tomas futuras por confirmar são apagadas.
     /// </summary>
     /// <returns>Uma tarefa assíncrona.</returns>
     [Fact]
@@ -402,6 +413,29 @@ public class FichaServiceTestes
     }
 
     /// <summary>
+    /// RF-122 e TR-10: ao reativar, as tomas dos tratamentos em curso voltam a ser geradas só a partir da reativação, sem
+    /// tomas para o período em que a ficha esteve arquivada.
+    /// </summary>
+    /// <returns>Uma tarefa assíncrona.</returns>
+    [Fact]
+    public async Task ReativarRetomaAGeracaoDasTomasAPartirDaReativacao()
+    {
+        var criada = await this.CriarAsync(Dados());
+        await this.servico.ArquivarAsync(this.criador, criada.Ficha.Id, CancellationToken.None);
+        this.repositorios.Tratamentos.Add(new Tratamento(
+            criada.Ficha.Id, "Metformina", "500 mg", GrauImportancia.Moderado, new DateOnly(2026, 10, 1), null, AsOito, this.criador, Agora));
+        var reativacao = Agora.AddDays(3);
+        this.relogio.Agora = reativacao;
+
+        await this.servico.ReativarAsync(this.criador, criada.Ficha.Id, CancellationToken.None);
+
+        // 08:00 de Lisboa de 17 de outubro a 15 de novembro: a janela móvel de 30 dias a contar da reativação.
+        Assert.Equal(30, this.repositorios.Tomas.Count);
+        Assert.All(this.repositorios.Tomas, t => Assert.True(t.PrevistaEmUtc >= reativacao));
+        Assert.Equal(new DateTime(2026, 10, 17, 7, 0, 0, DateTimeKind.Utc), this.repositorios.Tomas.Min(t => t.PrevistaEmUtc));
+    }
+
+    /// <summary>
     /// RF-123 CA1: a ficha sem registos é eliminada, com as notificações e os ficheiros dos documentos.
     /// </summary>
     /// <returns>Uma tarefa assíncrona.</returns>
@@ -422,23 +456,17 @@ public class FichaServiceTestes
     }
 
     /// <summary>
-    /// RF-123 CA2: com medicação, tarefas ou histórico, a eliminação é recusada e nada é removido.
+    /// RF-123 CA2: com medicação ou histórico, a eliminação é recusada e nada é removido.
     /// </summary>
     /// <param name="registo">Tipo de registo da ficha.</param>
     /// <returns>Uma tarefa assíncrona.</returns>
     [Theory]
     [InlineData("medicacao")]
-    [InlineData("tarefas")]
     [InlineData("historico")]
     public async Task EliminarFichaComRegistosERecusado(string registo)
     {
         var criada = await this.CriarAsync(Dados(), documentos: new[] { FicheirosTeste.Documento(FicheirosTeste.Pdf) });
-        var conjunto = registo switch
-        {
-            "medicacao" => this.repositorios.FichasComMedicacao,
-            "tarefas" => this.repositorios.FichasComTarefas,
-            _ => this.repositorios.FichasComHistorico,
-        };
+        var conjunto = registo == "medicacao" ? this.repositorios.FichasComMedicacao : this.repositorios.FichasComHistorico;
         conjunto.Add(criada.Ficha.Id);
 
         var erro = await Assert.ThrowsAsync<DominioException>(() => this.servico.EliminarAsync(this.criador, criada.Ficha.Id, CancellationToken.None));
@@ -505,6 +533,7 @@ public class FichaServiceTestes
     {
         var autorizacao = new AutorizacaoFichaService(this.repositorios);
         var documentos = new DocumentoService(this.repositorios, this.armazenamento, autorizacao, unidade, this.relogio);
+        var tomas = new TomaService(this.repositorios, this.repositorios, this.repositorios, this.repositorios, autorizacao, unidade, this.relogio);
         return new FichaService(
             this.repositorios,
             this.repositorios,
@@ -512,6 +541,7 @@ public class FichaServiceTestes
             this.repositorios,
             this.repositorios,
             documentos,
+            tomas,
             autorizacao,
             unidade,
             this.relogio);

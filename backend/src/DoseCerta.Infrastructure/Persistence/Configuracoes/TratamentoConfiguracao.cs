@@ -44,6 +44,13 @@ internal sealed class TratamentoConfiguracao : IEntityTypeConfiguration<Tratamen
             .HasForeignKey(e => e.CriadoPorId)
             .HasConstraintName("FK_Tratamento_CriadoPorId")
             .OnDelete(DeleteBehavior.NoAction);
+        builder.HasMany(e => e.Horarios)
+            .WithOne()
+            .HasForeignKey(h => h.TratamentoId)
+            .HasConstraintName("FK_HorarioToma_TratamentoId")
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.Navigation(e => e.Horarios).UsePropertyAccessMode(PropertyAccessMode.Field);
+
         builder.HasIndex(e => new { e.FichaId, e.Estado }, "IX_Tratamento_FichaEstado");
     }
 }
