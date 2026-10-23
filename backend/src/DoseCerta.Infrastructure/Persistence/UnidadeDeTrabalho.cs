@@ -9,7 +9,7 @@ namespace DoseCerta.Infrastructure.Persistence;
 /// <summary>
 /// Implementação de <see cref="IUnidadeDeTrabalho"/> sobre a transação do <see cref="DoseCertaDbContext"/>.
 /// Uma falha (incluindo de concorrência ou de unicidade) desfaz a transação inteira, executa as compensações registadas
-/// e volta a lançar o erro original.
+/// e volta a lançar o erro original; um conflito de versão é lançado como <see cref="ConflitoDeVersaoException"/>.
 /// </summary>
 public sealed partial class UnidadeDeTrabalho : IUnidadeDeTrabalho
 {
@@ -43,11 +43,17 @@ public sealed partial class UnidadeDeTrabalho : IUnidadeDeTrabalho
             this.compensacoes.Clear();
             return resultado;
         }
-        catch
+        catch (Exception erro)
         {
             await transacao.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
             this.contexto.ChangeTracker.Clear();
             this.ExecutarCompensacoes();
+            if (erro is DbUpdateConcurrencyException)
+            {
+                // A camada de aplicação não conhece o EF Core: recebe o conflito como ConflitoDeVersaoException (RNF-044).
+                throw new ConflitoDeVersaoException("O registo foi alterado por outra operação entre a leitura e a gravação.", erro);
+            }
+
             throw;
         }
     }

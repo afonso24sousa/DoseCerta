@@ -88,6 +88,21 @@ public static class CodigosErro
     public const string TratamentoJaTerminado = "TRATAMENTO_JA_TERMINADO";
 
     /// <summary>
+    /// A toma ainda não pode ser confirmada: a janela abre às 00:00 de Lisboa do dia previsto (409, OP-33, TR-13).
+    /// </summary>
+    public const string TomaForaDaJanela = "TOMA_FORA_DA_JANELA";
+
+    /// <summary>
+    /// A toma já foi confirmada; a resposta inclui quem confirmou e quando (409, OP-33, TR-15).
+    /// </summary>
+    public const string TomaJaConfirmada = "TOMA_JA_CONFIRMADA";
+
+    /// <summary>
+    /// A toma já não pode ser confirmada: passaram 24 horas da hora prevista (409, OP-33, TR-14).
+    /// </summary>
+    public const string TomaNaoConfirmavel = "TOMA_NAO_CONFIRMAVEL";
+
+    /// <summary>
     /// Ficheiro com mais de 10 MB (413, RNF-008).
     /// </summary>
     public const string FicheiroDemasiadoGrande = "FICHEIRO_DEMASIADO_GRANDE";
