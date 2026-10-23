@@ -21,6 +21,11 @@ public sealed class FichaService
     /// </summary>
     public const int ComprimentoMaximoNome = 150;
 
+    /// <summary>
+    /// Mensagem do erro <c>FICHA_PROPRIA_JA_EXISTE</c>, igual na verificação prévia e na violação do índice único (RF-031).
+    /// </summary>
+    public const string MensagemFichaPropriaJaExiste = "Já tem uma ficha própria; pode criar fichas de terceiros.";
+
     private const string RegraListaFechada = "Tem de conter apenas valores das listas de GET /api/v1/dominios/necessidades.";
 
     private readonly IFichaRepositorio fichas;
@@ -116,9 +121,7 @@ public sealed class FichaService
             {
                 if (propria && await this.fichas.ExistePropriaDeAsync(criadorId, cancelamento).ConfigureAwait(false))
                 {
-                    throw new DominioException(
-                        CodigosErro.FichaPropriaJaExiste,
-                        "Já tem uma ficha própria; pode criar fichas de terceiros.");
+                    throw new DominioException(CodigosErro.FichaPropriaJaExiste, MensagemFichaPropriaJaExiste);
                 }
 
                 var agora = this.relogio.AgoraUtc();

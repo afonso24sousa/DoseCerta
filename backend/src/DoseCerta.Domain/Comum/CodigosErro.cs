@@ -86,6 +86,9 @@ public static class CodigosErro
     /// O tratamento já está terminado (409, OP-31).
     /// </summary>
     public const string TratamentoJaTerminado = "TRATAMENTO_JA_TERMINADO";
+    /// O titular da ficha própria é sempre o Cuidador principal: não é despromovido, removido nem substituído (403, RF-033, RF-034).
+    /// </summary>
+    public const string CuidadorPrincipalProtegido = "CUIDADOR_PRINCIPAL_PROTEGIDO";
 
     /// <summary>
     /// Ficheiro com mais de 10 MB (413, RNF-008).
