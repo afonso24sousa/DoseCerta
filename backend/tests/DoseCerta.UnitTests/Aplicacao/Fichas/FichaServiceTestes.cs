@@ -47,7 +47,7 @@ public class FichaServiceTestes
         this.servico = new FichaService(
             this.repositorios,
             this.repositorios,
-            this.repositorios,
+            ServicosDeTeste.ConviteService(this.repositorios, this.unidadeDeTrabalho, this.relogio),
             this.repositorios,
             this.repositorios,
             documentos,
@@ -537,7 +537,7 @@ public class FichaServiceTestes
         return new FichaService(
             this.repositorios,
             this.repositorios,
-            this.repositorios,
+            ServicosDeTeste.ConviteService(this.repositorios, unidade, this.relogio),
             this.repositorios,
             this.repositorios,
             documentos,

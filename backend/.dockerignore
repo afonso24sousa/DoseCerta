@@ -1,0 +1,6 @@
+**/bin/
+**/obj/
+artefactos/
+**/appsettings.Development.json
+.env
+.env.*

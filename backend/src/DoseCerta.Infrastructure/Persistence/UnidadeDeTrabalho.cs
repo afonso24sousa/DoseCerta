@@ -9,7 +9,9 @@ namespace DoseCerta.Infrastructure.Persistence;
 /// <summary>
 /// Implementação de <see cref="IUnidadeDeTrabalho"/> sobre a transação do <see cref="DoseCertaDbContext"/>.
 /// Uma falha (incluindo de concorrência ou de unicidade) desfaz a transação inteira, executa as compensações registadas
-/// e volta a lançar o erro original; um conflito de versão é lançado como <see cref="ConflitoDeVersaoException"/>.
+/// e volta a lançar o erro original, exceto a violação de um índice único que garante uma regra de negócio, que é lançada
+/// como o erro dessa regra (<see cref="ConversorViolacaoUnicidade"/>); um conflito de versão é lançado como
+/// <see cref="ConflitoDeVersaoException"/>.
 /// </summary>
 public sealed partial class UnidadeDeTrabalho : IUnidadeDeTrabalho
 {
@@ -48,10 +50,17 @@ public sealed partial class UnidadeDeTrabalho : IUnidadeDeTrabalho
             await transacao.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
             this.contexto.ChangeTracker.Clear();
             this.ExecutarCompensacoes();
+
             if (erro is DbUpdateConcurrencyException)
             {
                 // A camada de aplicação não conhece o EF Core: recebe o conflito como ConflitoDeVersaoException (RNF-044).
                 throw new ConflitoDeVersaoException("O registo foi alterado por outra operação entre a leitura e a gravação.", erro);
+            }
+
+            // A violação de um índice que garante uma regra de negócio (por exemplo, pedidos simultâneos) dá o erro dessa regra.
+            if (erro is DbUpdateException gravacao && ConversorViolacaoUnicidade.Converter(gravacao) is { } regraDeNegocio)
+            {
+                throw regraDeNegocio;
             }
 
             throw;
