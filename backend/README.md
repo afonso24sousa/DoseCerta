@@ -210,12 +210,13 @@ termina sem sucesso se existirem diferenças de formatação. A pasta `artefacto
 ## 8. Migrações do EF Core
 
 As migrações ficam em `src/DoseCerta.Infrastructure/Persistence/Migrations` (código gerado, excluído da análise estática e
-da cobertura). A migração inicial (`Inicial`) cria as 23 tabelas, as chaves, as restrições `CHECK`, os índices, os valores
-predefinidos das listas fechadas e, no fim do `Up`, os 4 gatilhos (`migrationBuilder.CriarGatilhosDoseCerta()`; o `Down`
-começa por `migrationBuilder.RemoverGatilhosDoseCerta()`), porque o EF Core não gera gatilhos. A migração
-`RetirarTarefasRecorrentes` (Issue I037) remove a F007, retirada do âmbito: o gatilho `TR_ExecucaoTarefa_Historico`, as quatro
-tabelas das tarefas e os valores da F007 nas restrições das notificações; depois dela ficam as 19 tabelas e os 3 gatilhos do
-modelo de dados v02 (secção 15).
+da cobertura). Aplicadas todas, o esquema tem as **19 tabelas e os 3 gatilhos** do modelo de dados v02 (`TR_Toma_Historico`,
+`TR_Ocorrencia_Imutavel` e `TR_Nota_Imutavel`), sem nada da F007. Esse esquema resulta de duas migrações, que não se editam:
+
+| Migração | O que faz | Tabelas e gatilhos depois dela |
+|---|---|---|
+| `Inicial` | Cria as tabelas, as chaves, as restrições `CHECK`, os índices, os valores predefinidos das listas fechadas e, no fim do `Up`, os gatilhos (`migrationBuilder.CriarGatilhosDoseCerta()`; o `Down` começa por `migrationBuilder.RemoverGatilhosDoseCerta()`), porque o EF Core não gera gatilhos. Inclui ainda as 4 tabelas e o gatilho da F007, que existiam quando foi criada | 23 tabelas e 4 gatilhos (estado intermédio) |
+| `RetirarTarefasRecorrentes` (Issues I037 e I043) | Retira a F007 do âmbito: remove o gatilho `TR_ExecucaoTarefa_Historico`, as tabelas `ExecucaoTarefa`, `TarefaDiaSemana`, `HorarioTarefa` e `TarefaRecorrente` e os valores da F007 em `CK_Notificacao_Tipo` e `CK_Notificacao_Referencia` (modelo de dados v02, secção 15) | 19 tabelas e 3 gatilhos (esquema final) |
 
 Aplicar as migrações sem arrancar a API (com a variável `ConnectionStrings__DoseCerta` definida):
 
