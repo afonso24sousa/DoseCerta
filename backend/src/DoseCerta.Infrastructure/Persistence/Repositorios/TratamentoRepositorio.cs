@@ -52,6 +52,15 @@ public sealed class TratamentoRepositorio : ITratamentoRepositorio
     }
 
     /// <inheritdoc/>
+    public async Task<IReadOnlyList<Tratamento>> ComDataFimUltrapassadaAsync(DateOnly hojeLocal, CancellationToken cancelamento)
+    {
+        return await this.contexto.Tratamentos
+            .Where(t => t.Estado == EstadoTratamento.EmCurso && t.DataFim != null && t.DataFim < hojeLocal)
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc/>
     public void Adicionar(Tratamento tratamento)
     {
         this.contexto.Tratamentos.Add(tratamento);

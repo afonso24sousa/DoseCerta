@@ -38,6 +38,13 @@ public partial class RepositoriosEmMemoria : ITratamentoRepositorio, ITomaReposi
     }
 
     /// <inheritdoc/>
+    public Task<IReadOnlyList<Tratamento>> ComDataFimUltrapassadaAsync(DateOnly hojeLocal, CancellationToken cancelamento)
+    {
+        IReadOnlyList<Tratamento> lista = this.Tratamentos.Where(t => t.DataFimUltrapassada(hojeLocal)).ToList();
+        return Task.FromResult(lista);
+    }
+
+    /// <inheritdoc/>
     public void Adicionar(Tratamento tratamento)
     {
         this.Tratamentos.Add(tratamento);
