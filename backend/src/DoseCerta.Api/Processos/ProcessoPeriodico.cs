@@ -2,15 +2,17 @@
 
 using DoseCerta.Application.Abstracoes;
 using DoseCerta.Application.Emails;
+using DoseCerta.Application.Tomas;
 using Microsoft.Extensions.Options;
 
 namespace DoseCerta.Api.Processos;
 
 /// <summary>
 /// Processo periódico do backend, dentro do processo da API: um ciclo no arranque e depois de 30 em 30 segundos
-/// (Modelo de Classes do Backend, secção 8). Nesta tarefa (F004) só tem o passo 7, o envio e os reenvios dos e-mails de convite;
-/// os passos das tomas, das tarefas, dos compromissos, dos tratamentos e das sessões são acrescentados pelas tarefas dessas
-/// funcionalidades. O processo não tem regras de negócio: delega nos serviços de aplicação.
+/// (Modelo de Classes do Backend, secção 8.1). Tem os passos 1 (prolongamento da janela móvel das tomas), 5 (passagem das
+/// tomas a não confirmadas) e 6 (envio e reenvios dos e-mails); os restantes passos são acrescentados pelas tarefas dessas
+/// funcionalidades. Cada passo corre no seu âmbito e na sua transação. O processo não tem regras de negócio: delega nos
+/// serviços de aplicação.
 /// </summary>
 public sealed partial class ProcessoPeriodico : BackgroundService
 {
@@ -46,16 +48,17 @@ public sealed partial class ProcessoPeriodico : BackgroundService
     /// <returns>Uma tarefa assíncrona.</returns>
     public async Task ExecutarCicloAsync(CancellationToken cancelamento)
     {
-        try
-        {
-            await using var ambito = this.ambitos.CreateAsyncScope();
-            var envioEmail = ambito.ServiceProvider.GetRequiredService<EnvioEmailService>();
-            await envioEmail.ProcessarPendentesAsync(this.relogio.AgoraUtc(), cancelamento).ConfigureAwait(false);
-        }
-        catch (Exception erro) when (erro is not OperationCanceledException)
-        {
-            this.RegistarFalhaDoPasso("EnvioEmailService.ProcessarPendentes", erro);
-        }
+        await this.ExecutarPassoAsync(
+            "TomaService.PrologarJanelaMovel",
+            (servicos, agoraUtc) => servicos.GetRequiredService<TomaService>().PrologarJanelaMovelAsync(agoraUtc, cancelamento)).ConfigureAwait(false);
+
+        // Passos 2 a 4: notificações de atraso das tomas (TR-05 e TR-07, I047) e término dos tratamentos concluídos (I054).
+        await this.ExecutarPassoAsync(
+            "TomaService.ConcluirNaoConfirmadas",
+            (servicos, agoraUtc) => servicos.GetRequiredService<TomaService>().ConcluirNaoConfirmadasAsync(agoraUtc, cancelamento)).ConfigureAwait(false);
+        await this.ExecutarPassoAsync(
+            "EnvioEmailService.ProcessarPendentes",
+            (servicos, agoraUtc) => servicos.GetRequiredService<EnvioEmailService>().ProcessarPendentesAsync(agoraUtc, cancelamento)).ConfigureAwait(false);
     }
 
     /// <inheritdoc/>
@@ -73,6 +76,19 @@ public sealed partial class ProcessoPeriodico : BackgroundService
             await this.ExecutarCicloAsync(stoppingToken).ConfigureAwait(false);
         }
         while (await temporizador.WaitForNextTickAsync(stoppingToken).ConfigureAwait(false));
+    }
+
+    private async Task ExecutarPassoAsync(string passo, Func<IServiceProvider, DateTime, Task> executar)
+    {
+        try
+        {
+            await using var ambito = this.ambitos.CreateAsyncScope();
+            await executar(ambito.ServiceProvider, this.relogio.AgoraUtc()).ConfigureAwait(false);
+        }
+        catch (Exception erro) when (erro is not OperationCanceledException)
+        {
+            this.RegistarFalhaDoPasso(passo, erro);
+        }
     }
 
     [LoggerMessage(EventId = 3001, Level = LogLevel.Information, Message = "Processo periódico desligado pela configuração.")]
