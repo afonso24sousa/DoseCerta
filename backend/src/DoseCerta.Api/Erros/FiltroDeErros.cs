@@ -45,6 +45,7 @@ public sealed partial class FiltroDeErros : IExceptionHandler
         [CodigosErro.DocumentoNaoGuardado] = StatusCodes.Status503ServiceUnavailable,
         [CodigosErro.DocumentoIndisponivel] = StatusCodes.Status503ServiceUnavailable,
         [CodigosErro.ErroInterno] = StatusCodes.Status500InternalServerError,
+        [CodigosErro.RegistoImutavel] = StatusCodes.Status405MethodNotAllowed,
     }.ToFrozenDictionary(StringComparer.Ordinal);
 
     private readonly ILogger<FiltroDeErros> registo;

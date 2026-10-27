@@ -11,6 +11,7 @@ e gestão de fichas de utentes (Issue I033, F002 e ficha própria da F003: OP-07
 registo de medicação (Issue I037, F005: OP-27 a OP-31), descrito na secção 5.2. A F007 (tarefas de cuidados recorrentes)
 foi retirada do âmbito por alteração autorizada (documentação v02); a migração `RetirarTarefasRecorrentes` remove-a do
 esquema (secção 8).
+As ocorrências diárias e as notas partilhadas (Issue I045, F009: OP-46 a OP-49) estão descritas na secção 5.3.
 
 ## 1. Estrutura da solução
 
@@ -172,6 +173,28 @@ ficou ativa (DM-19). Alterar o tratamento apaga as tomas pendentes futuras e ger
 apaga-as; as anteriores mantêm a hora e o estado (RF-055, RF-056, RF-060). Numa ficha arquivada só é possível terminar o
 tratamento (RF-120). O prolongamento da janela de 30 dias e o término automático depois da data de fim pertencem ao processo
 periódico, que ainda não existe (F006 e F011).
+
+### 5.3 Ocorrências e notas partilhadas (F009)
+
+Os endpoints seguem a documentação da API (secção 5.8) e a matriz de permissões: só um Cuidador (principal ou não) regista
+ocorrências e notas; as ocorrências são consultadas por Cuidadores e Familiares e as notas só por Cuidadores (o Familiar recebe
+403, RF-095). Quem não está associado à ficha recebe 404 `FICHA_NAO_ENCONTRADA`.
+
+| Operação | Método e caminho |
+|---|---|
+| OP-46 Registar ocorrência | `POST /api/v1/fichas/{fichaId}/ocorrencias` |
+| OP-47 Registar nota partilhada | `POST /api/v1/fichas/{fichaId}/notas` |
+| OP-48 Consultar ocorrências | `GET /api/v1/fichas/{fichaId}/registos?tipo=Ocorrencia&de=AAAA-MM-DD&ate=AAAA-MM-DD` |
+| OP-49 Consultar notas partilhadas | `GET /api/v1/fichas/{fichaId}/registos?tipo=Nota&de=AAAA-MM-DD&ate=AAAA-MM-DD` |
+
+O servidor guarda o autor e o instante do registo (`criadaEm`); na ocorrência, `ocorridaEm` é indicado pelo Cuidador, com o
+desvio de Lisboa (RF-092). As consultas devolvem os registos do mais recente para o mais antigo pelo instante do registo; `tipo`
+é obrigatório e `de` e `ate` são opcionais, em dias de Lisboa, com `ate` inclusivo. Numa ficha arquivada não se registam
+ocorrências nem notas (409 `FICHA_ARQUIVADA`), mas as consultas continuam disponíveis (RF-120). Os registos são imutáveis:
+`PUT`, `PATCH` e `DELETE` em `/api/v1/fichas/{fichaId}/registos/{registoId}` respondem 405 `REGISTO_IMUTAVEL`, e os gatilhos
+`TR_Ocorrencia_Imutavel` e `TR_Nota_Imutavel` recusam qualquer alteração na base de dados (R-07, RNF-049). Ao registar uma
+ocorrência, na mesma transação, o servidor cria uma notificação `NovaOcorrencia` na aplicação para cada Cuidador e Familiar da
+ficha, exceto o autor (RF-115); a nota não gera notificações. O e-mail destas notificações pertence à F011.
 
 ## 6. Enviar uma mensagem de teste pelo serviço de e-mail
 
