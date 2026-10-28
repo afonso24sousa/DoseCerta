@@ -201,6 +201,30 @@ public sealed class TratamentoService
     }
 
     /// <summary>
+    /// Passo 4 do processo periódico: termina os tratamentos em curso cuja data de fim já passou, em hora de Lisboa
+    /// (RF-050, RF-056). Não há tomas depois da data de fim, por isso nenhuma é removida.
+    /// </summary>
+    /// <param name="agoraUtc">Instante do ciclo, em UTC.</param>
+    /// <param name="cancelamento">Token de cancelamento.</param>
+    /// <returns>O número de tratamentos terminados.</returns>
+    public async Task<int> TerminarConcluidosAsync(DateTime agoraUtc, CancellationToken cancelamento)
+    {
+        var hojeLocal = this.relogio.Calendario().DiaLocal(agoraUtc);
+        return await this.unidadeDeTrabalho.ExecutarEmTransacaoAsync(
+            async () =>
+            {
+                var concluidos = await this.tratamentos.ComDataFimUltrapassadaAsync(hojeLocal, cancelamento).ConfigureAwait(false);
+                foreach (var tratamento in concluidos)
+                {
+                    tratamento.Terminar(agoraUtc);
+                }
+
+                return concluidos.Count;
+            },
+            cancelamento).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// OP-31: termina um tratamento em curso, também numa ficha arquivada; as tomas previstas posteriores deixam de existir e
     /// as anteriores mantêm a hora e o estado (RF-056, RF-057, RF-060).
     /// </summary>

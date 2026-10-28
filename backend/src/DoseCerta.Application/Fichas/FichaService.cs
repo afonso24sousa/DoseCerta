@@ -5,6 +5,7 @@ using DoseCerta.Application.Comum;
 using DoseCerta.Application.Convites;
 using DoseCerta.Application.Documentos;
 using DoseCerta.Application.Repositorios;
+using DoseCerta.Application.Tomas;
 using DoseCerta.Domain.Comum;
 using DoseCerta.Domain.Entidades;
 using DoseCerta.Domain.Enumerados;
@@ -35,6 +36,7 @@ public sealed class FichaService
     private readonly IDocumentoRepositorio documentos;
     private readonly INotificacaoRepositorio notificacoes;
     private readonly DocumentoService documentoService;
+    private readonly TomaService tomaService;
     private readonly AutorizacaoFichaService autorizacao;
     private readonly IUnidadeDeTrabalho unidadeDeTrabalho;
     private readonly IRelogio relogio;
@@ -48,6 +50,7 @@ public sealed class FichaService
     /// <param name="documentos">Repositório dos documentos.</param>
     /// <param name="notificacoes">Repositório das notificações.</param>
     /// <param name="documentoService">Serviço dos documentos.</param>
+    /// <param name="tomaService">Serviço das tomas, para retomar a geração na reativação.</param>
     /// <param name="autorizacao">Verificação do papel na ficha.</param>
     /// <param name="unidadeDeTrabalho">Transação de cada operação de escrita.</param>
     /// <param name="relogio">Relógio do sistema.</param>
@@ -58,6 +61,7 @@ public sealed class FichaService
         IDocumentoRepositorio documentos,
         INotificacaoRepositorio notificacoes,
         DocumentoService documentoService,
+        TomaService tomaService,
         AutorizacaoFichaService autorizacao,
         IUnidadeDeTrabalho unidadeDeTrabalho,
         IRelogio relogio)
@@ -68,6 +72,7 @@ public sealed class FichaService
         this.documentos = documentos;
         this.notificacoes = notificacoes;
         this.documentoService = documentoService;
+        this.tomaService = tomaService;
         this.autorizacao = autorizacao;
         this.unidadeDeTrabalho = unidadeDeTrabalho;
         this.relogio = relogio;
@@ -246,7 +251,8 @@ public sealed class FichaService
     }
 
     /// <summary>
-    /// OP-13: reativa uma ficha arquivada; a geração de eventos retoma a partir deste instante (RF-121, RF-122).
+    /// OP-13: reativa uma ficha arquivada; a geração das tomas dos tratamentos em curso retoma a partir deste instante, na
+    /// mesma transação, sem tomas para o período arquivado (RF-121, RF-122, TR-10).
     /// </summary>
     /// <param name="utilizadorId">Utilizador autenticado.</param>
     /// <param name="fichaId">Ficha a reativar.</param>
@@ -258,7 +264,9 @@ public sealed class FichaService
             async () =>
             {
                 var acesso = await this.autorizacao.ExigirCuidadorAsync(utilizadorId, fichaId, cancelamento).ConfigureAwait(false);
-                acesso.Ficha.Reativar(this.relogio.AgoraUtc());
+                var agora = this.relogio.AgoraUtc();
+                acesso.Ficha.Reativar(agora);
+                await this.tomaService.RetomarGeracaoDaFichaAsync(fichaId, agora, cancelamento).ConfigureAwait(false);
                 return true;
             },
             cancelamento).ConfigureAwait(false);

@@ -45,7 +45,7 @@ public class TratamentoServiceTestes
         var unidadeDeTrabalho = new UnidadeDeTrabalhoComReversao(this.repositorios);
         var autorizacao = new AutorizacaoFichaService(this.repositorios);
         var documentos = new DocumentoService(this.repositorios, this.armazenamento, autorizacao, unidadeDeTrabalho, this.relogio);
-        var tomas = new TomaService(this.repositorios, this.repositorios, this.relogio);
+        var tomas = new TomaService(this.repositorios, this.repositorios, this.repositorios, this.repositorios, autorizacao, unidadeDeTrabalho, this.relogio);
         this.servico = new TratamentoService(this.repositorios, documentos, tomas, autorizacao, unidadeDeTrabalho, this.relogio);
 
         // Ficha ativa desde 2026-10-02 09:00 UTC.
@@ -265,6 +265,31 @@ public class TratamentoServiceTestes
         Assert.Equal(3, this.repositorios.Tomas.Count);
         Assert.All(this.repositorios.Tomas, t => Assert.True(t.PrevistaEmUtc < this.relogio.Agora));
         Assert.Equal(CodigosErro.TratamentoJaTerminado, outraVez.Codigo);
+    }
+
+    /// <summary>
+    /// RF-056 (passo 4 do processo periódico): o tratamento com data de fim a 2026-11-04 continua em curso nesse dia e é
+    /// terminado no dia seguinte, em hora de Lisboa; o tratamento sem data de fim nunca é terminado e um segundo ciclo não faz nada.
+    /// </summary>
+    /// <returns>Uma tarefa assíncrona.</returns>
+    [Fact]
+    public async Task TerminarConcluidosTerminaSoDepoisDaDataDeFim()
+    {
+        var comFim = (await this.RegistarAsync(Dados())).Tratamento;
+        var continuo = (await this.RegistarAsync(Dados(medicamento: "Paracetamol", inicio: new DateOnly(2026, 11, 2)))).Tratamento;
+        var ultimoInstanteDoDia = new DateTime(2026, 11, 4, 23, 59, 59, DateTimeKind.Utc);
+        var diaSeguinte = new DateTime(2026, 11, 5, 0, 0, 30, DateTimeKind.Utc);
+
+        var noDiaDoFim = await this.servico.TerminarConcluidosAsync(ultimoInstanteDoDia, CancellationToken.None);
+        var depois = await this.servico.TerminarConcluidosAsync(diaSeguinte, CancellationToken.None);
+        var outraVez = await this.servico.TerminarConcluidosAsync(diaSeguinte.AddSeconds(30), CancellationToken.None);
+
+        Assert.Equal(0, noDiaDoFim);
+        Assert.Equal(1, depois);
+        Assert.Equal(0, outraVez);
+        Assert.Equal(EstadoTratamento.Terminado, comFim.Estado);
+        Assert.Equal(diaSeguinte, comFim.TerminadoEmUtc);
+        Assert.Equal(EstadoTratamento.EmCurso, continuo.Estado);
     }
 
     /// <summary>

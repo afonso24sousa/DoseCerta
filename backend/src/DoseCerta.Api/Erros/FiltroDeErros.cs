@@ -1,7 +1,9 @@
 // Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
 
 using System.Collections.Frozen;
+using DoseCerta.Api.Contratos.Tomas;
 using DoseCerta.Domain.Comum;
+using DoseCerta.Domain.Tempo;
 using Microsoft.AspNetCore.Diagnostics;
 
 namespace DoseCerta.Api.Erros;
@@ -31,6 +33,9 @@ public sealed partial class FiltroDeErros : IExceptionHandler
         [CodigosErro.FichaPropriaJaExiste] = StatusCodes.Status409Conflict,
         [CodigosErro.TratamentoTerminado] = StatusCodes.Status409Conflict,
         [CodigosErro.TratamentoJaTerminado] = StatusCodes.Status409Conflict,
+        [CodigosErro.TomaForaDaJanela] = StatusCodes.Status409Conflict,
+        [CodigosErro.TomaJaConfirmada] = StatusCodes.Status409Conflict,
+        [CodigosErro.TomaNaoConfirmavel] = StatusCodes.Status409Conflict,
         [CodigosErro.CuidadorPrincipalProtegido] = StatusCodes.Status403Forbidden,
         [CodigosErro.ConvitePendenteExiste] = StatusCodes.Status409Conflict,
         [CodigosErro.PessoaJaAssociada] = StatusCodes.Status409Conflict,
@@ -47,6 +52,8 @@ public sealed partial class FiltroDeErros : IExceptionHandler
         [CodigosErro.ErroInterno] = StatusCodes.Status500InternalServerError,
         [CodigosErro.RegistoImutavel] = StatusCodes.Status405MethodNotAllowed,
     }.ToFrozenDictionary(StringComparer.Ordinal);
+
+    private static readonly CalendarioLisboa Calendario = new();
 
     private readonly ILogger<FiltroDeErros> registo;
 
@@ -84,7 +91,9 @@ public sealed partial class FiltroDeErros : IExceptionHandler
                     validacao.Codigo,
                     validacao.Message,
                     validacao.Campos.Select(c => new ErroCampoApi(c.Campo, c.Regra)).ToList())),
-            DominioException dominio => (EstadoHttp(dominio.Codigo), new ProblemaApi(dominio.Codigo, dominio.Message)),
+            DominioException dominio => (
+                EstadoHttp(dominio.Codigo),
+                new ProblemaApi(dominio.Codigo, dominio.Message, Confirmacao: Confirmacao(dominio.Confirmacao))),
             BadHttpRequestException => (
                 StatusCodes.Status400BadRequest,
                 new ProblemaApi(CodigosErro.ValidacaoInvalida, "O pedido é inválido.")),
@@ -109,6 +118,15 @@ public sealed partial class FiltroDeErros : IExceptionHandler
         httpContext.Response.StatusCode = estado;
         await httpContext.Response.WriteAsJsonAsync(corpo, cancellationToken).ConfigureAwait(false);
         return true;
+    }
+
+    private static ConfirmacaoApi? Confirmacao(ConfirmacaoRegistada? confirmacao)
+    {
+        return confirmacao is null
+            ? null
+            : new ConfirmacaoApi(
+                new PessoaConfirmou(confirmacao.ConfirmadaPorId, confirmacao.ConfirmadaPorNome),
+                Calendario.ParaLocal(confirmacao.ConfirmadaEmUtc));
     }
 
     [LoggerMessage(EventId = 5001, Level = LogLevel.Error, Message = "Erro inesperado ao tratar {Metodo} {Caminho}.")]
