@@ -88,6 +88,21 @@ public static class CodigosErro
     public const string TratamentoJaTerminado = "TRATAMENTO_JA_TERMINADO";
 
     /// <summary>
+    /// A toma ainda não pode ser confirmada: a janela abre às 00:00 de Lisboa do dia previsto (409, OP-33, TR-13).
+    /// </summary>
+    public const string TomaForaDaJanela = "TOMA_FORA_DA_JANELA";
+
+    /// <summary>
+    /// A toma já foi confirmada; a resposta inclui quem confirmou e quando (409, OP-33, TR-15).
+    /// </summary>
+    public const string TomaJaConfirmada = "TOMA_JA_CONFIRMADA";
+
+    /// <summary>
+    /// A toma já não pode ser confirmada: passaram 24 horas da hora prevista (409, OP-33, TR-14).
+    /// </summary>
+    public const string TomaNaoConfirmavel = "TOMA_NAO_CONFIRMAVEL";
+
+    /// <summary>
     /// O titular da ficha própria é sempre o Cuidador principal: não é despromovido, removido nem substituído (403, RF-033, RF-034).
     /// </summary>
     public const string CuidadorPrincipalProtegido = "CUIDADOR_PRINCIPAL_PROTEGIDO";

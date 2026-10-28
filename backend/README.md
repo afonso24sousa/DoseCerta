@@ -8,7 +8,8 @@ Esta versão corresponde à configuração da solução (Issue I029): camadas, a
 verificação do estado da aplicação, serviço de e-mail e testes; e ao modelo de dados (Issue I030): entidades, mapeamento
 EF Core, migração inicial e scripts SQL; à autenticação e gestão de conta (Issue I032, F001: OP-01 a OP-06); à criação
 e gestão de fichas de utentes (Issue I033, F002 e ficha própria da F003: OP-07 a OP-17), descritas na secção 5.1; e ao
-registo de medicação (Issue I037, F005: OP-27 a OP-31), descrito na secção 5.2. A F007 (tarefas de cuidados recorrentes)
+registo de medicação (Issue I037, F005: OP-27 a OP-31), descrito na secção 5.2; e aos horários e à confirmação de toma
+(Issue I038, F006: OP-32 a OP-34), descritos na secção 5.3. A F007 (tarefas de cuidados recorrentes)
 foi retirada do âmbito por alteração autorizada (documentação v02); a migração `RetirarTarefasRecorrentes` remove-a do
 esquema (secção 8).
 
@@ -170,8 +171,32 @@ Ao registar, o servidor gera uma toma `Pendente` por horário e por dia entre a 
 guardada em UTC); sem data de fim, só até 30 dias depois do registo. Não se geram tomas anteriores ao instante em que a ficha
 ficou ativa (DM-19). Alterar o tratamento apaga as tomas pendentes futuras e gera-as de novo com os dados novos; terminar
 apaga-as; as anteriores mantêm a hora e o estado (RF-055, RF-056, RF-060). Numa ficha arquivada só é possível terminar o
-tratamento (RF-120). O prolongamento da janela de 30 dias e o término automático depois da data de fim pertencem ao processo
-periódico, que ainda não existe (F006 e F011).
+tratamento (RF-120). O prolongamento da janela de 30 dias pertence ao processo periódico (secção 5.3) e o término automático
+depois da data de fim à F011.
+
+### 5.3 Tomas (F006)
+
+Os endpoints seguem a documentação da API (`m3-documentacao-api-v02.md`, OP-32 a OP-34) e o diagrama de estados da toma
+(`m3-diagrama-estados-toma-v02.md`). As datas das respostas vêm em hora de Lisboa, com o desvio (`2026-10-07T08:00:00+01:00`).
+
+| Operação | Método e caminho |
+|---|---|
+| OP-32 Listar tomas da ficha | `GET /api/v1/fichas/{fichaId}/tomas?de=AAAA-MM-DD&ate=AAAA-MM-DD[&estado=...][&tratamentoId=...]` |
+| OP-33 Confirmar toma | `POST /api/v1/tomas/{tomaId}/confirmacao` (sem corpo) |
+| OP-34 Sincronizar o calendário de tomas | `GET /api/v1/calendario/tomas` |
+
+- OP-32: `de` e `ate` são dias de Lisboa, obrigatórios, com no máximo 31 dias contando os dois. Cuidadores e Familiares
+  consultam, também numa ficha arquivada; quem não está associado recebe 404 `FICHA_NAO_ENCONTRADA`.
+- OP-33: só um Cuidador confirma (o Familiar recebe 403), também numa ficha arquivada. A janela abre às 00:00 de Lisboa do dia
+  da toma (antes disso, 409 `TOMA_FORA_DA_JANELA`). Até ao fim da tolerância (Leve 2 h, Moderado 1 h, Grave 30 min, inclusive)
+  fica `Confirmada`; depois, e antes das 24 horas, fica `ConfirmadaComAtraso`; a partir das 24 horas responde 409
+  `TOMA_NAO_CONFIRMAVEL`. A segunda confirmação responde 409 `TOMA_JA_CONFIRMADA` com o campo `confirmacao` (quem e quando).
+  Duas confirmações em simultâneo são resolvidas pela coluna `Versao` (RNF-044): uma responde 200 e a outra 409.
+- OP-34: tomas `Pendente` das próximas 48 horas das fichas ativas em que o Utilizador é Cuidador, para os alarmes locais do
+  telemóvel; lista vazia se não houver.
+- Reativar uma ficha (OP-13) volta a gerar as tomas dos tratamentos em curso a partir desse instante (TR-10).
+- Os passos do processo periódico estão no `TomaService`: `PrologarJanelaMovelAsync` (passo 1, janela móvel de 30 dias) e
+  `ConcluirNaoConfirmadasAsync` (passo 5, passagem a `NaoConfirmada` 24 horas depois da hora prevista, sem notificação).
 
 ## 6. Enviar uma mensagem de teste pelo serviço de e-mail
 

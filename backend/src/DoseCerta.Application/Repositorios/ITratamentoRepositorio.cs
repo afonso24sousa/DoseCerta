@@ -28,6 +28,21 @@ public interface ITratamentoRepositorio
     Task<IReadOnlyList<Tratamento>> DaFichaAsync(Guid fichaId, EstadoTratamento? estado, CancellationToken cancelamento);
 
     /// <summary>
+    /// Lista, para alteração, os tratamentos em curso cuja data de fim é anterior ao dia indicado (RF-056).
+    /// </summary>
+    /// <param name="hojeLocal">Dia atual, em hora de Lisboa.</param>
+    /// <param name="cancelamento">Token de cancelamento.</param>
+    /// <returns>Os tratamentos a terminar.</returns>
+    Task<IReadOnlyList<Tratamento>> ComDataFimUltrapassadaAsync(DateOnly hojeLocal, CancellationToken cancelamento);
+
+    /// <summary>
+    /// Lista os tratamentos em curso das fichas ativas, com os horários, para prolongar a janela móvel das tomas (RF-060).
+    /// </summary>
+    /// <param name="cancelamento">Token de cancelamento.</param>
+    /// <returns>Os tratamentos em curso de fichas ativas.</returns>
+    Task<IReadOnlyList<Tratamento>> EmCursoDeFichasAtivasAsync(CancellationToken cancelamento);
+
+    /// <summary>
     /// Regista um tratamento novo, com os horários.
     /// </summary>
     /// <param name="tratamento">Tratamento a registar.</param>
