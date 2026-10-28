@@ -6,7 +6,7 @@ using DoseCerta.Domain.Entidades;
 namespace DoseCerta.UnitTests.Suporte;
 
 /// <summary>
-/// Repositórios em memória das notificações criadas e dos e-mails a enviar (F004, convites).
+/// Repositórios em memória das notificações criadas e dos e-mails a enviar, de convites (F004) e de notificações (F011).
 /// </summary>
 public partial class RepositoriosEmMemoria : IEnvioEmailRepositorio
 {
@@ -36,7 +36,7 @@ public partial class RepositoriosEmMemoria : IEnvioEmailRepositorio
     public Task<IReadOnlyList<EnvioEmail>> PendentesDevidosAsync(DateTime agoraUtc, CancellationToken cancelamento)
     {
         IReadOnlyList<EnvioEmail> devidos = this.EnviosEmail
-            .Where(e => e.ConviteId is not null && e.Devido(agoraUtc))
+            .Where(e => e.Devido(agoraUtc))
             .OrderBy(e => e.ProximaTentativaEmUtc)
             .ThenBy(e => e.Id)
             .ToList();

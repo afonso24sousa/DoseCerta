@@ -102,4 +102,22 @@ public interface ITomaRepositorio
         DateTime deUtc,
         DateTime ateUtc,
         CancellationToken cancelamento);
+
+    /// <summary>
+    /// Lista as tomas pendentes de fichas ativas cujos Cuidadores ainda não foram avisados e cujo fim de tolerância do grau já
+    /// passou, estritamente, sem ter ocorrido antes do instante desde o qual a ficha está ativa (RF-110 a RF-112, RF-142, TR-05).
+    /// </summary>
+    /// <param name="agoraUtc">Instante atual, em UTC.</param>
+    /// <param name="cancelamento">Token de cancelamento.</param>
+    /// <returns>Os identificadores das tomas, por ordem do instante previsto.</returns>
+    Task<IReadOnlyList<Guid>> PorNotificarCuidadoresAsync(DateTime agoraUtc, CancellationToken cancelamento);
+
+    /// <summary>
+    /// Lista as tomas Grave pendentes de fichas ativas cujos Familiares ainda não foram avisados e com mais de 60 minutos desde
+    /// a hora prevista, sem esse instante ter ocorrido antes do instante desde o qual a ficha está ativa (RF-113, RF-142, TR-07).
+    /// </summary>
+    /// <param name="agoraUtc">Instante atual, em UTC.</param>
+    /// <param name="cancelamento">Token de cancelamento.</param>
+    /// <returns>Os identificadores das tomas, por ordem do instante previsto.</returns>
+    Task<IReadOnlyList<Guid>> PorNotificarFamiliaresAsync(DateTime agoraUtc, CancellationToken cancelamento);
 }

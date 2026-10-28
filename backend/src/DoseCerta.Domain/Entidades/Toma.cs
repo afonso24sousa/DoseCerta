@@ -207,4 +207,68 @@ public class Toma
         this.ConfirmadaPorId = cuidadorId;
         this.ConfirmadaEmUtc = agoraUtc;
     }
+
+    /// <summary>
+    /// Obtém o instante em que os Familiares são avisados de uma toma Grave por confirmar (RF-113).
+    /// </summary>
+    /// <returns>O instante previsto mais 60 minutos.</returns>
+    public DateTime InstanteFamiliaresGrave()
+    {
+        return PoliticaTolerancia.InstanteFamiliaresGrave(this.PrevistaEmUtc);
+    }
+
+    /// <summary>
+    /// Indica se os Cuidadores já deviam ter sido avisados do atraso: a toma continua pendente, ainda não foram avisados e o
+    /// instante atual é estritamente posterior ao fim da tolerância do grau (RF-110 a RF-112, TR-05).
+    /// </summary>
+    /// <param name="agoraUtc">Instante atual, em UTC.</param>
+    /// <returns><see langword="true"/> se a notificação aos Cuidadores for devida.</returns>
+    public bool AtrasoCuidadoresDevido(DateTime agoraUtc)
+    {
+        return this.Estado == EstadoToma.Pendente && this.CuidadoresNotificadosEmUtc is null && agoraUtc > this.FimTolerancia();
+    }
+
+    /// <summary>
+    /// Indica se os Familiares já deviam ter sido avisados: só no grau Grave, com a toma pendente, ainda sem aviso e o instante
+    /// atual estritamente posterior aos 60 minutos depois da hora prevista; nos graus Leve e Moderado nunca (RF-113, TR-07).
+    /// </summary>
+    /// <param name="agoraUtc">Instante atual, em UTC.</param>
+    /// <returns><see langword="true"/> se a notificação aos Familiares for devida.</returns>
+    public bool AtrasoFamiliaresDevido(DateTime agoraUtc)
+    {
+        return this.GrauImportancia == GrauImportancia.Grave
+            && this.Estado == EstadoToma.Pendente
+            && this.FamiliaresNotificadosEmUtc is null
+            && agoraUtc > this.InstanteFamiliaresGrave();
+    }
+
+    /// <summary>
+    /// Regista que os Cuidadores foram avisados do atraso, se o aviso for devido; o estado da toma não muda (RF-066, TR-05). A marca
+    /// garante uma só notificação por toma, mesmo que o processo periódico a analise várias vezes (RNF-043).
+    /// </summary>
+    /// <param name="agoraUtc">Instante do aviso, em UTC.</param>
+    public void MarcarCuidadoresNotificados(DateTime agoraUtc)
+    {
+        if (!this.AtrasoCuidadoresDevido(agoraUtc))
+        {
+            return;
+        }
+
+        this.CuidadoresNotificadosEmUtc = agoraUtc;
+    }
+
+    /// <summary>
+    /// Regista que os Familiares foram avisados da toma Grave por confirmar, se o aviso for devido; o estado da toma não muda
+    /// (RF-113, TR-07). Fica marcada mesmo sem Familiares na ficha, para não voltar a ser analisada (RF-113 CA3).
+    /// </summary>
+    /// <param name="agoraUtc">Instante do aviso, em UTC.</param>
+    public void MarcarFamiliaresNotificados(DateTime agoraUtc)
+    {
+        if (!this.AtrasoFamiliaresDevido(agoraUtc))
+        {
+            return;
+        }
+
+        this.FamiliaresNotificadosEmUtc = agoraUtc;
+    }
 }
