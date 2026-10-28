@@ -28,6 +28,13 @@ public interface ITratamentoRepositorio
     Task<IReadOnlyList<Tratamento>> DaFichaAsync(Guid fichaId, EstadoTratamento? estado, CancellationToken cancelamento);
 
     /// <summary>
+    /// Lista os tratamentos em curso das fichas ativas, com os horários, para prolongar a janela móvel das tomas (RF-060).
+    /// </summary>
+    /// <param name="cancelamento">Token de cancelamento.</param>
+    /// <returns>Os tratamentos em curso de fichas ativas.</returns>
+    Task<IReadOnlyList<Tratamento>> EmCursoDeFichasAtivasAsync(CancellationToken cancelamento);
+
+    /// <summary>
     /// Regista um tratamento novo, com os horários.
     /// </summary>
     /// <param name="tratamento">Tratamento a registar.</param>
