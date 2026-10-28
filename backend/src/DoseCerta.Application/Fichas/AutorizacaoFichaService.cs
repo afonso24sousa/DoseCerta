@@ -2,6 +2,7 @@
 
 using DoseCerta.Application.Repositorios;
 using DoseCerta.Domain.Comum;
+using DoseCerta.Domain.Enumerados;
 
 namespace DoseCerta.Application.Fichas;
 
@@ -89,5 +90,23 @@ public sealed class AutorizacaoFichaService
         var acesso = await this.ExigirCuidadorAsync(utilizadorId, fichaId, cancelamento).ConfigureAwait(false);
         acesso.Ficha.ExigirAtiva();
         return acesso;
+    }
+
+    /// <summary>
+    /// Obtém os identificadores das fichas ativas a que o Utilizador está associado, opcionalmente só as de um papel. A lista
+    /// diária usa só as fichas em que é Cuidador e a agenda usa todas; as fichas arquivadas nunca entram (RF-083, RF-100,
+    /// RNF-005; Matriz de Permissões, RP-17).
+    /// </summary>
+    /// <param name="utilizadorId">Utilizador autenticado.</param>
+    /// <param name="papel">Papel exigido, ou <see langword="null"/> para qualquer papel.</param>
+    /// <param name="cancelamento">Token de cancelamento.</param>
+    /// <returns>Os identificadores das fichas, vazio se não houver nenhuma.</returns>
+    public async Task<IReadOnlyList<Guid>> IdentificadoresDeFichasAtivasAsync(Guid utilizadorId, Papel? papel, CancellationToken cancelamento)
+    {
+        var fichasAtivas = await this.fichas.ListarDoUtilizadorAsync(utilizadorId, EstadoFicha.Ativa, cancelamento).ConfigureAwait(false);
+        return fichasAtivas
+            .Where(f => papel is null || f.ObterAssociacao(utilizadorId)?.Papel == papel)
+            .Select(f => f.Id)
+            .ToList();
     }
 }

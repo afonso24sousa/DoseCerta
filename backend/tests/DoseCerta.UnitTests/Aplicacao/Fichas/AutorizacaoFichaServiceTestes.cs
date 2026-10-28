@@ -110,4 +110,69 @@ public class AutorizacaoFichaServiceTestes
 
         Assert.Equal(CodigosErro.AcessoProibido, erro.Codigo);
     }
+
+    /// <summary>
+    /// RF-100: entram as fichas ativas em que o Utilizador é Cuidador, seja Cuidador principal, Cuidador principal provisório
+    /// ou Cuidador sem ser principal.
+    /// </summary>
+    /// <returns>Uma tarefa assíncrona.</returns>
+    [Fact]
+    public async Task FichasDeCuidadorIncluemPrincipalProvisorioECuidador()
+    {
+        var outro = Guid.NewGuid();
+        var comoCuidador = new Ficha("Segundo Utente Fictício", new DateOnly(1950, 1, 1), "+351 910 000 002", null, outro, Agora);
+        comoCuidador.AssociarCuidadorPrincipal(outro, provisorio: false, Agora);
+        comoCuidador.Associar(this.cuidador, Papel.Cuidador, Agora);
+        var comoProvisorio = new Ficha("Terceiro Utente Fictício", new DateOnly(1960, 1, 1), "+351 910 000 003", null, this.cuidador, Agora);
+        comoProvisorio.AssociarCuidadorPrincipal(this.cuidador, provisorio: true, Agora);
+        this.repositorios.Fichas.Add(comoCuidador);
+        this.repositorios.Fichas.Add(comoProvisorio);
+
+        var ids = await this.servico.IdentificadoresDeFichasAtivasAsync(this.cuidador, Papel.Cuidador, CancellationToken.None);
+
+        Assert.Equal(
+            new[] { this.ficha.Id, comoCuidador.Id, comoProvisorio.Id }.Order(),
+            ids.Order());
+    }
+
+    /// <summary>
+    /// RF-100, CA2 e RP-17: as fichas em que o Utilizador é só Familiar não entram na lista diária, mas entram quando qualquer
+    /// papel serve (agenda).
+    /// </summary>
+    /// <returns>Uma tarefa assíncrona.</returns>
+    [Fact]
+    public async Task FichaDeFamiliarSoEntraSemPapelExigido()
+    {
+        var comoCuidador = await this.servico.IdentificadoresDeFichasAtivasAsync(this.familiar, Papel.Cuidador, CancellationToken.None);
+        var qualquerPapel = await this.servico.IdentificadoresDeFichasAtivasAsync(this.familiar, null, CancellationToken.None);
+
+        Assert.Empty(comoCuidador);
+        Assert.Equal(new[] { this.ficha.Id }, qualquerPapel);
+    }
+
+    /// <summary>
+    /// RF-100, CA3: uma ficha arquivada não entra, mesmo para o seu Cuidador principal.
+    /// </summary>
+    /// <returns>Uma tarefa assíncrona.</returns>
+    [Fact]
+    public async Task FichaArquivadaNaoEntra()
+    {
+        this.ficha.Arquivar(Agora);
+
+        var ids = await this.servico.IdentificadoresDeFichasAtivasAsync(this.cuidador, Papel.Cuidador, CancellationToken.None);
+
+        Assert.Empty(ids);
+    }
+
+    /// <summary>
+    /// RNF-005: um Utilizador sem associações não recebe nenhuma ficha.
+    /// </summary>
+    /// <returns>Uma tarefa assíncrona.</returns>
+    [Fact]
+    public async Task UtilizadorSemFichasNaoRecebeNenhuma()
+    {
+        var ids = await this.servico.IdentificadoresDeFichasAtivasAsync(Guid.NewGuid(), null, CancellationToken.None);
+
+        Assert.Empty(ids);
+    }
 }
