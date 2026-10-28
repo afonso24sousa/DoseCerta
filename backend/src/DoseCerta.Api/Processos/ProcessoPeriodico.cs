@@ -3,6 +3,7 @@
 using DoseCerta.Application.Abstracoes;
 using DoseCerta.Application.Emails;
 using DoseCerta.Application.Repositorios;
+using DoseCerta.Application.Tomas;
 using DoseCerta.Application.Tratamentos;
 using Microsoft.Extensions.Options;
 
@@ -10,9 +11,10 @@ namespace DoseCerta.Api.Processos;
 
 /// <summary>
 /// Processo periódico do backend, dentro do processo da API: um ciclo no arranque e depois de 30 em 30 segundos
-/// (Modelo de Classes do Backend, secção 8.1). Tem os passos 4 (término dos tratamentos concluídos), 6 (envio e reenvios
-/// dos e-mails) e 7 (eliminação das credenciais expiradas); os passos das tomas e dos compromissos são acrescentados pelas
-/// tarefas dessas funcionalidades. O processo não tem regras de negócio: delega nos serviços de aplicação.
+/// (Modelo de Classes do Backend, secção 8.1). Tem os passos 1 (prolongamento da janela móvel das tomas), 4 (término dos
+/// tratamentos concluídos), 5 (passagem das tomas a não confirmadas), 6 (envio e reenvios dos e-mails) e 7 (eliminação das
+/// credenciais expiradas); os restantes passos são acrescentados pelas tarefas dessas funcionalidades. Cada passo corre no
+/// seu âmbito e na sua transação. O processo não tem regras de negócio: delega nos serviços de aplicação.
 /// </summary>
 public sealed partial class ProcessoPeriodico : BackgroundService
 {
@@ -49,8 +51,16 @@ public sealed partial class ProcessoPeriodico : BackgroundService
     public async Task ExecutarCicloAsync(CancellationToken cancelamento)
     {
         await this.ExecutarPassoAsync(
+            "TomaService.PrologarJanelaMovel",
+            (servicos, agoraUtc) => servicos.GetRequiredService<TomaService>().PrologarJanelaMovelAsync(agoraUtc, cancelamento)).ConfigureAwait(false);
+
+        // Passos 2 e 3: notificações de atraso das tomas (TR-05 e TR-07, I047).
+        await this.ExecutarPassoAsync(
             "TratamentoService.TerminarConcluidos",
             (servicos, agoraUtc) => servicos.GetRequiredService<TratamentoService>().TerminarConcluidosAsync(agoraUtc, cancelamento)).ConfigureAwait(false);
+        await this.ExecutarPassoAsync(
+            "TomaService.ConcluirNaoConfirmadas",
+            (servicos, agoraUtc) => servicos.GetRequiredService<TomaService>().ConcluirNaoConfirmadasAsync(agoraUtc, cancelamento)).ConfigureAwait(false);
         await this.ExecutarPassoAsync(
             "EnvioEmailService.ProcessarPendentes",
             (servicos, agoraUtc) => servicos.GetRequiredService<EnvioEmailService>().ProcessarPendentesAsync(agoraUtc, cancelamento)).ConfigureAwait(false);

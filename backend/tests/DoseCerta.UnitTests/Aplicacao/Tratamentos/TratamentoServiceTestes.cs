@@ -45,7 +45,7 @@ public class TratamentoServiceTestes
         var unidadeDeTrabalho = new UnidadeDeTrabalhoComReversao(this.repositorios);
         var autorizacao = new AutorizacaoFichaService(this.repositorios);
         var documentos = new DocumentoService(this.repositorios, this.armazenamento, autorizacao, unidadeDeTrabalho, this.relogio);
-        var tomas = new TomaService(this.repositorios, this.repositorios, this.relogio);
+        var tomas = new TomaService(this.repositorios, this.repositorios, this.repositorios, this.repositorios, autorizacao, unidadeDeTrabalho, this.relogio);
         this.servico = new TratamentoService(this.repositorios, documentos, tomas, autorizacao, unidadeDeTrabalho, this.relogio);
 
         // Ficha ativa desde 2026-10-02 09:00 UTC.
