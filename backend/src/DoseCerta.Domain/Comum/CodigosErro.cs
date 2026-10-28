@@ -176,4 +176,9 @@ public static class CodigosErro
     /// Erro inesperado do servidor, sem detalhes internos na resposta (500).
     /// </summary>
     public const string ErroInterno = "ERRO_INTERNO";
+
+    /// <summary>
+    /// As ocorrências e as notas não podem ser alteradas nem eliminadas (405, RF-090, RF-091, RNF-049).
+    /// </summary>
+    public const string RegistoImutavel = "REGISTO_IMUTAVEL";
 }

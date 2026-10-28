@@ -7,6 +7,7 @@ using DoseCerta.Application.Convites;
 using DoseCerta.Application.Documentos;
 using DoseCerta.Application.Emails;
 using DoseCerta.Application.Fichas;
+using DoseCerta.Application.Ocorrencias;
 using DoseCerta.Application.Pessoas;
 using DoseCerta.Application.Tomas;
 using DoseCerta.Application.Tratamentos;
@@ -39,6 +40,7 @@ public static class InjecaoDependencias
         servicos.AddScoped<TratamentoService>();
         servicos.AddScoped<CompromissoService>();
         servicos.AddScoped<AgendaService>();
+        servicos.AddScoped<OcorrenciaService>();
         return servicos;
     }
 }

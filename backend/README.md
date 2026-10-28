@@ -13,6 +13,7 @@ registo de medicação (Issue I037, F005: OP-27 a OP-31), descrito na secção 5
 (Issue I044, F008: OP-41 a OP-45), descrita na secção 5.4. A F007 (tarefas de cuidados recorrentes)
 foi retirada do âmbito por alteração autorizada (documentação v02); a migração `RetirarTarefasRecorrentes` remove-a do
 esquema (secção 8).
+As ocorrências diárias e as notas partilhadas (Issue I045, F009: OP-46 a OP-49) estão descritas na secção 5.5.
 
 ## 1. Estrutura da solução
 
@@ -224,6 +225,28 @@ consultam, também numa ficha arquivada.
   `estado`. As tomas só existem na janela móvel de 30 dias, por isso os períodos distantes só mostram compromissos. Sem
   fichas, a lista é vazia. A F007 foi retirada: a agenda não tem tarefas.
 
+### 5.5 Ocorrências e notas partilhadas (F009)
+
+Os endpoints seguem a documentação da API (secção 5.8) e a matriz de permissões: só um Cuidador (principal ou não) regista
+ocorrências e notas; as ocorrências são consultadas por Cuidadores e Familiares e as notas só por Cuidadores (o Familiar recebe
+403, RF-095). Quem não está associado à ficha recebe 404 `FICHA_NAO_ENCONTRADA`.
+
+| Operação | Método e caminho |
+|---|---|
+| OP-46 Registar ocorrência | `POST /api/v1/fichas/{fichaId}/ocorrencias` |
+| OP-47 Registar nota partilhada | `POST /api/v1/fichas/{fichaId}/notas` |
+| OP-48 Consultar ocorrências | `GET /api/v1/fichas/{fichaId}/registos?tipo=Ocorrencia&de=AAAA-MM-DD&ate=AAAA-MM-DD` |
+| OP-49 Consultar notas partilhadas | `GET /api/v1/fichas/{fichaId}/registos?tipo=Nota&de=AAAA-MM-DD&ate=AAAA-MM-DD` |
+
+O servidor guarda o autor e o instante do registo (`criadaEm`); na ocorrência, `ocorridaEm` é indicado pelo Cuidador, com o
+desvio de Lisboa (RF-092). As consultas devolvem os registos do mais recente para o mais antigo pelo instante do registo; `tipo`
+é obrigatório e `de` e `ate` são opcionais, em dias de Lisboa, com `ate` inclusivo. Numa ficha arquivada não se registam
+ocorrências nem notas (409 `FICHA_ARQUIVADA`), mas as consultas continuam disponíveis (RF-120). Os registos são imutáveis:
+`PUT`, `PATCH` e `DELETE` em `/api/v1/fichas/{fichaId}/registos/{registoId}` respondem 405 `REGISTO_IMUTAVEL`, e os gatilhos
+`TR_Ocorrencia_Imutavel` e `TR_Nota_Imutavel` recusam qualquer alteração na base de dados (R-07, RNF-049). Ao registar uma
+ocorrência, na mesma transação, o servidor cria uma notificação `NovaOcorrencia` na aplicação para cada Cuidador e Familiar da
+ficha, exceto o autor (RF-115); a nota não gera notificações. O e-mail destas notificações pertence à F011.
+
 ## 6. Enviar uma mensagem de teste pelo serviço de e-mail
 
 Depois de configurar a secção `Email`, o comando seguinte envia uma mensagem de teste e termina, sem arrancar o servidor web
@@ -261,12 +284,13 @@ termina sem sucesso se existirem diferenças de formatação. A pasta `artefacto
 ## 8. Migrações do EF Core
 
 As migrações ficam em `src/DoseCerta.Infrastructure/Persistence/Migrations` (código gerado, excluído da análise estática e
-da cobertura). A migração inicial (`Inicial`) cria as 23 tabelas, as chaves, as restrições `CHECK`, os índices, os valores
-predefinidos das listas fechadas e, no fim do `Up`, os 4 gatilhos (`migrationBuilder.CriarGatilhosDoseCerta()`; o `Down`
-começa por `migrationBuilder.RemoverGatilhosDoseCerta()`), porque o EF Core não gera gatilhos. A migração
-`RetirarTarefasRecorrentes` (Issue I037) remove a F007, retirada do âmbito: o gatilho `TR_ExecucaoTarefa_Historico`, as quatro
-tabelas das tarefas e os valores da F007 nas restrições das notificações; depois dela ficam as 19 tabelas e os 3 gatilhos do
-modelo de dados v02 (secção 15).
+da cobertura). Aplicadas todas, o esquema tem as **19 tabelas e os 3 gatilhos** do modelo de dados v02 (`TR_Toma_Historico`,
+`TR_Ocorrencia_Imutavel` e `TR_Nota_Imutavel`), sem nada da F007. Esse esquema resulta de duas migrações, que não se editam:
+
+| Migração | O que faz | Tabelas e gatilhos depois dela |
+|---|---|---|
+| `Inicial` | Cria as tabelas, as chaves, as restrições `CHECK`, os índices, os valores predefinidos das listas fechadas e, no fim do `Up`, os gatilhos (`migrationBuilder.CriarGatilhosDoseCerta()`; o `Down` começa por `migrationBuilder.RemoverGatilhosDoseCerta()`), porque o EF Core não gera gatilhos. Inclui ainda as 4 tabelas e o gatilho da F007, que existiam quando foi criada | 23 tabelas e 4 gatilhos (estado intermédio) |
+| `RetirarTarefasRecorrentes` (Issues I037 e I043) | Retira a F007 do âmbito: remove o gatilho `TR_ExecucaoTarefa_Historico`, as tabelas `ExecucaoTarefa`, `TarefaDiaSemana`, `HorarioTarefa` e `TarefaRecorrente` e os valores da F007 em `CK_Notificacao_Tipo` e `CK_Notificacao_Referencia` (modelo de dados v02, secção 15) | 19 tabelas e 3 gatilhos (esquema final) |
 
 Aplicar as migrações sem arrancar a API (com a variável `ConnectionStrings__DoseCerta` definida):
 

@@ -268,6 +268,31 @@ public class TratamentoServiceTestes
     }
 
     /// <summary>
+    /// RF-056 (passo 4 do processo periódico): o tratamento com data de fim a 2026-11-04 continua em curso nesse dia e é
+    /// terminado no dia seguinte, em hora de Lisboa; o tratamento sem data de fim nunca é terminado e um segundo ciclo não faz nada.
+    /// </summary>
+    /// <returns>Uma tarefa assíncrona.</returns>
+    [Fact]
+    public async Task TerminarConcluidosTerminaSoDepoisDaDataDeFim()
+    {
+        var comFim = (await this.RegistarAsync(Dados())).Tratamento;
+        var continuo = (await this.RegistarAsync(Dados(medicamento: "Paracetamol", inicio: new DateOnly(2026, 11, 2)))).Tratamento;
+        var ultimoInstanteDoDia = new DateTime(2026, 11, 4, 23, 59, 59, DateTimeKind.Utc);
+        var diaSeguinte = new DateTime(2026, 11, 5, 0, 0, 30, DateTimeKind.Utc);
+
+        var noDiaDoFim = await this.servico.TerminarConcluidosAsync(ultimoInstanteDoDia, CancellationToken.None);
+        var depois = await this.servico.TerminarConcluidosAsync(diaSeguinte, CancellationToken.None);
+        var outraVez = await this.servico.TerminarConcluidosAsync(diaSeguinte.AddSeconds(30), CancellationToken.None);
+
+        Assert.Equal(0, noDiaDoFim);
+        Assert.Equal(1, depois);
+        Assert.Equal(0, outraVez);
+        Assert.Equal(EstadoTratamento.Terminado, comFim.Estado);
+        Assert.Equal(diaSeguinte, comFim.TerminadoEmUtc);
+        Assert.Equal(EstadoTratamento.EmCurso, continuo.Estado);
+    }
+
+    /// <summary>
     /// RF-120: numa ficha arquivada o tratamento pode ser terminado, mas não pode ser alterado; o Familiar não termina.
     /// </summary>
     /// <returns>Uma tarefa assíncrona.</returns>
