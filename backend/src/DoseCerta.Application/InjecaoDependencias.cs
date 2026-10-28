@@ -1,5 +1,7 @@
 // Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
 
+using DoseCerta.Application.Agenda;
+using DoseCerta.Application.Compromissos;
 using DoseCerta.Application.Contas;
 using DoseCerta.Application.Convites;
 using DoseCerta.Application.Documentos;
@@ -35,6 +37,8 @@ public static class InjecaoDependencias
         servicos.AddScoped<EnvioEmailService>();
         servicos.AddScoped<TomaService>();
         servicos.AddScoped<TratamentoService>();
+        servicos.AddScoped<CompromissoService>();
+        servicos.AddScoped<AgendaService>();
         return servicos;
     }
 }

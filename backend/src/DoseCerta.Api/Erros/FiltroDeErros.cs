@@ -36,6 +36,7 @@ public sealed partial class FiltroDeErros : IExceptionHandler
         [CodigosErro.TomaForaDaJanela] = StatusCodes.Status409Conflict,
         [CodigosErro.TomaJaConfirmada] = StatusCodes.Status409Conflict,
         [CodigosErro.TomaNaoConfirmavel] = StatusCodes.Status409Conflict,
+        [CodigosErro.CompromissoNaoConfirmavel] = StatusCodes.Status405MethodNotAllowed,
         [CodigosErro.CuidadorPrincipalProtegido] = StatusCodes.Status403Forbidden,
         [CodigosErro.ConvitePendenteExiste] = StatusCodes.Status409Conflict,
         [CodigosErro.PessoaJaAssociada] = StatusCodes.Status409Conflict,

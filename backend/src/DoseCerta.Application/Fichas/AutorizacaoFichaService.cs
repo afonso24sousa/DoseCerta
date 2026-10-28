@@ -2,6 +2,7 @@
 
 using DoseCerta.Application.Repositorios;
 using DoseCerta.Domain.Comum;
+using DoseCerta.Domain.Enumerados;
 
 namespace DoseCerta.Application.Fichas;
 
@@ -39,6 +40,34 @@ public sealed class AutorizacaoFichaService
         var ficha = await this.fichas.ObterCompletaAsync(fichaId, cancelamento).ConfigureAwait(false);
         var associacao = ficha?.ObterAssociacao(utilizadorId);
         return ficha is null || associacao is null ? null : new AcessoFicha(ficha, associacao);
+    }
+
+    /// <summary>
+    /// Obtém as fichas ativas a que o Utilizador está associado, opcionalmente só com um papel, com a associação de cada uma.
+    /// Limita a agenda e a lista diária às fichas do Utilizador; as fichas arquivadas e os convites pendentes não contam
+    /// (RF-083, RF-100, RNF-005).
+    /// </summary>
+    /// <param name="utilizadorId">Utilizador autenticado.</param>
+    /// <param name="papel">Papel exigido, ou <see langword="null"/> para Cuidadores e Familiares.</param>
+    /// <param name="cancelamento">Token de cancelamento.</param>
+    /// <returns>O acesso a cada ficha, pelo identificador da ficha; vazio se não houver nenhuma.</returns>
+    public async Task<IReadOnlyDictionary<Guid, AcessoFicha>> IdentificadoresDeFichasAtivasAsync(
+        Guid utilizadorId,
+        Papel? papel,
+        CancellationToken cancelamento)
+    {
+        var lista = await this.fichas.ListarDoUtilizadorAsync(utilizadorId, EstadoFicha.Ativa, cancelamento).ConfigureAwait(false);
+        var acessos = new Dictionary<Guid, AcessoFicha>();
+        foreach (var ficha in lista)
+        {
+            var associacao = ficha.ObterAssociacao(utilizadorId);
+            if (associacao is not null && (papel is null || associacao.Papel == papel))
+            {
+                acessos[ficha.Id] = new AcessoFicha(ficha, associacao);
+            }
+        }
+
+        return acessos;
     }
 
     /// <summary>

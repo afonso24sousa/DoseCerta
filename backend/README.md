@@ -9,7 +9,8 @@ verificação do estado da aplicação, serviço de e-mail e testes; e ao modelo
 EF Core, migração inicial e scripts SQL; à autenticação e gestão de conta (Issue I032, F001: OP-01 a OP-06); à criação
 e gestão de fichas de utentes (Issue I033, F002 e ficha própria da F003: OP-07 a OP-17), descritas na secção 5.1; e ao
 registo de medicação (Issue I037, F005: OP-27 a OP-31), descrito na secção 5.2; e aos horários e à confirmação de toma
-(Issue I038, F006: OP-32 a OP-34), descritos na secção 5.3. A F007 (tarefas de cuidados recorrentes)
+(Issue I038, F006: OP-32 a OP-34), descritos na secção 5.3; e à agenda de consultas e calendário de cuidados
+(Issue I044, F008: OP-41 a OP-45), descrita na secção 5.4. A F007 (tarefas de cuidados recorrentes)
 foi retirada do âmbito por alteração autorizada (documentação v02); a migração `RetirarTarefasRecorrentes` remove-a do
 esquema (secção 8).
 
@@ -197,6 +198,31 @@ Os endpoints seguem a documentação da API (`m3-documentacao-api-v02.md`, OP-32
 - Reativar uma ficha (OP-13) volta a gerar as tomas dos tratamentos em curso a partir desse instante (TR-10).
 - Os passos do processo periódico estão no `TomaService`: `PrologarJanelaMovelAsync` (passo 1, janela móvel de 30 dias) e
   `ConcluirNaoConfirmadasAsync` (passo 5, passagem a `NaoConfirmada` 24 horas depois da hora prevista, sem notificação).
+
+### 5.4 Compromissos e agenda (F008)
+
+Os endpoints seguem a documentação da API (OP-41 a OP-45) e a matriz de permissões: só um Cuidador regista, edita e remove
+compromissos numa ficha ativa (o Familiar recebe 403 e a ficha arquivada 409 `FICHA_ARQUIVADA`); Cuidadores e Familiares
+consultam, também numa ficha arquivada.
+
+| Operação | Método e caminho |
+|---|---|
+| OP-41 Registar compromisso | `POST /api/v1/fichas/{fichaId}/compromissos` |
+| OP-42 Listar compromissos da ficha | `GET /api/v1/fichas/{fichaId}/compromissos[?de=AAAA-MM-DD&ate=AAAA-MM-DD]` |
+| OP-43 Editar compromisso | `PUT /api/v1/compromissos/{compromissoId}` |
+| OP-44 Remover compromisso | `DELETE /api/v1/compromissos/{compromissoId}` |
+| OP-45 Consultar agenda | `GET /api/v1/agenda?vista=dia\|semana\|mes&data=AAAA-MM-DD` |
+
+- OP-41 e OP-43: `dataHora` (ISO 8601 com o desvio), `local` e `motivo` são obrigatórios; `antecedenciaAvisoMinutos` só
+  aceita 30, 60, 120, 1440 ou 2880 e, por omissão, é 1440 (24 horas). Ao editar a data ou a antecedência, o aviso volta a ser
+  calculado com os valores novos. O envio do aviso (`ProximoCompromisso`) é da F011.
+- Os compromissos não são confirmáveis: `POST /api/v1/compromissos/{compromissoId}/confirmacao` responde sempre 405
+  `COMPROMISSO_NAO_CONFIRMAVEL` (RF-087).
+- OP-45: reúne os compromissos e as tomas das fichas **ativas** em que o Utilizador é Cuidador ou Familiar, por ordem de
+  `inicio`. Os limites do dia, da semana (segunda a domingo) e do mês seguem a hora de Lisboa, incluindo as mudanças de hora.
+  `confirmavel` só é verdadeiro nas tomas `Pendente` das fichas em que o Utilizador é Cuidador; os compromissos não têm
+  `estado`. As tomas só existem na janela móvel de 30 dias, por isso os períodos distantes só mostram compromissos. Sem
+  fichas, a lista é vazia. A F007 foi retirada: a agenda não tem tarefas.
 
 ## 6. Enviar uma mensagem de teste pelo serviço de e-mail
 

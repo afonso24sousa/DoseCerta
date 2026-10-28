@@ -59,6 +59,7 @@ public static class InjecaoDependencias
         servicos.AddScoped<IEnvioEmailRepositorio, EnvioEmailRepositorio>();
         servicos.AddScoped<ITratamentoRepositorio, TratamentoRepositorio>();
         servicos.AddScoped<ITomaRepositorio, TomaRepositorio>();
+        servicos.AddScoped<ICompromissoRepositorio, CompromissoRepositorio>();
 
         servicos.Configure<OpcoesDocumentos>(configuracao.GetSection(OpcoesDocumentos.Seccao));
         servicos.AddSingleton<IArmazenamentoDocumentos, ArmazenamentoSistemaFicheiros>();

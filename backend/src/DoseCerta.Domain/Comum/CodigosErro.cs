@@ -103,6 +103,11 @@ public static class CodigosErro
     public const string TomaNaoConfirmavel = "TOMA_NAO_CONFIRMAVEL";
 
     /// <summary>
+    /// Os compromissos não são confirmáveis: o pedido de confirmação é recusado (405, RF-087).
+    /// </summary>
+    public const string CompromissoNaoConfirmavel = "COMPROMISSO_NAO_CONFIRMAVEL";
+
+    /// <summary>
     /// O titular da ficha própria é sempre o Cuidador principal: não é despromovido, removido nem substituído (403, RF-033, RF-034).
     /// </summary>
     public const string CuidadorPrincipalProtegido = "CUIDADOR_PRINCIPAL_PROTEGIDO";

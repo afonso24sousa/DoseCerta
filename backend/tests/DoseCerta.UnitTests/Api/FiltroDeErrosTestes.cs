@@ -39,6 +39,7 @@ public class FiltroDeErrosTestes
     [InlineData(CodigosErro.TomaForaDaJanela, 409)]
     [InlineData(CodigosErro.TomaJaConfirmada, 409)]
     [InlineData(CodigosErro.TomaNaoConfirmavel, 409)]
+    [InlineData(CodigosErro.CompromissoNaoConfirmavel, 405)]
     [InlineData(CodigosErro.FicheiroDemasiadoGrande, 413)]
     [InlineData(CodigosErro.FormatoNaoSuportado, 415)]
     [InlineData(CodigosErro.DocumentoNaoGuardado, 503)]

@@ -73,4 +73,18 @@ public interface ITomaRepositorio
     /// <param name="cancelamento">Token de cancelamento.</param>
     /// <returns>As tomas que devem passar a não confirmadas.</returns>
     Task<IReadOnlyList<Toma>> PendentesComVinteEQuatroHorasAsync(DateTime agoraUtc, CancellationToken cancelamento);
+
+    /// <summary>
+    /// Lista as tomas de várias fichas previstas num intervalo, numa só consulta, com a ficha de cada uma (OP-45).
+    /// </summary>
+    /// <param name="fichaIds">Fichas pedidas.</param>
+    /// <param name="deUtc">Início do intervalo, inclusive, em UTC.</param>
+    /// <param name="ateUtc">Fim do intervalo, exclusive, em UTC.</param>
+    /// <param name="cancelamento">Token de cancelamento.</param>
+    /// <returns>As tomas das fichas no intervalo, por ordem do instante previsto.</returns>
+    Task<IReadOnlyList<TomaNaFicha>> DoPeriodoDasFichasAsync(
+        IReadOnlyCollection<Guid> fichaIds,
+        DateTime deUtc,
+        DateTime ateUtc,
+        CancellationToken cancelamento);
 }

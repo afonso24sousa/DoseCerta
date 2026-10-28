@@ -125,6 +125,23 @@ public partial class RepositoriosEmMemoria : ITratamentoRepositorio, ITomaReposi
         return Task.FromResult(lista);
     }
 
+    /// <inheritdoc/>
+    Task<IReadOnlyList<TomaNaFicha>> ITomaRepositorio.DoPeriodoDasFichasAsync(
+        IReadOnlyCollection<Guid> fichaIds,
+        DateTime deUtc,
+        DateTime ateUtc,
+        CancellationToken cancelamento)
+    {
+        IReadOnlyList<TomaNaFicha> lista = this.Tomas
+            .Where(t => t.PrevistaEmUtc >= deUtc && t.PrevistaEmUtc < ateUtc)
+            .Select(t => (Toma: t, Ficha: this.FichaDaToma(t)))
+            .Where(x => x.Ficha is not null && fichaIds.Contains(x.Ficha.Id))
+            .OrderBy(x => x.Toma.PrevistaEmUtc)
+            .Select(x => new TomaNaFicha(x.Ficha!.Id, x.Toma))
+            .ToList();
+        return Task.FromResult(lista);
+    }
+
     private Ficha? FichaDaToma(Toma toma)
     {
         var tratamento = this.Tratamentos.FirstOrDefault(t => t.Id == toma.TratamentoId);

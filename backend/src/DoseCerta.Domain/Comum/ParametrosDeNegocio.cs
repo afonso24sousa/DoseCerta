@@ -33,6 +33,11 @@ public static class ParametrosDeNegocio
     public const int ReenviosMaximos = 3;
 
     /// <summary>
+    /// Antecedência do aviso de um compromisso quando não é indicada: 24 horas, em minutos (RF-080, RF-116).
+    /// </summary>
+    public const int AntecedenciaPorOmissaoMin = 1440;
+
+    /// <summary>
     /// Intervalo entre as tentativas de envio de um e-mail: 5 minutos (RF-118, RF-136).
     /// </summary>
     public static readonly TimeSpan IntervaloReenvio = TimeSpan.FromMinutes(5);
@@ -63,5 +68,16 @@ public static class ParametrosDeNegocio
             && palavraPasse.Length >= TamanhoMinimoPalavraPasse
             && palavraPasse.Any(char.IsLetter)
             && palavraPasse.Any(char.IsDigit);
+    }
+
+    /// <summary>
+    /// Verifica se a antecedência do aviso de um compromisso é um dos valores permitidos: 30 minutos, 1, 2, 24 ou 48 horas
+    /// (RF-116, <c>CK_Compromisso_Antecedencia</c>).
+    /// </summary>
+    /// <param name="minutos">Antecedência, em minutos.</param>
+    /// <returns><see langword="true"/> se for 30, 60, 120, 1440 ou 2880.</returns>
+    public static bool AntecedenciaValida(int minutos)
+    {
+        return minutos is 30 or 60 or 120 or 1440 or 2880;
     }
 }

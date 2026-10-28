@@ -135,4 +135,22 @@ public sealed class TomaRepositorio : ITomaRepositorio
             .ToListAsync(cancelamento)
             .ConfigureAwait(false);
     }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<TomaNaFicha>> DoPeriodoDasFichasAsync(
+        IReadOnlyCollection<Guid> fichaIds,
+        DateTime deUtc,
+        DateTime ateUtc,
+        CancellationToken cancelamento)
+    {
+        var lidas = await (
+            from t in this.contexto.Tomas.AsNoTracking()
+            join tratamento in this.contexto.Tratamentos on t.TratamentoId equals tratamento.Id
+            where fichaIds.Contains(tratamento.FichaId) && t.PrevistaEmUtc >= deUtc && t.PrevistaEmUtc < ateUtc
+            orderby t.PrevistaEmUtc, t.Id
+            select new { tratamento.FichaId, Toma = t })
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false);
+        return lidas.Select(l => new TomaNaFicha(l.FichaId, l.Toma)).ToList();
+    }
 }
