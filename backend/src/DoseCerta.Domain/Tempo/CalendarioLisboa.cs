@@ -87,6 +87,37 @@ public sealed class CalendarioLisboa
     }
 
     /// <summary>
+    /// Obtém o instante UTC correspondente às 00:00 de Lisboa da segunda-feira da semana (segunda a domingo) que contém a data.
+    /// </summary>
+    /// <param name="data">Dia em hora de Lisboa.</param>
+    /// <returns>O instante em UTC.</returns>
+    public DateTime InicioDaSemanaUtc(DateOnly data)
+    {
+        var diasDesdeSegunda = ((int)data.DayOfWeek + 6) % 7;
+        return this.InicioDoDiaUtc(data.AddDays(-diasDesdeSegunda));
+    }
+
+    /// <summary>
+    /// Obtém o instante UTC correspondente às 00:00 de Lisboa do primeiro dia do mês que contém a data.
+    /// </summary>
+    /// <param name="data">Dia em hora de Lisboa.</param>
+    /// <returns>O instante em UTC.</returns>
+    public DateTime InicioDoMesUtc(DateOnly data)
+    {
+        return this.InicioDoDiaUtc(new DateOnly(data.Year, data.Month, 1));
+    }
+
+    /// <summary>
+    /// Obtém o instante UTC correspondente às 00:00 de Lisboa do primeiro dia do mês seguinte ao que contém a data.
+    /// </summary>
+    /// <param name="data">Dia em hora de Lisboa.</param>
+    /// <returns>O instante em UTC.</returns>
+    public DateTime InicioDoMesSeguinteUtc(DateOnly data)
+    {
+        return this.InicioDoDiaUtc(new DateOnly(data.Year, data.Month, 1).AddMonths(1));
+    }
+
+    /// <summary>
     /// Converte um instante UTC para a hora de Lisboa, com o respetivo desvio.
     /// </summary>
     /// <param name="instanteUtc">Instante em UTC.</param>

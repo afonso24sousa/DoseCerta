@@ -59,6 +59,7 @@ public static class InjecaoDependencias
         servicos.AddScoped<IEnvioEmailRepositorio, EnvioEmailRepositorio>();
         servicos.AddScoped<ITratamentoRepositorio, TratamentoRepositorio>();
         servicos.AddScoped<ITomaRepositorio, TomaRepositorio>();
+        servicos.AddScoped<ICompromissoRepositorio, CompromissoRepositorio>();
         servicos.AddScoped<IOcorrenciaRepositorio, OcorrenciaRepositorio>();
         servicos.AddScoped<INotaRepositorio, NotaRepositorio>();
 
