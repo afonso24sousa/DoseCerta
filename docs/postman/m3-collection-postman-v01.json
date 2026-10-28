@@ -2452,6 +2452,204 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "F010 Lista diária",
+      "description": "OP-50 com o Utilizador A ({{token}}). As tomas são geradas por OP-27 (F005) na ficha própria {{fichaPropriaId}} para o dia 2027-06-15; a confirmação de tomas (F006) e os compromissos (F008) ainda não têm endpoints na main, por isso os itens aparecem pendentes. O dia 2027-06-15 é futuro, por isso as tomas ainda não são confirmáveis.",
+      "item": [
+        {
+          "name": "OP-27 Registar tratamento na ficha própria (gera as tomas do dia)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaPropriaId}}/tratamentos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaPropriaId}}",
+                "tratamentos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"medicamento\": \"Metformina\",\n  \"dose\": \"500 mg\",\n  \"grauImportancia\": \"Moderado\",\n  \"dataInicio\": \"2027-06-15\",\n  \"dataFim\": \"2027-06-15\",\n  \"horarios\": [\n    \"20:00\",\n    \"08:00\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-50 Consultar lista diária de um dia",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const itens = pm.response.json();",
+                  "pm.test(\"Duas tomas da ficha própria, ordenadas por hora\", () => {",
+                  "    pm.expect(itens.length).to.eql(2);",
+                  "    pm.expect(itens.map(i => i.previstaEm)).to.eql([\"2027-06-15T08:00:00+01:00\", \"2027-06-15T20:00:00+01:00\"]);",
+                  "});",
+                  "pm.test(\"Cada toma indica o utente, o título e o estado\", () => {",
+                  "    pm.expect(itens[0].tipo).to.eql(\"Toma\");",
+                  "    pm.expect(itens[0].fichaId).to.eql(pm.collectionVariables.get(\"fichaPropriaId\"));",
+                  "    pm.expect(itens[0].nomeFicha).to.eql(\"Ana Fictícia Costa\");",
+                  "    pm.expect(itens[0].titulo).to.eql(\"Metformina 500 mg\");",
+                  "    pm.expect(itens[0].estado).to.eql(\"Pendente\");",
+                  "    pm.expect(itens[0]).to.not.have.property(\"confirmadaPor\");",
+                  "    pm.expect(itens[0].confirmavel).to.eql(false);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/lista-diaria?data=2027-06-15",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "lista-diaria"
+              ],
+              "query": [
+                {
+                  "key": "data",
+                  "value": "2027-06-15"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-50 Consultar lista diária de hoje (sem data)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Devolve uma lista\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/lista-diaria",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "lista-diaria"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-50 Erro: data inválida (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 400\", () => pm.response.to.have.status(400));",
+                  "const corpo = pm.response.json();",
+                  "pm.test(\"Código VALIDACAO_INVALIDA com o campo data\", () => {",
+                  "    pm.expect(corpo.codigo).to.eql(\"VALIDACAO_INVALIDA\");",
+                  "    pm.expect(corpo.campos[0].campo).to.eql(\"data\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/lista-diaria?data=15-06-2027",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "lista-diaria"
+              ],
+              "query": [
+                {
+                  "key": "data",
+                  "value": "15-06-2027"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-50 Erro: sem token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"Código de erro NAO_AUTENTICADO\", () => pm.expect(pm.response.json().codigo).to.eql(\"NAO_AUTENTICADO\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/lista-diaria",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "lista-diaria"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "variable": [
