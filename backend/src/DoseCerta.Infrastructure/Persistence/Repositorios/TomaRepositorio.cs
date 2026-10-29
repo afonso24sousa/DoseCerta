@@ -10,7 +10,8 @@ using Microsoft.EntityFrameworkCore;
 namespace DoseCerta.Infrastructure.Persistence.Repositorios;
 
 /// <summary>
-/// Repositório EF Core das tomas: geração e remoção (F005), consulta, calendário e passagem a não confirmada (F006).
+/// Repositório EF Core das tomas: geração e remoção (F005), consulta, calendário e passagem a não confirmada (F006), e
+/// consulta da lista diária (F010).
 /// </summary>
 public sealed class TomaRepositorio : ITomaRepositorio
 {
@@ -152,5 +153,33 @@ public sealed class TomaRepositorio : ITomaRepositorio
             .ToListAsync(cancelamento)
             .ConfigureAwait(false);
         return lidas.Select(l => new TomaNaFicha(l.FichaId, l.Toma)).ToList();
+    }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<TomaDoDia>> DoDiaDosCuidadoresAsync(
+        IReadOnlyCollection<Guid> fichaIds,
+        DateTime deUtc,
+        DateTime ateUtc,
+        CancellationToken cancelamento)
+    {
+        return await (
+            from t in this.contexto.Tomas.AsNoTracking()
+            join tratamento in this.contexto.Tratamentos on t.TratamentoId equals tratamento.Id
+            join ficha in this.contexto.Fichas on tratamento.FichaId equals ficha.Id
+            where fichaIds.Contains(ficha.Id) && t.PrevistaEmUtc >= deUtc && t.PrevistaEmUtc < ateUtc
+            join u in this.contexto.Utilizadores on t.ConfirmadaPorId equals (Guid?)u.Id into confirmou
+            from u in confirmou.DefaultIfEmpty()
+            select new TomaDoDia(
+                t.Id,
+                ficha.Id,
+                ficha.NomeCompleto,
+                t.Medicamento,
+                t.Dose,
+                t.PrevistaEmUtc,
+                t.Estado,
+                u == null ? null : u.Nome,
+                t.ConfirmadaEmUtc))
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false);
     }
 }

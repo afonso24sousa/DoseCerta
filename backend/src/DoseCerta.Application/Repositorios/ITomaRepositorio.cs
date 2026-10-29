@@ -8,7 +8,7 @@ namespace DoseCerta.Application.Repositorios;
 
 /// <summary>
 /// Acesso às tomas (TomaRepositorio do Modelo de Classes do Backend): geração e remoção (F005), consulta, confirmação,
-/// calendário e passagem a não confirmada (F006).
+/// calendário e passagem a não confirmada (F006), e consulta da lista diária (F010).
 /// </summary>
 public interface ITomaRepositorio
 {
@@ -83,6 +83,21 @@ public interface ITomaRepositorio
     /// <param name="cancelamento">Token de cancelamento.</param>
     /// <returns>As tomas das fichas no intervalo, por ordem do instante previsto.</returns>
     Task<IReadOnlyList<TomaNaFicha>> DoPeriodoDasFichasAsync(
+        IReadOnlyCollection<Guid> fichaIds,
+        DateTime deUtc,
+        DateTime ateUtc,
+        CancellationToken cancelamento);
+
+    /// <summary>
+    /// Lista as tomas de um conjunto de fichas previstas num período, com o nome do utente e o nome de quem confirmou, para a
+    /// lista diária dos Cuidadores (RF-100, RF-101, RF-104).
+    /// </summary>
+    /// <param name="fichaIds">Fichas a considerar.</param>
+    /// <param name="deUtc">Início do período, inclusive, em UTC.</param>
+    /// <param name="ateUtc">Fim do período, exclusive, em UTC.</param>
+    /// <param name="cancelamento">Token de cancelamento.</param>
+    /// <returns>As tomas do período.</returns>
+    Task<IReadOnlyList<TomaDoDia>> DoDiaDosCuidadoresAsync(
         IReadOnlyCollection<Guid> fichaIds,
         DateTime deUtc,
         DateTime ateUtc,
