@@ -1,7 +1,7 @@
 {
   "info": {
     "_postman_id": "b8a1f0e2-1036-4c3a-9f00-d05ece27a036",
-    "name": "DoseCerta API - F001 a F004 (m3, v01)",
+    "name": "DoseCerta API - F001 a F011, sem a F007 (m3, v02)",
     "description": "Collection da Issue I036 (Grupo G07): um pedido por endpoint de F001 a F004, com testes ao código de resposta e ao corpo. A Issue I044 acrescentou a pasta F008 (OP-41 a OP-45 e a recusa da confirmação de compromissos), que corre depois da F004: o Utilizador B, Cuidador principal da ficha, convida o Utilizador A como Familiar.\n\nExecução: Collection Runner (ou newman) do princípio ao fim, pela ordem das pastas, com o ambiente `m3-ambiente-local-postman-v01` e o backend local a correr.\nA collection é independente dos dados existentes: regista os seus próprios utilizadores fictícios com e-mail único (@example.com) e guarda os tokens e os ids nas variáveis da collection.\nNão contém segredos: só dados fictícios; os tokens são obtidos em cada execução.\n\nAutenticação: Bearer {{token}} herdado da collection; os pedidos do segundo utilizador usam Bearer {{token2}}; OP-01 e OP-02 são públicos.\nO backend local usa um certificado HTTPS de desenvolvimento: no newman use `--insecure`; no Postman, desative \"SSL certificate verification\" ou confie no certificado com `dotnet dev-certs https --trust`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
@@ -23,19 +23,6 @@
         {
           "name": "OP-01 Registar conta (Utilizador A)",
           "event": [
-            {
-              "listen": "prerequest",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "// E-mails únicos em cada execução, para a collection ser independente dos dados existentes.",
-                  "const sufixo = Date.now();",
-                  "pm.collectionVariables.set(\"emailA\", \"ana.ficticia+\" + sufixo + \"@example.com\");",
-                  "pm.collectionVariables.set(\"emailB\", \"rui.ficticio+\" + sufixo + \"@example.com\");",
-                  "pm.collectionVariables.set(\"emailC\", \"carla.ficticia+\" + sufixo + \"@example.com\");"
-                ]
-              }
-            },
             {
               "listen": "test",
               "script": {
@@ -245,8 +232,7 @@
                   "    pm.expect(corpo.token).to.be.a(\"string\").and.not.empty;",
                   "    pm.expect(corpo.expiraEm).to.match(/[+-]\\d{2}:\\d{2}$/);",
                   "});",
-                  "// O token fica na collection e é usado por todos os pedidos seguintes (Bearer {{token}}).",
-                  "pm.collectionVariables.set(\"token\", corpo.token);"
+                  "// O token usado pelos pedidos seguintes é obtido no pre-request da collection."
                 ]
               }
             }
@@ -293,7 +279,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
-                  "pm.collectionVariables.set(\"token2\", pm.response.json().token);"
+                  "// O token usado pelos pedidos seguintes é obtido no pre-request da collection."
                 ]
               }
             }
@@ -448,16 +434,6 @@
           "name": "OP-05 Atualizar dados da conta",
           "event": [
             {
-              "listen": "prerequest",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "const email = pm.collectionVariables.get(\"emailA\").replace(\"ana.ficticia+\", \"ana.costa+\");",
-                  "pm.collectionVariables.set(\"emailANovo\", email);"
-                ]
-              }
-            },
-            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -553,7 +529,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Responde 204\", () => pm.response.to.have.status(204));"
+                  "pm.test(\"Responde 204\", () => pm.response.to.have.status(204));",
+                  "pm.collectionVariables.set(\"palavraPasseA\", pm.variables.get(\"palavraPasseNova\"));"
                 ]
               }
             }
@@ -578,7 +555,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"palavraPasseAtual\": \"{{palavraPasse}}\",\n  \"palavraPasseNova\": \"{{palavraPasseNova}}\"\n}",
+              "raw": "{\n  \"palavraPasseAtual\": \"{{palavraPasseA}}\",\n  \"palavraPasseNova\": \"{{palavraPasseNova}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3455,16 +3432,64 @@
   ],
   "variable": [
     {
+      "key": "execucao",
+      "value": "",
+      "type": "string",
+      "description": "Timestamp da execução, usado nos e-mails das contas fictícias (pre-request da collection)."
+    },
+    {
+      "key": "emailA",
+      "value": "",
+      "type": "string",
+      "description": "E-mail do Utilizador A (gerado no pre-request da collection; muda em OP-05)."
+    },
+    {
+      "key": "emailANovo",
+      "value": "",
+      "type": "string",
+      "description": "E-mail novo do Utilizador A, usado em OP-05."
+    },
+    {
+      "key": "emailB",
+      "value": "",
+      "type": "string",
+      "description": "E-mail do Utilizador B (gerado no pre-request da collection)."
+    },
+    {
+      "key": "emailC",
+      "value": "",
+      "type": "string",
+      "description": "E-mail sem conta, usado nos convites."
+    },
+    {
+      "key": "palavraPasseA",
+      "value": "",
+      "type": "string",
+      "description": "Palavra-passe atual do Utilizador A: a do ambiente e, depois de OP-06, a palavraPasseNova."
+    },
+    {
       "key": "token",
       "value": "",
       "type": "string",
-      "description": "Token do Utilizador A, guardado por OP-02."
+      "description": "Token do Utilizador A, obtido automaticamente no pre-request da collection."
+    },
+    {
+      "key": "tokenExpiraEm",
+      "value": "",
+      "type": "string",
+      "description": "Fim da validade de {{token}}, em milissegundos."
     },
     {
       "key": "token2",
       "value": "",
       "type": "string",
-      "description": "Token do Utilizador B (segundo utilizador fictício), guardado por OP-02."
+      "description": "Token do Utilizador B, obtido automaticamente no pre-request da collection."
+    },
+    {
+      "key": "token2ExpiraEm",
+      "value": "",
+      "type": "string",
+      "description": "Fim da validade de {{token2}}, em milissegundos."
     },
     {
       "key": "tokenSessaoTerminada",
@@ -3473,39 +3498,40 @@
       "description": "Sessão extra do Utilizador A, usada só para testar OP-03."
     },
     {
-      "key": "palavraPasse",
-      "value": "Ficticia123",
-      "type": "string",
-      "description": "Palavra-passe fictícia das contas criadas pela collection."
-    },
-    {
-      "key": "palavraPasseNova",
-      "value": "Ficticia456",
-      "type": "string",
-      "description": "Palavra-passe fictícia usada em OP-06."
-    },
-    {
-      "key": "emailA",
+      "key": "hoje",
       "value": "",
       "type": "string",
-      "description": "E-mail único do Utilizador A (gerado em OP-01)."
+      "description": "Dia de hoje em Lisboa (AAAA-MM-DD), calculado no pre-request da collection."
     },
     {
-      "key": "emailANovo",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "emailB",
+      "key": "ontem",
       "value": "",
       "type": "string",
-      "description": "E-mail único do Utilizador B (gerado em OP-01)."
+      "description": "Dia anterior a {{hoje}}."
     },
     {
-      "key": "emailC",
+      "key": "amanha",
       "value": "",
       "type": "string",
-      "description": "E-mail único sem conta, usado nos convites."
+      "description": "Dia seguinte a {{hoje}}."
+    },
+    {
+      "key": "desvioHoje",
+      "value": "",
+      "type": "string",
+      "description": "Desvio de Lisboa em {{hoje}} (+00:00 ou +01:00)."
+    },
+    {
+      "key": "desvioAmanha",
+      "value": "",
+      "type": "string",
+      "description": "Desvio de Lisboa em {{amanha}}."
+    },
+    {
+      "key": "agora",
+      "value": "",
+      "type": "string",
+      "description": "Instante atual em Lisboa, com o desvio, atualizado antes de cada pedido."
     },
     {
       "key": "utilizadorId",
@@ -3517,13 +3543,13 @@
       "key": "pessoaId",
       "value": "",
       "type": "string",
-      "description": "Id do Utilizador B, usado na F004."
+      "description": "Id do Utilizador B."
     },
     {
       "key": "fichaId",
       "value": "",
       "type": "string",
-      "description": "Ficha de terceiro do Utilizador A (F002 e F004)."
+      "description": "Ficha de terceiro (F002 e F004 a F009); no fim da F004, B é o Cuidador principal."
     },
     {
       "key": "fichaTemporariaId",
@@ -3535,7 +3561,7 @@
       "key": "fichaPropriaId",
       "value": "",
       "type": "string",
-      "description": "Ficha própria do Utilizador A (F003)."
+      "description": "Ficha própria do Utilizador A (F003 e F010)."
     },
     {
       "key": "documentoId",
@@ -3557,11 +3583,135 @@
     },
     {
       "key": "conviteFamiliarId",
-      "value": ""
+      "value": "",
+      "type": "string",
+      "description": "Convite com que A volta à ficha como Familiar (preparação da F005)."
+    },
+    {
+      "key": "tratamentoId",
+      "value": "",
+      "type": "string",
+      "description": "Tratamento registado por B na F005."
+    },
+    {
+      "key": "tratamentoTerminadoId",
+      "value": "",
+      "type": "string",
+      "description": "Tratamento terminado na F005."
+    },
+    {
+      "key": "tomaHojeId",
+      "value": "",
+      "type": "string",
+      "description": "Toma de hoje confirmada na F006."
+    },
+    {
+      "key": "tomaAmanhaId",
+      "value": "",
+      "type": "string",
+      "description": "Toma de amanhã, ainda fora da janela de confirmação (F006)."
     },
     {
       "key": "compromissoId",
-      "value": ""
+      "value": "",
+      "type": "string",
+      "description": "Compromisso registado na F008."
+    },
+    {
+      "key": "ocorrenciaId",
+      "value": "",
+      "type": "string",
+      "description": "Ocorrência registada na F009."
+    },
+    {
+      "key": "notaId",
+      "value": "",
+      "type": "string",
+      "description": "Nota partilhada registada na F009."
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Pre-request da collection (I041): corre antes de cada pedido.",
+          "const v = pm.collectionVariables;",
+          "",
+          "// Desvio de Lisboa num instante: hora de verão do último domingo de março às 01:00 UTC ao último domingo de outubro às 01:00 UTC.",
+          "function desvioLisboaMin(instante) {",
+          "    const ano = instante.getUTCFullYear();",
+          "    const ultimoDomingo = mes => {",
+          "        const d = new Date(Date.UTC(ano, mes + 1, 0, 1));",
+          "        d.setUTCDate(d.getUTCDate() - d.getUTCDay());",
+          "        return d;",
+          "    };",
+          "    return instante >= ultimoDomingo(2) && instante < ultimoDomingo(9) ? 60 : 0;",
+          "}",
+          "const textoDesvio = min => (min === 60 ? \"+01:00\" : \"+00:00\");",
+          "const diaLisboa = instante => new Date(instante.getTime() + desvioLisboaMin(instante) * 60000).toISOString().slice(0, 10);",
+          "const somarDias = (dia, n) => {",
+          "    const [a, m, d] = dia.split(\"-\").map(Number);",
+          "    return new Date(Date.UTC(a, m - 1, d + n)).toISOString().slice(0, 10);",
+          "};",
+          "// Desvio de um dia de Lisboa, ao meio-dia (os pedidos usam horas depois das 02:00, já com o desvio do dia).",
+          "const desvioDoDia = dia => textoDesvio(desvioLisboaMin(new Date(dia + \"T12:00:00Z\")));",
+          "",
+          "// 1. Nova execução: no primeiro pedido (OP-01 do Utilizador A) ou quando ainda não há execução, cria e-mails novos",
+          "//    (contas fictícias postman.<ambiente>.<timestamp>.<conta>@exemplo.pt) e calcula as datas a partir de hoje em Lisboa.",
+          "if (!v.get(\"execucao\") || pm.info.requestName === \"OP-01 Registar conta (Utilizador A)\") {",
+          "    const execucao = String(Date.now());",
+          "    const prefixo = pm.variables.get(\"prefixoEmail\") || \"postman.local\";",
+          "    const email = conta => prefixo + \".\" + execucao + \".\" + conta + \"@exemplo.pt\";",
+          "    v.set(\"execucao\", execucao);",
+          "    v.set(\"emailA\", email(\"a\"));",
+          "    v.set(\"emailANovo\", email(\"a2\"));",
+          "    v.set(\"emailB\", email(\"b\"));",
+          "    v.set(\"emailC\", email(\"c\"));",
+          "    v.set(\"palavraPasseA\", pm.variables.get(\"palavraPasse\"));",
+          "    [\"token\", \"token2\", \"tokenExpiraEm\", \"token2ExpiraEm\", \"tokenSessaoTerminada\"].forEach(nome => v.set(nome, \"\"));",
+          "    const hoje = diaLisboa(new Date());",
+          "    v.set(\"hoje\", hoje);",
+          "    v.set(\"ontem\", somarDias(hoje, -1));",
+          "    v.set(\"amanha\", somarDias(hoje, 1));",
+          "    v.set(\"desvioHoje\", desvioDoDia(hoje));",
+          "    v.set(\"desvioAmanha\", desvioDoDia(somarDias(hoje, 1)));",
+          "}",
+          "",
+          "// Instante atual em Lisboa, ao segundo e com o desvio (por exemplo para ocorridaEm).",
+          "const agora = new Date();",
+          "const desvioAgora = desvioLisboaMin(agora);",
+          "v.set(\"agora\", new Date(agora.getTime() + desvioAgora * 60000).toISOString().slice(0, 19) + textoDesvio(desvioAgora));",
+          "",
+          "// 2. Token JWT automático: antes de qualquer pedido que não seja o registo ou o início de sessão, garante sessões válidas",
+          "//    do Utilizador A ({{token}}) e do Utilizador B ({{token2}}), iniciando sessão com OP-02 se faltar o token ou se estiver",
+          "//    a menos de um minuto de expirar.",
+          "function garantirSessao(variavel, email, palavraPasse) {",
+          "    if (v.get(variavel) && Number(v.get(variavel + \"ExpiraEm\")) > Date.now() + 60000) {",
+          "        return;",
+          "    }",
+          "    pm.sendRequest({",
+          "        url: pm.variables.get(\"baseUrl\") + \"/auth/login\",",
+          "        method: \"POST\",",
+          "        header: { \"Content-Type\": \"application/json\" },",
+          "        body: { mode: \"raw\", raw: JSON.stringify({ email: email, palavraPasse: palavraPasse }) }",
+          "    }, (falha, resposta) => {",
+          "        if (falha || resposta.code !== 200) {",
+          "            console.error(\"Início de sessão automático falhou para \" + email + \": \" + (falha || resposta.code));",
+          "            return;",
+          "        }",
+          "        const sessao = resposta.json();",
+          "        v.set(variavel, sessao.token);",
+          "        v.set(variavel + \"ExpiraEm\", String(Date.parse(sessao.expiraEm)));",
+          "    });",
+          "}",
+          "if (!/\\/auth\\/(registo|login)$/.test(pm.request.url.getPath())) {",
+          "    garantirSessao(\"token\", v.get(\"emailA\"), v.get(\"palavraPasseA\"));",
+          "    garantirSessao(\"token2\", v.get(\"emailB\"), pm.variables.get(\"palavraPasse\"));",
+          "}"
+        ]
+      }
     }
   ]
 }

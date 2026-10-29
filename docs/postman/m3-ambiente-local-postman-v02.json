@@ -1,0 +1,31 @@
+{
+  "id": "c9b2e1f3-1041-4d4b-8a11-d05ece27a041",
+  "name": "m3-ambiente-local-postman-v02",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "https://localhost:7180/api/v1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "prefixoEmail",
+      "value": "postman.local",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "palavraPasse",
+      "value": "Ficticia123",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "palavraPasseNova",
+      "value": "Ficticia456",
+      "type": "default",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}
