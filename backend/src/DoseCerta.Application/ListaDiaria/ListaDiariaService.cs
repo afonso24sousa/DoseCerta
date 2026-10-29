@@ -4,6 +4,7 @@ using DoseCerta.Application.Abstracoes;
 using DoseCerta.Application.Fichas;
 using DoseCerta.Application.Repositorios;
 using DoseCerta.Application.Tomas;
+using DoseCerta.Domain.Comum;
 using DoseCerta.Domain.Entidades;
 using DoseCerta.Domain.Enumerados;
 using DoseCerta.Domain.Tempo;
@@ -17,9 +18,6 @@ namespace DoseCerta.Application.ListaDiaria;
 /// </summary>
 public sealed class ListaDiariaService
 {
-    // Uma toma sem confirmação 24 horas depois da hora prevista já não pode ser confirmada (RF-068).
-    private static readonly TimeSpan LimiteConfirmacao = TimeSpan.FromHours(24);
-
     private readonly ITomaRepositorio tomas;
     private readonly ICompromissoRepositorio compromissos;
     private readonly AutorizacaoFichaService autorizacao;
@@ -89,12 +87,13 @@ public sealed class ListaDiariaService
             .ToList();
     }
 
-    // Só se confirma uma toma pendente a partir das 00:00 do dia previsto e antes de passar a não confirmada (RF-064, RF-068).
+    // Só se confirma uma toma pendente a partir das 00:00 do dia previsto e antes de passar a não confirmada (RF-064, RF-068),
+    // com os mesmos limites da confirmação (Toma.JanelaDeConfirmacaoAberta e PoliticaTolerancia).
     private static ItemListaDiaria ItemDeToma(TomaDoDia toma, DateOnly hoje, DateTime agoraUtc, CalendarioLisboa calendario)
     {
         var confirmavel = toma.Estado == EstadoToma.Pendente
             && calendario.DiaLocal(toma.PrevistaEmUtc) <= hoje
-            && agoraUtc < toma.PrevistaEmUtc + LimiteConfirmacao;
+            && agoraUtc < PoliticaTolerancia.InstanteNaoConfirmada(toma.PrevistaEmUtc);
         return new ItemListaDiaria(
             TipoItemListaDiaria.Toma,
             toma.Id,
