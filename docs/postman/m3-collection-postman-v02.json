@@ -2431,7 +2431,7 @@
       ]
     },
     {
-      "name": "F008 Compromissos e agenda",
+      "name": "F005 Registo de medicação",
       "item": [
         {
           "name": "Preparação: OP-19 B convida A como Familiar",
@@ -2519,6 +2519,758 @@
           },
           "response": []
         },
+        {
+          "name": "OP-27 Registar tratamento",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 201\", () => pm.response.to.have.status(201));",
+                  "const corpo = pm.response.json();",
+                  "pm.test(\"Tratamento em curso com os dados pedidos\", () => {",
+                  "    pm.expect(corpo.fichaId).to.eql(pm.collectionVariables.get(\"fichaId\"));",
+                  "    pm.expect(corpo.medicamento).to.eql(\"Paracetamol\");",
+                  "    pm.expect(corpo.dose).to.eql(\"500 mg\");",
+                  "    pm.expect(corpo.grauImportancia).to.eql(\"Moderado\");",
+                  "    pm.expect(corpo.dataInicio).to.eql(pm.collectionVariables.get(\"hoje\"));",
+                  "    pm.expect(corpo.dataFim).to.eql(pm.collectionVariables.get(\"amanha\"));",
+                  "    pm.expect(corpo.horarios).to.have.members([\"08:00\", \"23:59\"]);",
+                  "    pm.expect(corpo.estado).to.eql(\"EmCurso\");",
+                  "    pm.expect(corpo.receitaDocumentoId).to.eql(null);",
+                  "});",
+                  "pm.collectionVariables.set(\"tratamentoId\", corpo.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaId}}/tratamentos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaId}}",
+                "tratamentos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"medicamento\": \"Paracetamol\",\n  \"dose\": \"500 mg\",\n  \"grauImportancia\": \"Moderado\",\n  \"dataInicio\": \"{{hoje}}\",\n  \"dataFim\": \"{{amanha}}\",\n  \"horarios\": [\n    \"08:00\",\n    \"23:59\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-27 Registar tratamento com receita (multipart)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// OP-27 com receita é multipart/form-data: a parte \"dados\" leva o JSON do tratamento e a parte \"receita\" um PDF fictício",
+                  "// gerado em texto, para a collection correr no Collection Runner e no newman sem ficheiros externos.",
+                  "const v = pm.collectionVariables;",
+                  "const dados = {",
+                  "    medicamento: \"Ibuprofeno\",",
+                  "    dose: \"400 mg\",",
+                  "    grauImportancia: \"Leve\",",
+                  "    dataInicio: v.get(\"hoje\"),",
+                  "    dataFim: v.get(\"amanha\"),",
+                  "    horarios: [\"09:00\", \"21:00\"]",
+                  "};",
+                  "const fronteira = \"----DoseCertaI041\" + Date.now();",
+                  "const corpo = \"--\" + fronteira + \"\\r\\nContent-Disposition: form-data; name=\\\"dados\\\"\\r\\n\\r\\n\" + JSON.stringify(dados) + \"\\r\\n\"",
+                  "    + \"--\" + fronteira + \"\\r\\nContent-Disposition: form-data; name=\\\"receita\\\"; filename=\\\"receita-ficticia.pdf\\\"\\r\\n\"",
+                  "    + \"Content-Type: application/pdf\\r\\n\\r\\n\" + \"%PDF-1.4\\n% Receita ficticia da collection I041\\n%%EOF\" + \"\\r\\n--\" + fronteira + \"--\\r\\n\";",
+                  "pm.request.headers.upsert({ key: \"Content-Type\", value: \"multipart/form-data; boundary=\" + fronteira });",
+                  "pm.request.body.update({ mode: \"raw\", raw: corpo });"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 201\", () => pm.response.to.have.status(201));",
+                  "const corpo = pm.response.json();",
+                  "pm.test(\"Guarda a receita com o tratamento\", () => {",
+                  "    pm.expect(corpo.medicamento).to.eql(\"Ibuprofeno\");",
+                  "    pm.expect(corpo.grauImportancia).to.eql(\"Leve\");",
+                  "    pm.expect(corpo.receitaDocumentoId).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "pm.collectionVariables.set(\"tratamentoTerminadoId\", corpo.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaId}}/tratamentos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaId}}",
+                "tratamentos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-27 Erro: dados inválidos (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Código de erro VALIDACAO_INVALIDA\", () => pm.expect(pm.response.json().codigo).to.eql(\"VALIDACAO_INVALIDA\"));",
+                  "pm.test(\"Indica os campos em erro\", () => pm.expect(pm.response.json().campos.map(c => c.campo))",
+                  "    .to.include.members([\"grauImportancia\", \"dataFim\"]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaId}}/tratamentos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaId}}",
+                "tratamentos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"medicamento\": \"Paracetamol\",\n  \"dose\": \"500 mg\",\n  \"grauImportancia\": \"Urgente\",\n  \"dataInicio\": \"{{amanha}}\",\n  \"dataFim\": \"{{hoje}}\",\n  \"horarios\": [\n    \"08:00\",\n    \"23:59\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-27 Erro: Familiar não regista (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"Código de erro ACESSO_PROIBIDO\", () => pm.expect(pm.response.json().codigo).to.eql(\"ACESSO_PROIBIDO\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaId}}/tratamentos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaId}}",
+                "tratamentos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"medicamento\": \"Paracetamol\",\n  \"dose\": \"500 mg\",\n  \"grauImportancia\": \"Moderado\",\n  \"dataInicio\": \"{{hoje}}\",\n  \"dataFim\": \"{{amanha}}\",\n  \"horarios\": [\n    \"08:00\",\n    \"23:59\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-28 Listar tratamentos da ficha (Familiar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"O Familiar vê os dois tratamentos\", () => pm.expect(pm.response.json().map(t => t.id))",
+                  "    .to.include.members([pm.collectionVariables.get(\"tratamentoId\"), pm.collectionVariables.get(\"tratamentoTerminadoId\")]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaId}}/tratamentos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaId}}",
+                "tratamentos"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-28 Erro: ficha sem associação (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Código de erro FICHA_NAO_ENCONTRADA\", () => pm.expect(pm.response.json().codigo).to.eql(\"FICHA_NAO_ENCONTRADA\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaPropriaId}}/tratamentos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaPropriaId}}",
+                "tratamentos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-29 Consultar tratamento (Familiar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Devolve o tratamento pedido\", () => {",
+                  "    const corpo = pm.response.json();",
+                  "    pm.expect(corpo.id).to.eql(pm.collectionVariables.get(\"tratamentoId\"));",
+                  "    pm.expect(corpo.medicamento).to.eql(\"Paracetamol\");",
+                  "    pm.expect(corpo.estado).to.eql(\"EmCurso\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tratamentos/{{tratamentoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tratamentos",
+                "{{tratamentoId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-29 Erro: tratamento inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Código de erro RECURSO_NAO_ENCONTRADO\", () => pm.expect(pm.response.json().codigo).to.eql(\"RECURSO_NAO_ENCONTRADO\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tratamentos/00000000-0000-4000-8000-000000000000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tratamentos",
+                "00000000-0000-4000-8000-000000000000"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-30 Atualizar tratamento",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Guarda a dose e o grau novos\", () => {",
+                  "    const corpo = pm.response.json();",
+                  "    pm.expect(corpo.dose).to.eql(\"1 g\");",
+                  "    pm.expect(corpo.grauImportancia).to.eql(\"Grave\");",
+                  "    pm.expect(corpo.medicamento).to.eql(\"Paracetamol\");",
+                  "    pm.expect(corpo.dataInicio).to.eql(pm.collectionVariables.get(\"hoje\"));",
+                  "    pm.expect(corpo.estado).to.eql(\"EmCurso\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tratamentos/{{tratamentoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tratamentos",
+                "{{tratamentoId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dose\": \"1 g\",\n  \"grauImportancia\": \"Grave\",\n  \"dataFim\": \"{{amanha}}\",\n  \"horarios\": [\n    \"08:00\",\n    \"23:59\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-30 Erro: sem horários (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Código de erro VALIDACAO_INVALIDA\", () => pm.expect(pm.response.json().codigo).to.eql(\"VALIDACAO_INVALIDA\"));",
+                  "pm.test(\"Indica o campo horarios\", () => pm.expect(pm.response.json().campos.map(c => c.campo)).to.include(\"horarios\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tratamentos/{{tratamentoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tratamentos",
+                "{{tratamentoId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dose\": \"1 g\",\n  \"grauImportancia\": \"Grave\",\n  \"dataFim\": \"{{amanha}}\",\n  \"horarios\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-30 Erro: Familiar não altera (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"Código de erro ACESSO_PROIBIDO\", () => pm.expect(pm.response.json().codigo).to.eql(\"ACESSO_PROIBIDO\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tratamentos/{{tratamentoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tratamentos",
+                "{{tratamentoId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dose\": \"1 g\",\n  \"grauImportancia\": \"Grave\",\n  \"dataFim\": \"{{amanha}}\",\n  \"horarios\": [\n    \"08:00\",\n    \"23:59\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-31 Terminar tratamento antecipadamente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"O tratamento fica Terminado e mantém os dados\", () => {",
+                  "    const corpo = pm.response.json();",
+                  "    pm.expect(corpo.id).to.eql(pm.collectionVariables.get(\"tratamentoTerminadoId\"));",
+                  "    pm.expect(corpo.estado).to.eql(\"Terminado\");",
+                  "    pm.expect(corpo.medicamento).to.eql(\"Ibuprofeno\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tratamentos/{{tratamentoTerminadoId}}/termino",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tratamentos",
+                "{{tratamentoTerminadoId}}",
+                "termino"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-31 Erro: tratamento já terminado (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Código de erro TRATAMENTO_JA_TERMINADO\", () => pm.expect(pm.response.json().codigo).to.eql(\"TRATAMENTO_JA_TERMINADO\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tratamentos/{{tratamentoTerminadoId}}/termino",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tratamentos",
+                "{{tratamentoTerminadoId}}",
+                "termino"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-30 Erro: tratamento terminado (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Código de erro TRATAMENTO_TERMINADO\", () => pm.expect(pm.response.json().codigo).to.eql(\"TRATAMENTO_TERMINADO\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tratamentos/{{tratamentoTerminadoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tratamentos",
+                "{{tratamentoTerminadoId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dose\": \"1 g\",\n  \"grauImportancia\": \"Grave\",\n  \"dataFim\": \"{{amanha}}\",\n  \"horarios\": [\n    \"08:00\",\n    \"23:59\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-28 Listar só os tratamentos em curso",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const ids = pm.response.json().map(t => t.id);",
+                  "pm.test(\"Inclui o tratamento em curso e não o terminado\", () => {",
+                  "    pm.expect(ids).to.include(pm.collectionVariables.get(\"tratamentoId\"));",
+                  "    pm.expect(ids).to.not.include(pm.collectionVariables.get(\"tratamentoTerminadoId\"));",
+                  "});",
+                  "pm.test(\"Todos estão EmCurso\", () => pm.response.json().forEach(t => pm.expect(t.estado).to.eql(\"EmCurso\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaId}}/tratamentos?estado=EmCurso",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaId}}",
+                "tratamentos"
+              ],
+              "query": [
+                {
+                  "key": "estado",
+                  "value": "EmCurso"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Ficha de terceiro ({{fichaId}}): B é o Cuidador principal e A volta a ser Familiar na preparação, para os testes de permissão de F005 a F009."
+    },
+    {
+      "name": "F008 Compromissos e agenda",
+      "item": [
         {
           "name": "OP-41 Registar compromisso",
           "event": [
