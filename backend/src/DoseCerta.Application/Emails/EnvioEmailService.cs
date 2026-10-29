@@ -2,6 +2,7 @@
 
 using DoseCerta.Application.Abstracoes;
 using DoseCerta.Application.Convites;
+using DoseCerta.Application.Notificacoes;
 using DoseCerta.Application.Repositorios;
 using DoseCerta.Domain.Entidades;
 
@@ -10,7 +11,7 @@ namespace DoseCerta.Application.Emails;
 /// <summary>
 /// Regista os e-mails a enviar, separados do convite e da notificação que os originam, e submete-os ao serviço de e-mail com até
 /// 3 reenvios de 5 em 5 minutos; a falha nunca desfaz a operação de origem (RF-118, RF-119, RF-135, RF-136, RF-141, DM-13).
-/// Nesta tarefa só trata dos e-mails de convite (F004); os e-mails das restantes notificações são da F011.
+/// Envia os e-mails de convite (F004) e os de qualquer notificação (F011), incluindo as que foram criadas só na aplicação.
 /// </summary>
 public sealed class EnvioEmailService
 {
@@ -23,7 +24,7 @@ public sealed class EnvioEmailService
     /// <summary>
     /// Initializes a new instance of the <see cref="EnvioEmailService"/> class.
     /// </summary>
-    /// <param name="envios">Repositório dos e-mails a enviar.</param>
+    /// <param name="envios">Repositório dos e-mails a enviar e das notificações sem e-mail.</param>
     /// <param name="convites">Repositório dos convites, para o texto do e-mail.</param>
     /// <param name="emailSender">Serviço de e-mail transacional.</param>
     /// <param name="unidadeDeTrabalho">Transação de cada atualização de um e-mail.</param>
@@ -58,15 +59,61 @@ public sealed class EnvioEmailService
     }
 
     /// <summary>
-    /// Passo 7 do processo periódico: submete cada e-mail pendente cuja próxima tentativa chegou e regista o resultado, cada um
-    /// na sua própria transação. Uma falha agenda o reenvio 5 minutos depois; depois de 3 reenvios falhados o e-mail fica
-    /// não entregue (RF-118, RF-119, RF-136). Uma exceção do serviço de e-mail conta como falha, para o e-mail não ficar preso.
+    /// Regista, na transação da notificação, o e-mail da notificação como pendente, com a primeira tentativa devida de imediato
+    /// (RF-141, RNF-018). O assunto depende do tipo e não tem dados de saúde.
+    /// </summary>
+    /// <param name="notificacao">Notificação criada.</param>
+    /// <param name="enderecoDestino">E-mail da conta do destinatário.</param>
+    /// <param name="agoraUtc">Instante da criação, em UTC.</param>
+    /// <returns>O e-mail registado.</returns>
+    public EnvioEmail RegistarDeNotificacao(Notificacao notificacao, string enderecoDestino, DateTime agoraUtc)
+    {
+        ArgumentNullException.ThrowIfNull(notificacao);
+        var envio = new EnvioEmail(notificacao.Id, null, enderecoDestino, TextosNotificacao.AssuntoEmail(notificacao.Tipo), agoraUtc);
+        this.envios.Adicionar(envio);
+        return envio;
+    }
+
+    /// <summary>
+    /// Regista, numa transação própria, o e-mail das notificações que ainda não o têm, por exemplo as criadas por outras
+    /// funcionalidades só com a notificação na aplicação; assim todas as notificações são enviadas por e-mail (RF-141).
+    /// </summary>
+    /// <param name="agoraUtc">Instante do ciclo, em UTC.</param>
+    /// <param name="cancelamento">Token de cancelamento.</param>
+    /// <returns>O número de e-mails registados.</returns>
+    public async Task<int> RegistarEmFaltaAsync(DateTime agoraUtc, CancellationToken cancelamento)
+    {
+        var semEmail = await this.envios.NotificacoesSemEmailAsync(cancelamento).ConfigureAwait(false);
+        if (semEmail.Count == 0)
+        {
+            return 0;
+        }
+
+        return await this.unidadeDeTrabalho.ExecutarEmTransacaoAsync(
+            () =>
+            {
+                foreach (var emFalta in semEmail)
+                {
+                    this.RegistarDeNotificacao(emFalta.Notificacao, emFalta.EnderecoDestino, agoraUtc);
+                }
+
+                return Task.FromResult(semEmail.Count);
+            },
+            cancelamento).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Passo 6 do processo periódico: regista os e-mails das notificações que ainda não o têm e submete cada e-mail pendente
+    /// cuja próxima tentativa chegou, de convite ou de notificação, e regista o resultado, cada um na sua própria transação. Uma
+    /// falha agenda o reenvio 5 minutos depois; depois de 3 reenvios falhados o e-mail fica não entregue, o que o histórico de
+    /// notificações mostra (RF-118, RF-119, RF-136). Uma exceção do serviço de e-mail conta como falha, para o e-mail não ficar preso.
     /// </summary>
     /// <param name="agoraUtc">Instante do ciclo, em UTC.</param>
     /// <param name="cancelamento">Token de cancelamento.</param>
     /// <returns>O número de e-mails tentados.</returns>
     public async Task<int> ProcessarPendentesAsync(DateTime agoraUtc, CancellationToken cancelamento)
     {
+        await this.RegistarEmFaltaAsync(agoraUtc, cancelamento).ConfigureAwait(false);
         var devidos = await this.envios.PendentesDevidosAsync(agoraUtc, cancelamento).ConfigureAwait(false);
         foreach (var envio in devidos)
         {
@@ -107,6 +154,14 @@ public sealed class EnvioEmailService
 
     private async Task<string> CorpoDoEmailAsync(EnvioEmail envio, CancellationToken cancelamento)
     {
+        // O e-mail de um convite tem o texto do convite, mesmo quando também tem a notificação ConviteRecebido.
+        if (envio.ConviteId is null)
+        {
+            var notificacao = await this.envios.ObterNotificacaoAsync(envio.NotificacaoId!.Value, cancelamento).ConfigureAwait(false)
+                ?? throw new InvalidOperationException("O e-mail de notificação não tem notificação.");
+            return TextosNotificacao.CorpoEmail(notificacao.Mensagem, this.relogio.Calendario().FormatarDataHora(notificacao.CriadaEmUtc));
+        }
+
         var convite = await this.convites.ObterResumoAsync(envio.ConviteId!.Value, cancelamento).ConfigureAwait(false)
             ?? throw new InvalidOperationException("O e-mail de convite não tem convite.");
         return TextosConvite.CorpoEmail(convite, this.relogio.Calendario().FormatarDataHora(convite.CriadoEmUtc));

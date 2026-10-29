@@ -247,6 +247,37 @@ ocorrências nem notas (409 `FICHA_ARQUIVADA`), mas as consultas continuam dispo
 ocorrência, na mesma transação, o servidor cria uma notificação `NovaOcorrencia` na aplicação para cada Cuidador e Familiar da
 ficha, exceto o autor (RF-115); a nota não gera notificações. O e-mail destas notificações pertence à F011.
 
+### 5.6 Notificações de atraso das tomas (F011)
+
+As notificações de atraso (Issue I047) seguem a secção 4 da documentação da API («Comportamentos do servidor sem endpoint») e
+o diagrama de estados da toma (TR-05 e TR-07). O processo periódico corre de 30 em 30 segundos, com um ciclo no arranque:
+
+| Passo | Operação | O que faz |
+|---|---|---|
+| 1 | `TomaService.PrologarJanelaMovelAsync` | Gera as tomas em falta da janela móvel de 30 dias |
+| 2 | `AtrasoTomaService.NotificarCuidadoresAsync` | Toma `Pendente` de ficha ativa estritamente depois do fim da tolerância (Leve 2 h, Moderado 1 h, Grave 30 min): marca `CuidadoresNotificadosEmUtc` e cria uma `TomaEmAtraso` e o e-mail para cada Cuidador (RF-110 a RF-112) |
+| 3 | `AtrasoTomaService.NotificarFamiliaresAsync` | Só no grau Grave, estritamente depois de T + 60 min: marca `FamiliaresNotificadosEmUtc` e cria uma `TomaGraveFamiliares` e o e-mail para cada Familiar (RF-113) |
+| 4 | `TratamentoService.TerminarConcluidosAsync` | Termina os tratamentos cuja data de fim passou |
+| 5 | `TomaService.ConcluirNaoConfirmadasAsync` | Passa a `NaoConfirmada` as tomas pendentes com 24 horas |
+| 6 | `EnvioEmailService.ProcessarPendentesAsync` | Regista o e-mail das notificações que ainda não o têm e envia os e-mails devidos, de convites e de notificações, com até 3 reenvios de 5 em 5 minutos; depois fica `NaoEntregue` (RF-118, RF-119) |
+| 7 | `ISessaoRevogadaRepositorio.EliminarExpiradasAsync` | Elimina as credenciais terminadas já expiradas |
+
+- A toma continua `Pendente` depois dos avisos (RF-066). Cada toma é tratada na sua transação: a marca e as notificações são
+  gravadas juntas e a coluna `Versao` desfaz a transação se a toma for confirmada entretanto, por isso uma toma confirmada
+  antes da deteção não gera notificação e repetir o ciclo não duplica (RNF-043, `UQ_Notificacao_Origem`).
+- Não há notificações de fichas arquivadas, nem, depois da reativação, de instantes-limite anteriores a `AtivaDesdeUtc` (RF-142).
+- A mensagem segue o exemplo de OP-51 («A toma de Insulina de Maria Fictícia Santos das 10:00 não foi confirmada.»); o
+  assunto do e-mail não tem dados de saúde. Qualquer notificação, mesmo criada só na aplicação por outra funcionalidade, é
+  enviada por e-mail a partir do ciclo seguinte (RF-141).
+
+| Operação | Método e caminho |
+|---|---|
+| OP-51 Consultar histórico de notificações | `GET /api/v1/notificacoes[?de=AAAA-MM-DD][&ate=AAAA-MM-DD]` |
+
+- OP-51: qualquer Utilizador autenticado vê só as notificações que recebeu, da mais recente para a mais antiga, com `nomeFicha`,
+  `medicamento` e `previstaEm` (nas notificações de toma), `criadaEm` e `email` (`Enviado`, `Pendente` ou `NaoEntregue`).
+  `de` e `ate` são dias de Lisboa opcionais, com `ate` inclusivo; `ate` anterior a `de` responde 400 `VALIDACAO_INVALIDA`.
+
 ## 6. Enviar uma mensagem de teste pelo serviço de e-mail
 
 Depois de configurar a secção `Email`, o comando seguinte envia uma mensagem de teste e termina, sem arrancar o servidor web

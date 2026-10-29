@@ -182,4 +182,58 @@ public sealed class TomaRepositorio : ITomaRepositorio
             .ToListAsync(cancelamento)
             .ConfigureAwait(false);
     }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<Guid>> PorNotificarCuidadoresAsync(DateTime agoraUtc, CancellationToken cancelamento)
+    {
+        // Fim da tolerância estritamente anterior a agora (prevista < agora - tolerância) e não anterior a AtivaDesdeUtc
+        // (prevista >= AtivaDesdeUtc - tolerância), para cada grau (RF-110 a RF-112, RF-142).
+        var leveAteUtc = agoraUtc - PoliticaTolerancia.Leve;
+        var moderadoAteUtc = agoraUtc - PoliticaTolerancia.Moderado;
+        var graveAteUtc = agoraUtc - PoliticaTolerancia.Grave;
+        var leveMinutos = PoliticaTolerancia.Leve.TotalMinutes;
+        var moderadoMinutos = PoliticaTolerancia.Moderado.TotalMinutes;
+        var graveMinutos = PoliticaTolerancia.Grave.TotalMinutes;
+        return await (
+            from t in this.contexto.Tomas.AsNoTracking()
+            join tratamento in this.contexto.Tratamentos on t.TratamentoId equals tratamento.Id
+            join ficha in this.contexto.Fichas on tratamento.FichaId equals ficha.Id
+            where t.Estado == EstadoToma.Pendente
+                && t.CuidadoresNotificadosEmUtc == null
+                && ficha.Estado == EstadoFicha.Ativa
+                && ((t.GrauImportancia == GrauImportancia.Leve
+                        && t.PrevistaEmUtc < leveAteUtc
+                        && t.PrevistaEmUtc >= ficha.AtivaDesdeUtc.AddMinutes(-leveMinutos))
+                    || (t.GrauImportancia == GrauImportancia.Moderado
+                        && t.PrevistaEmUtc < moderadoAteUtc
+                        && t.PrevistaEmUtc >= ficha.AtivaDesdeUtc.AddMinutes(-moderadoMinutos))
+                    || (t.GrauImportancia == GrauImportancia.Grave
+                        && t.PrevistaEmUtc < graveAteUtc
+                        && t.PrevistaEmUtc >= ficha.AtivaDesdeUtc.AddMinutes(-graveMinutos)))
+            orderby t.PrevistaEmUtc, t.Id
+            select t.Id)
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<Guid>> PorNotificarFamiliaresAsync(DateTime agoraUtc, CancellationToken cancelamento)
+    {
+        var previstaAteUtc = agoraUtc - PoliticaTolerancia.FamiliaresGrave;
+        var familiaresMinutos = PoliticaTolerancia.FamiliaresGrave.TotalMinutes;
+        return await (
+            from t in this.contexto.Tomas.AsNoTracking()
+            join tratamento in this.contexto.Tratamentos on t.TratamentoId equals tratamento.Id
+            join ficha in this.contexto.Fichas on tratamento.FichaId equals ficha.Id
+            where t.Estado == EstadoToma.Pendente
+                && t.GrauImportancia == GrauImportancia.Grave
+                && t.FamiliaresNotificadosEmUtc == null
+                && ficha.Estado == EstadoFicha.Ativa
+                && t.PrevistaEmUtc < previstaAteUtc
+                && t.PrevistaEmUtc >= ficha.AtivaDesdeUtc.AddMinutes(-familiaresMinutos)
+            orderby t.PrevistaEmUtc, t.Id
+            select t.Id)
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false);
+    }
 }
