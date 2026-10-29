@@ -3831,7 +3831,7 @@
                   "const corpo = pm.response.json();",
                   "pm.test(\"Devolve o compromisso com a data em hora de Lisboa\", () => {",
                   "    pm.expect(corpo.fichaId).to.eql(pm.collectionVariables.get(\"fichaId\"));",
-                  "    pm.expect(corpo.dataHora).to.eql(\"2027-03-12T10:30:00+00:00\");",
+                  "    pm.expect(corpo.dataHora).to.eql(pm.variables.replaceIn(\"{{amanha}}T10:30:00{{desvioAmanha}}\"));",
                   "    pm.expect(corpo.local).to.eql(\"Centro de Saúde Fictício\");",
                   "    pm.expect(corpo.motivo).to.eql(\"Consulta de rotina\");",
                   "});",
@@ -3872,7 +3872,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"dataHora\": \"2027-03-12T10:30:00+00:00\",\n  \"local\": \"Centro de Saúde Fictício\",\n  \"motivo\": \"Consulta de rotina\"\n}",
+              "raw": "{\n  \"dataHora\": \"{{amanha}}T10:30:00{{desvioAmanha}}\",\n  \"local\": \"Centro de Saúde Fictício\",\n  \"motivo\": \"Consulta de rotina\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3973,7 +3973,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"dataHora\": \"2027-03-12T10:30:00+00:00\",\n  \"local\": \"Centro de Saúde Fictício\",\n  \"motivo\": \"Consulta de rotina\"\n}",
+              "raw": "{\n  \"dataHora\": \"{{amanha}}T10:30:00{{desvioAmanha}}\",\n  \"local\": \"Centro de Saúde Fictício\",\n  \"motivo\": \"Consulta de rotina\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -4001,7 +4001,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/fichas/{{fichaId}}/compromissos?de=2027-03-01&ate=2027-03-31",
+              "raw": "{{baseUrl}}/fichas/{{fichaId}}/compromissos?de={{hoje}}&ate={{amanha}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -4013,11 +4013,11 @@
               "query": [
                 {
                   "key": "de",
-                  "value": "2027-03-01"
+                  "value": "{{hoje}}"
                 },
                 {
                   "key": "ate",
-                  "value": "2027-03-31"
+                  "value": "{{amanha}}"
                 }
               ]
             }
@@ -4076,7 +4076,7 @@
                   "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
                   "const corpo = pm.response.json();",
                   "pm.test(\"Guarda os dados novos\", () => {",
-                  "    pm.expect(corpo.dataHora).to.eql(\"2027-03-12T11:00:00+00:00\");",
+                  "    pm.expect(corpo.dataHora).to.eql(pm.variables.replaceIn(\"{{amanha}}T11:00:00{{desvioAmanha}}\"));",
                   "    pm.expect(corpo.motivo).to.eql(\"Consulta de seguimento\");",
                   "    pm.expect(corpo.antecedenciaAvisoMinutos).to.eql(120);",
                   "});"
@@ -4114,7 +4114,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"dataHora\": \"2027-03-12T11:00:00+00:00\",\n  \"local\": \"Centro de Saúde Fictício\",\n  \"motivo\": \"Consulta de seguimento\",\n  \"antecedenciaAvisoMinutos\": 120\n}",
+              "raw": "{\n  \"dataHora\": \"{{amanha}}T11:00:00{{desvioAmanha}}\",\n  \"local\": \"Centro de Saúde Fictício\",\n  \"motivo\": \"Consulta de seguimento\",\n  \"antecedenciaAvisoMinutos\": 120\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -4169,7 +4169,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"dataHora\": \"2027-03-12T10:30:00+00:00\",\n  \"local\": \"Centro de Saúde Fictício\",\n  \"motivo\": \"Consulta de rotina\",\n  \"antecedenciaAvisoMinutos\": 45\n}",
+              "raw": "{\n  \"dataHora\": \"{{amanha}}T10:30:00{{desvioAmanha}}\",\n  \"local\": \"Centro de Saúde Fictício\",\n  \"motivo\": \"Consulta de rotina\",\n  \"antecedenciaAvisoMinutos\": 45\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -4234,7 +4234,7 @@
                   "    pm.expect(item).to.not.be.undefined;",
                   "    pm.expect(item.tipo).to.eql(\"Compromisso\");",
                   "    pm.expect(item.titulo).to.eql(\"Consulta de seguimento\");",
-                  "    pm.expect(item.inicio).to.eql(\"2027-03-12T11:00:00+00:00\");",
+                  "    pm.expect(item.inicio).to.eql(pm.variables.replaceIn(\"{{amanha}}T11:00:00{{desvioAmanha}}\"));",
                   "    pm.expect(item.confirmavel).to.eql(false);",
                   "    pm.expect(item).to.not.have.property(\"estado\");",
                   "});"
@@ -4246,7 +4246,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/agenda?vista=dia&data=2027-03-12",
+              "raw": "{{baseUrl}}/agenda?vista=dia&data={{amanha}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -4260,7 +4260,69 @@
                 },
                 {
                   "key": "data",
-                  "value": "2027-03-12"
+                  "value": "{{amanha}}"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-45 Consultar agenda (vista semanal)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const itens = pm.response.json();",
+                  "pm.test(\"Inclui o compromisso de amanhã\", () => pm.expect(itens.map(i => i.id)).to.include(pm.collectionVariables.get(\"compromissoId\")));",
+                  "pm.test(\"Inclui a toma pendente de amanhã da F006, confirmável pelo Cuidador\", () => {",
+                  "    const toma = itens.find(i => i.id === pm.collectionVariables.get(\"tomaAmanhaId\"));",
+                  "    pm.expect(toma).to.not.be.undefined;",
+                  "    pm.expect(toma.tipo).to.eql(\"Toma\");",
+                  "    pm.expect(toma.nomeFicha).to.eql(\"Maria Fictícia Santos\");",
+                  "    pm.expect(toma.estado).to.eql(\"Pendente\");",
+                  "    pm.expect(toma.confirmavel).to.eql(true);",
+                  "});",
+                  "pm.test(\"Ordenada por hora\", () => {",
+                  "    const inicios = itens.map(i => Date.parse(i.inicio));",
+                  "    pm.expect(inicios).to.eql([...inicios].sort((a, b) => a - b));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/agenda?vista=semana&data={{amanha}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agenda"
+              ],
+              "query": [
+                {
+                  "key": "vista",
+                  "value": "semana"
+                },
+                {
+                  "key": "data",
+                  "value": "{{amanha}}"
                 }
               ]
             },
@@ -4296,7 +4358,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/agenda?vista=mes&data=2027-03-01",
+              "raw": "{{baseUrl}}/agenda?vista=mes&data={{amanha}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -4310,7 +4372,7 @@
                 },
                 {
                   "key": "data",
-                  "value": "2027-03-01"
+                  "value": "{{amanha}}"
                 }
               ]
             }
@@ -4336,7 +4398,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/agenda?vista=ano&data=2027-03-12",
+              "raw": "{{baseUrl}}/agenda?vista=ano&data={{amanha}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -4350,7 +4412,7 @@
                 },
                 {
                   "key": "data",
-                  "value": "2027-03-12"
+                  "value": "{{amanha}}"
                 }
               ]
             }
@@ -4470,7 +4532,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"dataHora\": \"2027-03-12T10:30:00+00:00\",\n  \"local\": \"Centro de Saúde Fictício\",\n  \"motivo\": \"Consulta de rotina\"\n}",
+              "raw": "{\n  \"dataHora\": \"{{amanha}}T10:30:00{{desvioAmanha}}\",\n  \"local\": \"Centro de Saúde Fictício\",\n  \"motivo\": \"Consulta de rotina\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -4498,7 +4560,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/agenda?vista=dia&data=2027-03-12",
+              "raw": "{{baseUrl}}/agenda?vista=dia&data={{amanha}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -4512,7 +4574,7 @@
                 },
                 {
                   "key": "data",
-                  "value": "2027-03-12"
+                  "value": "{{amanha}}"
                 }
               ]
             },
