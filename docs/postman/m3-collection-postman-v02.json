@@ -5366,10 +5366,10 @@
     },
     {
       "name": "F010 Lista diária",
-      "description": "OP-50 com o Utilizador A ({{token}}). As tomas são geradas por OP-27 (F005) na ficha própria {{fichaPropriaId}} para o dia 2027-06-15; a confirmação de tomas (F006) e os compromissos (F008) ainda não têm endpoints na main, por isso os itens aparecem pendentes. O dia 2027-06-15 é futuro, por isso as tomas ainda não são confirmáveis.",
+      "description": "Lista de tarefas de hoje de cada Cuidador: A vê a ficha própria; B vê a ficha de terceiro e a toma que confirmou na F006.",
       "item": [
         {
-          "name": "OP-27 Registar tratamento na ficha própria (gera as tomas do dia)",
+          "name": "Preparação: OP-27 Registar tratamento na ficha própria (tomas de hoje)",
           "event": [
             {
               "listen": "test",
@@ -5402,7 +5402,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"medicamento\": \"Metformina\",\n  \"dose\": \"500 mg\",\n  \"grauImportancia\": \"Moderado\",\n  \"dataInicio\": \"2027-06-15\",\n  \"dataFim\": \"2027-06-15\",\n  \"horarios\": [\n    \"20:00\",\n    \"08:00\"\n  ]\n}",
+              "raw": "{\n  \"medicamento\": \"Metformina\",\n  \"dose\": \"500 mg\",\n  \"grauImportancia\": \"Moderado\",\n  \"dataInicio\": \"{{hoje}}\",\n  \"dataFim\": \"{{hoje}}\",\n  \"horarios\": [\n    \"23:59\",\n    \"23:58\"\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -5413,7 +5413,51 @@
           "response": []
         },
         {
-          "name": "OP-50 Consultar lista diária de um dia",
+          "name": "Preparação: OP-41 Registar compromisso de hoje na ficha própria",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaPropriaId}}/compromissos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaPropriaId}}",
+                "compromissos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dataHora\": \"{{hoje}}T23:57:00{{desvioHoje}}\",\n  \"local\": \"Domicílio\",\n  \"motivo\": \"Higiene e mudança de pensos\",\n  \"antecedenciaAvisoMinutos\": 30\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-50 Consultar lista diária de hoje",
           "event": [
             {
               "listen": "test",
@@ -5421,19 +5465,30 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const v = pm.collectionVariables;",
                   "const itens = pm.response.json();",
-                  "pm.test(\"Duas tomas da ficha própria, ordenadas por hora\", () => {",
-                  "    pm.expect(itens.length).to.eql(2);",
-                  "    pm.expect(itens.map(i => i.previstaEm)).to.eql([\"2027-06-15T08:00:00+01:00\", \"2027-06-15T20:00:00+01:00\"]);",
+                  "const instante = hora => v.get(\"hoje\") + \"T\" + hora + \":00\" + v.get(\"desvioHoje\");",
+                  "pm.test(\"Só a ficha própria, em que A é Cuidador (a ficha em que é Familiar não entra)\", () => {",
+                  "    pm.expect(itens.length).to.eql(3);",
+                  "    itens.forEach(i => {",
+                  "        pm.expect(i.fichaId).to.eql(v.get(\"fichaPropriaId\"));",
+                  "        pm.expect(i.nomeFicha).to.eql(\"Ana Fictícia Costa\");",
+                  "    });",
                   "});",
-                  "pm.test(\"Cada toma indica o utente, o título e o estado\", () => {",
-                  "    pm.expect(itens[0].tipo).to.eql(\"Toma\");",
-                  "    pm.expect(itens[0].fichaId).to.eql(pm.collectionVariables.get(\"fichaPropriaId\"));",
-                  "    pm.expect(itens[0].nomeFicha).to.eql(\"Ana Fictícia Costa\");",
-                  "    pm.expect(itens[0].titulo).to.eql(\"Metformina 500 mg\");",
-                  "    pm.expect(itens[0].estado).to.eql(\"Pendente\");",
-                  "    pm.expect(itens[0]).to.not.have.property(\"confirmadaPor\");",
+                  "pm.test(\"Ordenados por hora: o compromisso e as duas tomas\", () => {",
+                  "    pm.expect(itens.map(i => i.previstaEm)).to.eql([instante(\"23:57\"), instante(\"23:58\"), instante(\"23:59\")]);",
+                  "    pm.expect(itens.map(i => i.tipo)).to.eql([\"Compromisso\", \"Toma\", \"Toma\"]);",
+                  "});",
+                  "pm.test(\"As tomas pendentes de hoje são confirmáveis\", () => itens.filter(i => i.tipo === \"Toma\").forEach(i => {",
+                  "    pm.expect(i.titulo).to.eql(\"Metformina 500 mg\");",
+                  "    pm.expect(i.estado).to.eql(\"Pendente\");",
+                  "    pm.expect(i).to.not.have.property(\"confirmadaPor\");",
+                  "    pm.expect(i.confirmavel).to.eql(true);",
+                  "}));",
+                  "pm.test(\"O compromisso não é confirmável e não tem estado\", () => {",
+                  "    pm.expect(itens[0].titulo).to.eql(\"Higiene e mudança de pensos\");",
                   "    pm.expect(itens[0].confirmavel).to.eql(false);",
+                  "    pm.expect(itens[0]).to.not.have.property(\"estado\");",
                   "});"
                 ]
               }
@@ -5443,7 +5498,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/lista-diaria?data=2027-06-15",
+              "raw": "{{baseUrl}}/lista-diaria?data={{hoje}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -5453,7 +5508,7 @@
               "query": [
                 {
                   "key": "data",
-                  "value": "2027-06-15"
+                  "value": "{{hoje}}"
                 }
               ]
             }
@@ -5461,7 +5516,7 @@
           "response": []
         },
         {
-          "name": "OP-50 Consultar lista diária de hoje (sem data)",
+          "name": "OP-50 Consultar lista diária sem data (hoje em Lisboa)",
           "event": [
             {
               "listen": "test",
@@ -5469,7 +5524,31 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
-                  "pm.test(\"Devolve uma lista\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+                  "const v = pm.collectionVariables;",
+                  "const itens = pm.response.json();",
+                  "const instante = hora => v.get(\"hoje\") + \"T\" + hora + \":00\" + v.get(\"desvioHoje\");",
+                  "pm.test(\"Só a ficha própria, em que A é Cuidador (a ficha em que é Familiar não entra)\", () => {",
+                  "    pm.expect(itens.length).to.eql(3);",
+                  "    itens.forEach(i => {",
+                  "        pm.expect(i.fichaId).to.eql(v.get(\"fichaPropriaId\"));",
+                  "        pm.expect(i.nomeFicha).to.eql(\"Ana Fictícia Costa\");",
+                  "    });",
+                  "});",
+                  "pm.test(\"Ordenados por hora: o compromisso e as duas tomas\", () => {",
+                  "    pm.expect(itens.map(i => i.previstaEm)).to.eql([instante(\"23:57\"), instante(\"23:58\"), instante(\"23:59\")]);",
+                  "    pm.expect(itens.map(i => i.tipo)).to.eql([\"Compromisso\", \"Toma\", \"Toma\"]);",
+                  "});",
+                  "pm.test(\"As tomas pendentes de hoje são confirmáveis\", () => itens.filter(i => i.tipo === \"Toma\").forEach(i => {",
+                  "    pm.expect(i.titulo).to.eql(\"Metformina 500 mg\");",
+                  "    pm.expect(i.estado).to.eql(\"Pendente\");",
+                  "    pm.expect(i).to.not.have.property(\"confirmadaPor\");",
+                  "    pm.expect(i.confirmavel).to.eql(true);",
+                  "}));",
+                  "pm.test(\"O compromisso não é confirmável e não tem estado\", () => {",
+                  "    pm.expect(itens[0].titulo).to.eql(\"Higiene e mudança de pensos\");",
+                  "    pm.expect(itens[0].confirmavel).to.eql(false);",
+                  "    pm.expect(itens[0]).to.not.have.property(\"estado\");",
+                  "});"
                 ]
               }
             }
@@ -5484,6 +5563,64 @@
               ],
               "path": [
                 "lista-diaria"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-50 Lista diária do Cuidador B mostra a toma que confirmou",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const v = pm.collectionVariables;",
+                  "const itens = pm.response.json();",
+                  "pm.test(\"A toma confirmada na F006 aparece com quem confirmou e quando\", () => {",
+                  "    const toma = itens.find(i => i.id === v.get(\"tomaHojeId\"));",
+                  "    pm.expect(toma).to.not.be.undefined;",
+                  "    pm.expect(toma.nomeFicha).to.eql(\"Maria Fictícia Santos\");",
+                  "    pm.expect(toma.titulo).to.eql(\"Paracetamol 1 g\");",
+                  "    pm.expect(toma.estado).to.eql(\"Confirmada\");",
+                  "    pm.expect(toma.confirmadaPor).to.eql(\"Rui Fictício\");",
+                  "    pm.expect(toma.confirmadaEm).to.match(/[+-]\\d{2}:\\d{2}$/);",
+                  "    pm.expect(toma.confirmavel).to.eql(false);",
+                  "});",
+                  "pm.test(\"Não inclui a ficha própria de A, a que B não está associado\", () =>",
+                  "    pm.expect(itens.map(i => i.fichaId)).to.not.include(v.get(\"fichaPropriaId\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/lista-diaria?data={{hoje}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "lista-diaria"
+              ],
+              "query": [
+                {
+                  "key": "data",
+                  "value": "{{hoje}}"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
               ]
             }
           },
