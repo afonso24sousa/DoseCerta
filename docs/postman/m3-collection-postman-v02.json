@@ -5698,6 +5698,245 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "F011 Notificações",
+      "item": [
+        {
+          "name": "OP-51 Consultar histórico de notificações (Familiar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const notificacoes = pm.response.json();",
+                  "const tipos = [\"ConviteRecebido\", \"TomaEmAtraso\", \"TomaGraveFamiliares\", \"NovaOcorrencia\", \"ProximoCompromisso\"];",
+                  "pm.test(\"Cada notificação tem tipo, mensagem, ficha, criação e estado do e-mail\", () => notificacoes.forEach(n => {",
+                  "    pm.expect(tipos).to.include(n.tipo);",
+                  "    pm.expect(n.mensagem).to.be.a(\"string\").and.not.empty;",
+                  "    pm.expect(n.nomeFicha).to.be.a(\"string\").and.not.empty;",
+                  "    pm.expect(n.criadaEm).to.match(/[+-]\\d{2}:\\d{2}$/);",
+                  "    pm.expect([\"Enviado\", \"Pendente\", \"NaoEntregue\"]).to.include(n.email);",
+                  "}));",
+                  "pm.test(\"Da mais recente para a mais antiga\", () => {",
+                  "    const criadas = notificacoes.map(n => Date.parse(n.criadaEm));",
+                  "    pm.expect(criadas).to.eql([...criadas].sort((a, b) => b - a));",
+                  "});",
+                  "pm.test(\"Inclui a nova ocorrência da F009 e os convites recebidos\", () => {",
+                  "    const ocorrencia = notificacoes.find(n => n.tipo === \"NovaOcorrencia\" && n.fichaId === pm.collectionVariables.get(\"fichaId\"));",
+                  "    pm.expect(ocorrencia, \"NovaOcorrencia\").to.not.be.undefined;",
+                  "    pm.expect(ocorrencia.nomeFicha).to.eql(\"Maria Fictícia Santos\");",
+                  "    pm.expect(notificacoes.map(n => n.tipo)).to.include(\"ConviteRecebido\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notificacoes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notificacoes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-51 Consultar notificações de hoje (de e ate)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const notificacoes = pm.response.json();",
+                  "const tipos = [\"ConviteRecebido\", \"TomaEmAtraso\", \"TomaGraveFamiliares\", \"NovaOcorrencia\", \"ProximoCompromisso\"];",
+                  "pm.test(\"Cada notificação tem tipo, mensagem, ficha, criação e estado do e-mail\", () => notificacoes.forEach(n => {",
+                  "    pm.expect(tipos).to.include(n.tipo);",
+                  "    pm.expect(n.mensagem).to.be.a(\"string\").and.not.empty;",
+                  "    pm.expect(n.nomeFicha).to.be.a(\"string\").and.not.empty;",
+                  "    pm.expect(n.criadaEm).to.match(/[+-]\\d{2}:\\d{2}$/);",
+                  "    pm.expect([\"Enviado\", \"Pendente\", \"NaoEntregue\"]).to.include(n.email);",
+                  "}));",
+                  "pm.test(\"Da mais recente para a mais antiga\", () => {",
+                  "    const criadas = notificacoes.map(n => Date.parse(n.criadaEm));",
+                  "    pm.expect(criadas).to.eql([...criadas].sort((a, b) => b - a));",
+                  "});",
+                  "pm.test(\"Inclui a nova ocorrência da F009 e os convites recebidos\", () => {",
+                  "    const ocorrencia = notificacoes.find(n => n.tipo === \"NovaOcorrencia\" && n.fichaId === pm.collectionVariables.get(\"fichaId\"));",
+                  "    pm.expect(ocorrencia, \"NovaOcorrencia\").to.not.be.undefined;",
+                  "    pm.expect(ocorrencia.nomeFicha).to.eql(\"Maria Fictícia Santos\");",
+                  "    pm.expect(notificacoes.map(n => n.tipo)).to.include(\"ConviteRecebido\");",
+                  "});",
+                  "pm.test(\"Só notificações criadas hoje em Lisboa\", () =>",
+                  "    notificacoes.forEach(n => pm.expect(n.criadaEm.slice(0, 10)).to.eql(pm.collectionVariables.get(\"hoje\"))));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notificacoes?de={{hoje}}&ate={{hoje}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notificacoes"
+              ],
+              "query": [
+                {
+                  "key": "de",
+                  "value": "{{hoje}}"
+                },
+                {
+                  "key": "ate",
+                  "value": "{{hoje}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-51 O autor da ocorrência não é notificado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const notificacoes = pm.response.json();",
+                  "const tipos = [\"ConviteRecebido\", \"TomaEmAtraso\", \"TomaGraveFamiliares\", \"NovaOcorrencia\", \"ProximoCompromisso\"];",
+                  "pm.test(\"Cada notificação tem tipo, mensagem, ficha, criação e estado do e-mail\", () => notificacoes.forEach(n => {",
+                  "    pm.expect(tipos).to.include(n.tipo);",
+                  "    pm.expect(n.mensagem).to.be.a(\"string\").and.not.empty;",
+                  "    pm.expect(n.nomeFicha).to.be.a(\"string\").and.not.empty;",
+                  "    pm.expect(n.criadaEm).to.match(/[+-]\\d{2}:\\d{2}$/);",
+                  "    pm.expect([\"Enviado\", \"Pendente\", \"NaoEntregue\"]).to.include(n.email);",
+                  "}));",
+                  "pm.test(\"Da mais recente para a mais antiga\", () => {",
+                  "    const criadas = notificacoes.map(n => Date.parse(n.criadaEm));",
+                  "    pm.expect(criadas).to.eql([...criadas].sort((a, b) => b - a));",
+                  "});",
+                  "pm.test(\"B recebeu o convite de A, mas não a notificação da ocorrência que registou\", () => {",
+                  "    pm.expect(notificacoes.map(n => n.tipo)).to.include(\"ConviteRecebido\");",
+                  "    pm.expect(notificacoes.filter(n => n.tipo === \"NovaOcorrencia\")).to.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notificacoes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notificacoes"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-51 Erro: ate anterior a de (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Código de erro VALIDACAO_INVALIDA\", () => pm.expect(pm.response.json().codigo).to.eql(\"VALIDACAO_INVALIDA\"));",
+                  "pm.test(\"Indica o campo ate\", () => pm.expect(pm.response.json().campos.map(c => c.campo)).to.include(\"ate\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notificacoes?de={{amanha}}&ate={{hoje}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notificacoes"
+              ],
+              "query": [
+                {
+                  "key": "de",
+                  "value": "{{amanha}}"
+                },
+                {
+                  "key": "ate",
+                  "value": "{{hoje}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-51 Erro: sem token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"Código de erro NAO_AUTENTICADO\", () => pm.expect(pm.response.json().codigo).to.eql(\"NAO_AUTENTICADO\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notificacoes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notificacoes"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Histórico de notificações de cada Utilizador. As notificações de atraso das tomas e de compromissos dependem do processo periódico e da hora; a collection só verifica as que já existem no fim da F009."
     }
   ],
   "variable": [
