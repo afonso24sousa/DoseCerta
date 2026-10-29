@@ -1,13 +1,13 @@
 // Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
 
-using DoseCerta.Application.Compromissos;
 using DoseCerta.Application.Repositorios;
+using DoseCerta.Domain.Entidades;
 using Microsoft.EntityFrameworkCore;
 
 namespace DoseCerta.Infrastructure.Persistence.Repositorios;
 
 /// <summary>
-/// Repositório EF Core dos compromissos (consulta da lista diária, F010).
+/// Repositório EF Core dos compromissos de saúde (F008). As consultas por intervalo usam <c>IX_Compromisso_FichaData</c>.
 /// </summary>
 public sealed class CompromissoRepositorio : ICompromissoRepositorio
 {
@@ -23,7 +23,34 @@ public sealed class CompromissoRepositorio : ICompromissoRepositorio
     }
 
     /// <inheritdoc/>
-    public async Task<IReadOnlyList<CompromissoDoPeriodo>> DoPeriodoDasFichasAsync(
+    public Task<Compromisso?> ObterPorIdAsync(Guid id, CancellationToken cancelamento)
+    {
+        return this.contexto.Compromissos.FirstOrDefaultAsync(c => c.Id == id, cancelamento);
+    }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<Compromisso>> DaFichaAsync(Guid fichaId, DateTime? deUtc, DateTime? ateUtc, CancellationToken cancelamento)
+    {
+        var consulta = this.contexto.Compromissos.AsNoTracking().Where(c => c.FichaId == fichaId);
+        if (deUtc is not null)
+        {
+            consulta = consulta.Where(c => c.DataHoraUtc >= deUtc);
+        }
+
+        if (ateUtc is not null)
+        {
+            consulta = consulta.Where(c => c.DataHoraUtc < ateUtc);
+        }
+
+        return await consulta
+            .OrderBy(c => c.DataHoraUtc)
+            .ThenBy(c => c.Id)
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<Compromisso>> DoPeriodoDasFichasAsync(
         IReadOnlyCollection<Guid> fichaIds,
         DateTime deUtc,
         DateTime ateUtc,
@@ -32,13 +59,21 @@ public sealed class CompromissoRepositorio : ICompromissoRepositorio
         return await this.contexto.Compromissos
             .AsNoTracking()
             .Where(c => fichaIds.Contains(c.FichaId) && c.DataHoraUtc >= deUtc && c.DataHoraUtc < ateUtc)
-            .Join(this.contexto.Fichas, c => c.FichaId, f => f.Id, (c, f) => new CompromissoDoPeriodo(
-                c.Id,
-                f.Id,
-                f.NomeCompleto,
-                c.Motivo,
-                c.DataHoraUtc))
+            .OrderBy(c => c.DataHoraUtc)
+            .ThenBy(c => c.Id)
             .ToListAsync(cancelamento)
             .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc/>
+    public void Adicionar(Compromisso compromisso)
+    {
+        this.contexto.Compromissos.Add(compromisso);
+    }
+
+    /// <inheritdoc/>
+    public void Remover(Compromisso compromisso)
+    {
+        this.contexto.Compromissos.Remove(compromisso);
     }
 }

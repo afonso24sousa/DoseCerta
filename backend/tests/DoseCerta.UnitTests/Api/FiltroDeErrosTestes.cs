@@ -1,6 +1,7 @@
 // Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
 
 using System.Text.Json;
+using DoseCerta.Api.Contratos.Tomas;
 using DoseCerta.Api.Erros;
 using DoseCerta.Domain.Comum;
 using Microsoft.AspNetCore.Http;
@@ -35,6 +36,10 @@ public class FiltroDeErrosTestes
     [InlineData(CodigosErro.FichaPropriaJaExiste, 409)]
     [InlineData(CodigosErro.TratamentoTerminado, 409)]
     [InlineData(CodigosErro.TratamentoJaTerminado, 409)]
+    [InlineData(CodigosErro.TomaForaDaJanela, 409)]
+    [InlineData(CodigosErro.TomaJaConfirmada, 409)]
+    [InlineData(CodigosErro.TomaNaoConfirmavel, 409)]
+    [InlineData(CodigosErro.CompromissoNaoConfirmavel, 405)]
     [InlineData(CodigosErro.FicheiroDemasiadoGrande, 413)]
     [InlineData(CodigosErro.FormatoNaoSuportado, 415)]
     [InlineData(CodigosErro.DocumentoNaoGuardado, 503)]
@@ -68,6 +73,31 @@ public class FiltroDeErrosTestes
         Assert.Equal(CodigosErro.ValidacaoInvalida, corpo.Codigo);
         var campo = Assert.Single(corpo.Campos!);
         Assert.Equal("email", campo.Campo);
+    }
+
+    /// <summary>
+    /// OP-33: o erro <c>TOMA_JA_CONFIRMADA</c> leva a confirmação gravada, com a data no desvio de Lisboa; os outros erros não
+    /// têm o campo <c>confirmacao</c> no JSON.
+    /// </summary>
+    [Fact]
+    public void ConverterTomaJaConfirmadaIncluiAConfirmacao()
+    {
+        var cuidador = Guid.NewGuid();
+        var erro = new DominioException(CodigosErro.TomaJaConfirmada, "A toma já foi confirmada.")
+        {
+            Confirmacao = new ConfirmacaoRegistada(cuidador, "Ana Fictícia", new DateTime(2026, 10, 7, 7, 5, 0, DateTimeKind.Utc)),
+        };
+        var opcoes = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+
+        var (estado, corpo) = FiltroDeErros.Converter(erro);
+        var (_, outro) = FiltroDeErros.Converter(new DominioException(CodigosErro.TomaForaDaJanela, "Fora da janela."));
+
+        Assert.Equal(409, estado);
+        Assert.Equal(new PessoaConfirmou(cuidador, "Ana Fictícia"), corpo.Confirmacao!.ConfirmadaPor);
+        Assert.Equal(new DateTimeOffset(2026, 10, 7, 8, 5, 0, TimeSpan.FromHours(1)), corpo.Confirmacao.ConfirmadaEm);
+        Assert.Equal(TimeSpan.FromHours(1), corpo.Confirmacao.ConfirmadaEm.Offset);
+        Assert.Contains("\"confirmacao\"", JsonSerializer.Serialize(corpo, opcoes), StringComparison.Ordinal);
+        Assert.DoesNotContain("confirmacao", JsonSerializer.Serialize(outro, opcoes), StringComparison.Ordinal);
     }
 
     /// <summary>

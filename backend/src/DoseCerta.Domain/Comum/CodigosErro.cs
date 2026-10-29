@@ -88,6 +88,26 @@ public static class CodigosErro
     public const string TratamentoJaTerminado = "TRATAMENTO_JA_TERMINADO";
 
     /// <summary>
+    /// A toma ainda não pode ser confirmada: a janela abre às 00:00 de Lisboa do dia previsto (409, OP-33, TR-13).
+    /// </summary>
+    public const string TomaForaDaJanela = "TOMA_FORA_DA_JANELA";
+
+    /// <summary>
+    /// A toma já foi confirmada; a resposta inclui quem confirmou e quando (409, OP-33, TR-15).
+    /// </summary>
+    public const string TomaJaConfirmada = "TOMA_JA_CONFIRMADA";
+
+    /// <summary>
+    /// A toma já não pode ser confirmada: passaram 24 horas da hora prevista (409, OP-33, TR-14).
+    /// </summary>
+    public const string TomaNaoConfirmavel = "TOMA_NAO_CONFIRMAVEL";
+
+    /// <summary>
+    /// Os compromissos não são confirmáveis: o pedido de confirmação é recusado (405, RF-087).
+    /// </summary>
+    public const string CompromissoNaoConfirmavel = "COMPROMISSO_NAO_CONFIRMAVEL";
+
+    /// <summary>
     /// O titular da ficha própria é sempre o Cuidador principal: não é despromovido, removido nem substituído (403, RF-033, RF-034).
     /// </summary>
     public const string CuidadorPrincipalProtegido = "CUIDADOR_PRINCIPAL_PROTEGIDO";
@@ -156,4 +176,9 @@ public static class CodigosErro
     /// Erro inesperado do servidor, sem detalhes internos na resposta (500).
     /// </summary>
     public const string ErroInterno = "ERRO_INTERNO";
+
+    /// <summary>
+    /// As ocorrências e as notas não podem ser alteradas nem eliminadas (405, RF-090, RF-091, RNF-049).
+    /// </summary>
+    public const string RegistoImutavel = "REGISTO_IMUTAVEL";
 }

@@ -4,6 +4,7 @@ using DoseCerta.Application.Abstracoes;
 using DoseCerta.Application.Convites;
 using DoseCerta.Application.Emails;
 using DoseCerta.Application.Fichas;
+using DoseCerta.Application.Ocorrencias;
 
 namespace DoseCerta.UnitTests.Suporte;
 
@@ -47,5 +48,24 @@ public static class ServicosDeTeste
         IEmailSender emailSender)
     {
         return new EnvioEmailService(repositorios, repositorios, emailSender, unidadeDeTrabalho, relogio);
+    }
+
+    /// <summary>
+    /// Cria o serviço das ocorrências e das notas (F009) com os repositórios em memória.
+    /// </summary>
+    /// <param name="repositorios">Repositórios em memória.</param>
+    /// <param name="unidadeDeTrabalho">Unidade de trabalho dos testes.</param>
+    /// <param name="relogio">Relógio dos testes.</param>
+    /// <returns>O serviço das ocorrências e das notas.</returns>
+    public static OcorrenciaService OcorrenciaService(RepositoriosEmMemoria repositorios, IUnidadeDeTrabalho unidadeDeTrabalho, IRelogio relogio)
+    {
+        return new OcorrenciaService(
+            repositorios,
+            repositorios,
+            repositorios,
+            repositorios,
+            new AutorizacaoFichaService(repositorios),
+            unidadeDeTrabalho,
+            relogio);
     }
 }

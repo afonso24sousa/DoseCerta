@@ -132,7 +132,7 @@ public class AutorizacaoFichaServiceTestes
 
         Assert.Equal(
             new[] { this.ficha.Id, comoCuidador.Id, comoProvisorio.Id }.Order(),
-            ids.Order());
+            ids.Keys.Order());
     }
 
     /// <summary>
@@ -147,7 +147,7 @@ public class AutorizacaoFichaServiceTestes
         var qualquerPapel = await this.servico.IdentificadoresDeFichasAtivasAsync(this.familiar, null, CancellationToken.None);
 
         Assert.Empty(comoCuidador);
-        Assert.Equal(new[] { this.ficha.Id }, qualquerPapel);
+        Assert.Equal(new[] { this.ficha.Id }, qualquerPapel.Keys);
     }
 
     /// <summary>

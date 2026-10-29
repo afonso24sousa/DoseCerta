@@ -55,4 +55,9 @@ public class DominioException : Exception
     /// Gets o código de erro da API.
     /// </summary>
     public string Codigo { get; }
+
+    /// <summary>
+    /// Gets a confirmação já gravada, devolvida no corpo do erro <see cref="CodigosErro.TomaJaConfirmada"/>; nos restantes erros é nula.
+    /// </summary>
+    public ConfirmacaoRegistada? Confirmacao { get; init; }
 }

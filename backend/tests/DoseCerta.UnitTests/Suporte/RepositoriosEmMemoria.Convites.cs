@@ -1,6 +1,7 @@
 // Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
 
 using DoseCerta.Application.Convites;
+using DoseCerta.Application.Repositorios;
 using DoseCerta.Domain.Entidades;
 using DoseCerta.Domain.Enumerados;
 
@@ -18,7 +19,7 @@ public partial class RepositoriosEmMemoria
     }
 
     /// <inheritdoc/>
-    public Task<Convite?> ObterAsync(Guid id, CancellationToken cancelamento)
+    Task<Convite?> IConviteRepositorio.ObterAsync(Guid id, CancellationToken cancelamento)
     {
         return Task.FromResult(this.Convites.Find(c => c.Id == id));
     }

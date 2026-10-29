@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "b8a1f0e2-1036-4c3a-9f00-d05ece27a036",
     "name": "DoseCerta API - F001 a F004 (m3, v01)",
-    "description": "Collection da Issue I036 (Grupo G07): um pedido por endpoint de F001 a F004, com testes ao código de resposta e ao corpo.\n\nExecução: Collection Runner (ou newman) do princípio ao fim, pela ordem das pastas, com o ambiente `m3-ambiente-local-postman-v01` e o backend local a correr.\nA collection é independente dos dados existentes: regista os seus próprios utilizadores fictícios com e-mail único (@example.com) e guarda os tokens e os ids nas variáveis da collection.\nNão contém segredos: só dados fictícios; os tokens são obtidos em cada execução.\n\nAutenticação: Bearer {{token}} herdado da collection; os pedidos do segundo utilizador usam Bearer {{token2}}; OP-01 e OP-02 são públicos.\nO backend local usa um certificado HTTPS de desenvolvimento: no newman use `--insecure`; no Postman, desative \"SSL certificate verification\" ou confie no certificado com `dotnet dev-certs https --trust`.",
+    "description": "Collection da Issue I036 (Grupo G07): um pedido por endpoint de F001 a F004, com testes ao código de resposta e ao corpo. A Issue I044 acrescentou a pasta F008 (OP-41 a OP-45 e a recusa da confirmação de compromissos), que corre depois da F004: o Utilizador B, Cuidador principal da ficha, convida o Utilizador A como Familiar.\n\nExecução: Collection Runner (ou newman) do princípio ao fim, pela ordem das pastas, com o ambiente `m3-ambiente-local-postman-v01` e o backend local a correr.\nA collection é independente dos dados existentes: regista os seus próprios utilizadores fictícios com e-mail único (@example.com) e guarda os tokens e os ids nas variáveis da collection.\nNão contém segredos: só dados fictícios; os tokens são obtidos em cada execução.\n\nAutenticação: Bearer {{token}} herdado da collection; os pedidos do segundo utilizador usam Bearer {{token2}}; OP-01 e OP-02 são públicos.\nO backend local usa um certificado HTTPS de desenvolvimento: no newman use `--insecure`; no Postman, desative \"SSL certificate verification\" ou confie no certificado com `dotnet dev-certs https --trust`.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -2454,6 +2454,807 @@
       ]
     },
     {
+      "name": "F008 Compromissos e agenda",
+      "item": [
+        {
+          "name": "Preparação: OP-19 B convida A como Familiar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 201\", () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set(\"conviteFamiliarId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaId}}/convites",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaId}}",
+                "convites"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailA}}\",\n  \"papel\": \"Familiar\",\n  \"paraPrincipal\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Preparação: OP-21 A aceita e fica Familiar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"A fica Familiar\", () => pm.expect(pm.response.json().papel).to.eql(\"Familiar\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/convites/{{conviteFamiliarId}}/aceitacao",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "convites",
+                "{{conviteFamiliarId}}",
+                "aceitacao"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-41 Registar compromisso",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 201\", () => pm.response.to.have.status(201));",
+                  "const corpo = pm.response.json();",
+                  "pm.test(\"Devolve o compromisso com a data em hora de Lisboa\", () => {",
+                  "    pm.expect(corpo.fichaId).to.eql(pm.collectionVariables.get(\"fichaId\"));",
+                  "    pm.expect(corpo.dataHora).to.eql(\"2027-03-12T10:30:00+00:00\");",
+                  "    pm.expect(corpo.local).to.eql(\"Centro de Saúde Fictício\");",
+                  "    pm.expect(corpo.motivo).to.eql(\"Consulta de rotina\");",
+                  "});",
+                  "pm.test(\"Antecedência por omissão de 24 horas\", () => pm.expect(corpo.antecedenciaAvisoMinutos).to.eql(1440));",
+                  "pm.collectionVariables.set(\"compromissoId\", corpo.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaId}}/compromissos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaId}}",
+                "compromissos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dataHora\": \"2027-03-12T10:30:00+00:00\",\n  \"local\": \"Centro de Saúde Fictício\",\n  \"motivo\": \"Consulta de rotina\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-41 Erro: dados inválidos (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Código VALIDACAO_INVALIDA\", () => pm.expect(pm.response.json().codigo).to.eql(\"VALIDACAO_INVALIDA\"));",
+                  "pm.test(\"Indica os campos em falta\", () => pm.expect(pm.response.json().campos.map(c => c.campo)).to.include.members([\"dataHora\", \"local\", \"motivo\"]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaId}}/compromissos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaId}}",
+                "compromissos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"antecedenciaAvisoMinutos\": 60\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-41 Erro: Familiar não regista (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"Código ACESSO_PROIBIDO\", () => pm.expect(pm.response.json().codigo).to.eql(\"ACESSO_PROIBIDO\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaId}}/compromissos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaId}}",
+                "compromissos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dataHora\": \"2027-03-12T10:30:00+00:00\",\n  \"local\": \"Centro de Saúde Fictício\",\n  \"motivo\": \"Consulta de rotina\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-42 Listar compromissos da ficha (Familiar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Inclui o compromisso\", () => pm.expect(pm.response.json().map(c => c.id)).to.include(pm.collectionVariables.get(\"compromissoId\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaId}}/compromissos?de=2027-03-01&ate=2027-03-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaId}}",
+                "compromissos"
+              ],
+              "query": [
+                {
+                  "key": "de",
+                  "value": "2027-03-01"
+                },
+                {
+                  "key": "ate",
+                  "value": "2027-03-31"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-42 Erro: ficha sem associação (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Código FICHA_NAO_ENCONTRADA\", () => pm.expect(pm.response.json().codigo).to.eql(\"FICHA_NAO_ENCONTRADA\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaPropriaId}}/compromissos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaPropriaId}}",
+                "compromissos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-43 Editar compromisso",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const corpo = pm.response.json();",
+                  "pm.test(\"Guarda os dados novos\", () => {",
+                  "    pm.expect(corpo.dataHora).to.eql(\"2027-03-12T11:00:00+00:00\");",
+                  "    pm.expect(corpo.motivo).to.eql(\"Consulta de seguimento\");",
+                  "    pm.expect(corpo.antecedenciaAvisoMinutos).to.eql(120);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/compromissos/{{compromissoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "compromissos",
+                "{{compromissoId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dataHora\": \"2027-03-12T11:00:00+00:00\",\n  \"local\": \"Centro de Saúde Fictício\",\n  \"motivo\": \"Consulta de seguimento\",\n  \"antecedenciaAvisoMinutos\": 120\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-43 Erro: antecedência não permitida (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Código VALIDACAO_INVALIDA\", () => pm.expect(pm.response.json().codigo).to.eql(\"VALIDACAO_INVALIDA\"));",
+                  "pm.test(\"Indica o campo antecedenciaAvisoMinutos\", () => pm.expect(pm.response.json().campos.map(c => c.campo)).to.include(\"antecedenciaAvisoMinutos\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/compromissos/{{compromissoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "compromissos",
+                "{{compromissoId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dataHora\": \"2027-03-12T10:30:00+00:00\",\n  \"local\": \"Centro de Saúde Fictício\",\n  \"motivo\": \"Consulta de rotina\",\n  \"antecedenciaAvisoMinutos\": 45\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Erro: confirmar um compromisso (405)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 405\", () => pm.response.to.have.status(405));",
+                  "pm.test(\"Código COMPROMISSO_NAO_CONFIRMAVEL\", () => pm.expect(pm.response.json().codigo).to.eql(\"COMPROMISSO_NAO_CONFIRMAVEL\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/compromissos/{{compromissoId}}/confirmacao",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "compromissos",
+                "{{compromissoId}}",
+                "confirmacao"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-45 Consultar agenda (vista diária)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const item = pm.response.json().find(i => i.id === pm.collectionVariables.get(\"compromissoId\"));",
+                  "pm.test(\"Inclui o compromisso, não confirmável e sem estado\", () => {",
+                  "    pm.expect(item).to.not.be.undefined;",
+                  "    pm.expect(item.tipo).to.eql(\"Compromisso\");",
+                  "    pm.expect(item.titulo).to.eql(\"Consulta de seguimento\");",
+                  "    pm.expect(item.inicio).to.eql(\"2027-03-12T11:00:00+00:00\");",
+                  "    pm.expect(item.confirmavel).to.eql(false);",
+                  "    pm.expect(item).to.not.have.property(\"estado\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/agenda?vista=dia&data=2027-03-12",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agenda"
+              ],
+              "query": [
+                {
+                  "key": "vista",
+                  "value": "dia"
+                },
+                {
+                  "key": "data",
+                  "value": "2027-03-12"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-45 Consultar agenda como Familiar (vista mensal)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"O Familiar vê o compromisso\", () => pm.expect(pm.response.json().map(i => i.id)).to.include(pm.collectionVariables.get(\"compromissoId\")));",
+                  "pm.test(\"Nada é confirmável para o Familiar\", () => pm.response.json().forEach(i => pm.expect(i.confirmavel).to.eql(false)));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/agenda?vista=mes&data=2027-03-01",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agenda"
+              ],
+              "query": [
+                {
+                  "key": "vista",
+                  "value": "mes"
+                },
+                {
+                  "key": "data",
+                  "value": "2027-03-01"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-45 Erro: vista inválida (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Código VALIDACAO_INVALIDA\", () => pm.expect(pm.response.json().codigo).to.eql(\"VALIDACAO_INVALIDA\"));",
+                  "pm.test(\"Indica o campo vista\", () => pm.expect(pm.response.json().campos.map(c => c.campo)).to.include(\"vista\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/agenda?vista=ano&data=2027-03-12",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agenda"
+              ],
+              "query": [
+                {
+                  "key": "vista",
+                  "value": "ano"
+                },
+                {
+                  "key": "data",
+                  "value": "2027-03-12"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-44 Erro: Familiar não remove (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"Código ACESSO_PROIBIDO\", () => pm.expect(pm.response.json().codigo).to.eql(\"ACESSO_PROIBIDO\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/compromissos/{{compromissoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "compromissos",
+                "{{compromissoId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-44 Remover compromisso",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/compromissos/{{compromissoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "compromissos",
+                "{{compromissoId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-43 Erro: compromisso removido (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Código RECURSO_NAO_ENCONTRADO\", () => pm.expect(pm.response.json().codigo).to.eql(\"RECURSO_NAO_ENCONTRADO\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/compromissos/{{compromissoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "compromissos",
+                "{{compromissoId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dataHora\": \"2027-03-12T10:30:00+00:00\",\n  \"local\": \"Centro de Saúde Fictício\",\n  \"motivo\": \"Consulta de rotina\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-45 Agenda sem o compromisso removido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"O compromisso removido deixa de aparecer\", () => pm.expect(pm.response.json().map(i => i.id)).to.not.include(pm.collectionVariables.get(\"compromissoId\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/agenda?vista=dia&data=2027-03-12",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agenda"
+              ],
+              "query": [
+                {
+                  "key": "vista",
+                  "value": "dia"
+                },
+                {
+                  "key": "data",
+                  "value": "2027-03-12"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "F010 Lista diária",
       "description": "OP-50 com o Utilizador A ({{token}}). As tomas são geradas por OP-27 (F005) na ficha própria {{fichaPropriaId}} para o dia 2027-06-15; a confirmação de tomas (F006) e os compromissos (F008) ainda não têm endpoints na main, por isso os itens aparecem pendentes. O dia 2027-06-15 é futuro, por isso as tomas ainda não são confirmáveis.",
       "item": [
@@ -2753,6 +3554,14 @@
       "value": "",
       "type": "string",
       "description": "Convites usados para testar a recusa."
+    },
+    {
+      "key": "conviteFamiliarId",
+      "value": ""
+    },
+    {
+      "key": "compromissoId",
+      "value": ""
     }
   ]
 }

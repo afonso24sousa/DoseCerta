@@ -1,6 +1,5 @@
 // Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
 
-using DoseCerta.Application.Compromissos;
 using DoseCerta.Application.Fichas;
 using DoseCerta.Application.ListaDiaria;
 using DoseCerta.Application.Tomas;
@@ -55,11 +54,11 @@ public class ListaDiariaServiceTestes
     public async Task ReuneTomasECompromissosDasFichasEmQueECuidador()
     {
         var tomaX = this.Toma(this.fichaX, Utc(11, 2, 8));
-        var compromissoX = this.Compromisso(this.fichaX, Utc(11, 2, 10, 30));
+        var compromissoX = this.CriarCompromisso(this.fichaX, Utc(11, 2, 10, 30));
         var tomaY = this.Toma(this.fichaY, Utc(11, 2, 8));
-        var compromissoY = this.Compromisso(this.fichaY, Utc(11, 2, 15));
+        var compromissoY = this.CriarCompromisso(this.fichaY, Utc(11, 2, 15));
         this.Toma(this.fichaZ, Utc(11, 2, 9));
-        this.Compromisso(this.fichaZ, Utc(11, 2, 11));
+        this.CriarCompromisso(this.fichaZ, Utc(11, 2, 11));
 
         var itens = await this.servico.ConsultarAsync(this.cuidador, Dia, CancellationToken.None);
 
@@ -86,7 +85,7 @@ public class ListaDiariaServiceTestes
     public async Task FichaArquivadaNaoAparece()
     {
         this.Toma(this.fichaX, Utc(11, 2, 8));
-        this.Compromisso(this.fichaX, Utc(11, 2, 10));
+        this.CriarCompromisso(this.fichaX, Utc(11, 2, 10));
         var tomaY = this.Toma(this.fichaY, Utc(11, 2, 8));
         this.fichaX.Arquivar(Utc(11, 1, 9));
 
@@ -106,7 +105,7 @@ public class ListaDiariaServiceTestes
         this.relogio.Agora = Utc(11, 2, 0, 30);
         var pendente = this.Toma(this.fichaX, Utc(11, 1, 23, 30));
         this.Toma(this.fichaX, Utc(11, 1, 8), EstadoToma.Confirmada, "Ana Fictícia", Utc(11, 1, 8, 5));
-        this.Compromisso(this.fichaX, Utc(11, 1, 18));
+        this.CriarCompromisso(this.fichaX, Utc(11, 1, 18));
 
         var semData = await this.servico.ConsultarAsync(this.cuidador, null, CancellationToken.None);
         var comData = await this.servico.ConsultarAsync(this.cuidador, Dia, CancellationToken.None);
@@ -185,7 +184,7 @@ public class ListaDiariaServiceTestes
     [Fact]
     public async Task OrdenaPorHoraEDesempataPorTipoENomeDoUtente()
     {
-        var compromissoX = this.Compromisso(this.fichaX, Utc(11, 2, 8));
+        var compromissoX = this.CriarCompromisso(this.fichaX, Utc(11, 2, 8));
         var tomaX = this.Toma(this.fichaX, Utc(11, 2, 8));
         var tomaY = this.Toma(this.fichaY, Utc(11, 2, 8));
         var cedo = this.Toma(this.fichaX, Utc(11, 2, 7, 30));
@@ -273,10 +272,10 @@ public class ListaDiariaServiceTestes
         return toma;
     }
 
-    private CompromissoDoPeriodo Compromisso(Ficha ficha, DateTime dataHoraUtc)
+    private Compromisso CriarCompromisso(Ficha ficha, DateTime dataHoraUtc)
     {
-        var compromisso = new CompromissoDoPeriodo(Guid.NewGuid(), ficha.Id, ficha.NomeCompleto, "Consulta de rotina", dataHoraUtc);
-        this.repositorios.CompromissosDoPeriodo.Add(compromisso);
+        var compromisso = new Compromisso(ficha.Id, dataHoraUtc, "Centro de Saúde Fictício", "Consulta de rotina", 1440, this.cuidador, Utc(10, 1, 9));
+        this.repositorios.Compromissos.Add(compromisso);
         return compromisso;
     }
 }

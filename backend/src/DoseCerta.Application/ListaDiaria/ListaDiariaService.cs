@@ -1,10 +1,10 @@
 // Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
 
 using DoseCerta.Application.Abstracoes;
-using DoseCerta.Application.Compromissos;
 using DoseCerta.Application.Fichas;
 using DoseCerta.Application.Repositorios;
 using DoseCerta.Application.Tomas;
+using DoseCerta.Domain.Entidades;
 using DoseCerta.Domain.Enumerados;
 using DoseCerta.Domain.Tempo;
 
@@ -53,12 +53,14 @@ public sealed class ListaDiariaService
     /// <returns>Os itens do dia; vazio se o Utilizador não for Cuidador de nenhuma ficha ativa.</returns>
     public async Task<IReadOnlyList<ItemListaDiaria>> ConsultarAsync(Guid utilizadorId, DateOnly? data, CancellationToken cancelamento)
     {
-        var fichaIds = await this.autorizacao.IdentificadoresDeFichasAtivasAsync(utilizadorId, Papel.Cuidador, cancelamento)
+        var fichas = await this.autorizacao.IdentificadoresDeFichasAtivasAsync(utilizadorId, Papel.Cuidador, cancelamento)
             .ConfigureAwait(false);
-        if (fichaIds.Count == 0)
+        if (fichas.Count == 0)
         {
             return Array.Empty<ItemListaDiaria>();
         }
+
+        var fichaIds = fichas.Keys.ToList();
 
         var agoraUtc = this.relogio.AgoraUtc();
         var calendario = this.relogio.Calendario();
@@ -78,7 +80,7 @@ public sealed class ListaDiariaService
         return tomasDoDia
             .Where(t => t.PrevistaEmUtc >= inicioUtc || t.Estado == EstadoToma.Pendente)
             .Select(t => ItemDeToma(t, hoje, agoraUtc, calendario))
-            .Concat(compromissosDoDia.Select(ItemDeCompromisso))
+            .Concat(compromissosDoDia.Select(c => ItemDeCompromisso(c, fichas[c.FichaId].Ficha.NomeCompleto)))
             .OrderBy(i => i.PrevistaEmUtc)
             .ThenBy(i => i.Tipo)
             .ThenBy(i => i.NomeFicha, StringComparer.Ordinal)
@@ -107,13 +109,13 @@ public sealed class ListaDiariaService
     }
 
     // Os compromissos são só de consulta: não têm estado nem podem ser confirmados (RF-087).
-    private static ItemListaDiaria ItemDeCompromisso(CompromissoDoPeriodo compromisso)
+    private static ItemListaDiaria ItemDeCompromisso(Compromisso compromisso, string nomeFicha)
     {
         return new ItemListaDiaria(
             TipoItemListaDiaria.Compromisso,
             compromisso.Id,
             compromisso.FichaId,
-            compromisso.NomeFicha,
+            nomeFicha,
             compromisso.Motivo,
             compromisso.DataHoraUtc,
             null,

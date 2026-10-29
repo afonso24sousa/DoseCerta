@@ -8,9 +8,12 @@ Esta versão corresponde à configuração da solução (Issue I029): camadas, a
 verificação do estado da aplicação, serviço de e-mail e testes; e ao modelo de dados (Issue I030): entidades, mapeamento
 EF Core, migração inicial e scripts SQL; à autenticação e gestão de conta (Issue I032, F001: OP-01 a OP-06); à criação
 e gestão de fichas de utentes (Issue I033, F002 e ficha própria da F003: OP-07 a OP-17), descritas na secção 5.1; e ao
-registo de medicação (Issue I037, F005: OP-27 a OP-31), descrito na secção 5.2. A F007 (tarefas de cuidados recorrentes)
+registo de medicação (Issue I037, F005: OP-27 a OP-31), descrito na secção 5.2; e aos horários e à confirmação de toma
+(Issue I038, F006: OP-32 a OP-34), descritos na secção 5.3; e à agenda de consultas e calendário de cuidados
+(Issue I044, F008: OP-41 a OP-45), descrita na secção 5.4. A F007 (tarefas de cuidados recorrentes)
 foi retirada do âmbito por alteração autorizada (documentação v02); a migração `RetirarTarefasRecorrentes` remove-a do
 esquema (secção 8).
+As ocorrências diárias e as notas partilhadas (Issue I045, F009: OP-46 a OP-49) estão descritas na secção 5.5.
 
 ## 1. Estrutura da solução
 
@@ -170,8 +173,79 @@ Ao registar, o servidor gera uma toma `Pendente` por horário e por dia entre a 
 guardada em UTC); sem data de fim, só até 30 dias depois do registo. Não se geram tomas anteriores ao instante em que a ficha
 ficou ativa (DM-19). Alterar o tratamento apaga as tomas pendentes futuras e gera-as de novo com os dados novos; terminar
 apaga-as; as anteriores mantêm a hora e o estado (RF-055, RF-056, RF-060). Numa ficha arquivada só é possível terminar o
-tratamento (RF-120). O prolongamento da janela de 30 dias e o término automático depois da data de fim pertencem ao processo
-periódico, que ainda não existe (F006 e F011).
+tratamento (RF-120). O prolongamento da janela de 30 dias pertence ao processo periódico (secção 5.3) e o término automático
+depois da data de fim à F011.
+
+### 5.3 Tomas (F006)
+
+Os endpoints seguem a documentação da API (`m3-documentacao-api-v02.md`, OP-32 a OP-34) e o diagrama de estados da toma
+(`m3-diagrama-estados-toma-v02.md`). As datas das respostas vêm em hora de Lisboa, com o desvio (`2026-10-07T08:00:00+01:00`).
+
+| Operação | Método e caminho |
+|---|---|
+| OP-32 Listar tomas da ficha | `GET /api/v1/fichas/{fichaId}/tomas?de=AAAA-MM-DD&ate=AAAA-MM-DD[&estado=...][&tratamentoId=...]` |
+| OP-33 Confirmar toma | `POST /api/v1/tomas/{tomaId}/confirmacao` (sem corpo) |
+| OP-34 Sincronizar o calendário de tomas | `GET /api/v1/calendario/tomas` |
+
+- OP-32: `de` e `ate` são dias de Lisboa, obrigatórios, com no máximo 31 dias contando os dois. Cuidadores e Familiares
+  consultam, também numa ficha arquivada; quem não está associado recebe 404 `FICHA_NAO_ENCONTRADA`.
+- OP-33: só um Cuidador confirma (o Familiar recebe 403), também numa ficha arquivada. A janela abre às 00:00 de Lisboa do dia
+  da toma (antes disso, 409 `TOMA_FORA_DA_JANELA`). Até ao fim da tolerância (Leve 2 h, Moderado 1 h, Grave 30 min, inclusive)
+  fica `Confirmada`; depois, e antes das 24 horas, fica `ConfirmadaComAtraso`; a partir das 24 horas responde 409
+  `TOMA_NAO_CONFIRMAVEL`. A segunda confirmação responde 409 `TOMA_JA_CONFIRMADA` com o campo `confirmacao` (quem e quando).
+  Duas confirmações em simultâneo são resolvidas pela coluna `Versao` (RNF-044): uma responde 200 e a outra 409.
+- OP-34: tomas `Pendente` das próximas 48 horas das fichas ativas em que o Utilizador é Cuidador, para os alarmes locais do
+  telemóvel; lista vazia se não houver.
+- Reativar uma ficha (OP-13) volta a gerar as tomas dos tratamentos em curso a partir desse instante (TR-10).
+- Os passos do processo periódico estão no `TomaService`: `PrologarJanelaMovelAsync` (passo 1, janela móvel de 30 dias) e
+  `ConcluirNaoConfirmadasAsync` (passo 5, passagem a `NaoConfirmada` 24 horas depois da hora prevista, sem notificação).
+
+### 5.4 Compromissos e agenda (F008)
+
+Os endpoints seguem a documentação da API (OP-41 a OP-45) e a matriz de permissões: só um Cuidador regista, edita e remove
+compromissos numa ficha ativa (o Familiar recebe 403 e a ficha arquivada 409 `FICHA_ARQUIVADA`); Cuidadores e Familiares
+consultam, também numa ficha arquivada.
+
+| Operação | Método e caminho |
+|---|---|
+| OP-41 Registar compromisso | `POST /api/v1/fichas/{fichaId}/compromissos` |
+| OP-42 Listar compromissos da ficha | `GET /api/v1/fichas/{fichaId}/compromissos[?de=AAAA-MM-DD&ate=AAAA-MM-DD]` |
+| OP-43 Editar compromisso | `PUT /api/v1/compromissos/{compromissoId}` |
+| OP-44 Remover compromisso | `DELETE /api/v1/compromissos/{compromissoId}` |
+| OP-45 Consultar agenda | `GET /api/v1/agenda?vista=dia\|semana\|mes&data=AAAA-MM-DD` |
+
+- OP-41 e OP-43: `dataHora` (ISO 8601 com o desvio), `local` e `motivo` são obrigatórios; `antecedenciaAvisoMinutos` só
+  aceita 30, 60, 120, 1440 ou 2880 e, por omissão, é 1440 (24 horas). Ao editar a data ou a antecedência, o aviso volta a ser
+  calculado com os valores novos. O envio do aviso (`ProximoCompromisso`) é da F011.
+- Os compromissos não são confirmáveis: `POST /api/v1/compromissos/{compromissoId}/confirmacao` responde sempre 405
+  `COMPROMISSO_NAO_CONFIRMAVEL` (RF-087).
+- OP-45: reúne os compromissos e as tomas das fichas **ativas** em que o Utilizador é Cuidador ou Familiar, por ordem de
+  `inicio`. Os limites do dia, da semana (segunda a domingo) e do mês seguem a hora de Lisboa, incluindo as mudanças de hora.
+  `confirmavel` só é verdadeiro nas tomas `Pendente` das fichas em que o Utilizador é Cuidador; os compromissos não têm
+  `estado`. As tomas só existem na janela móvel de 30 dias, por isso os períodos distantes só mostram compromissos. Sem
+  fichas, a lista é vazia. A F007 foi retirada: a agenda não tem tarefas.
+
+### 5.5 Ocorrências e notas partilhadas (F009)
+
+Os endpoints seguem a documentação da API (secção 5.8) e a matriz de permissões: só um Cuidador (principal ou não) regista
+ocorrências e notas; as ocorrências são consultadas por Cuidadores e Familiares e as notas só por Cuidadores (o Familiar recebe
+403, RF-095). Quem não está associado à ficha recebe 404 `FICHA_NAO_ENCONTRADA`.
+
+| Operação | Método e caminho |
+|---|---|
+| OP-46 Registar ocorrência | `POST /api/v1/fichas/{fichaId}/ocorrencias` |
+| OP-47 Registar nota partilhada | `POST /api/v1/fichas/{fichaId}/notas` |
+| OP-48 Consultar ocorrências | `GET /api/v1/fichas/{fichaId}/registos?tipo=Ocorrencia&de=AAAA-MM-DD&ate=AAAA-MM-DD` |
+| OP-49 Consultar notas partilhadas | `GET /api/v1/fichas/{fichaId}/registos?tipo=Nota&de=AAAA-MM-DD&ate=AAAA-MM-DD` |
+
+O servidor guarda o autor e o instante do registo (`criadaEm`); na ocorrência, `ocorridaEm` é indicado pelo Cuidador, com o
+desvio de Lisboa (RF-092). As consultas devolvem os registos do mais recente para o mais antigo pelo instante do registo; `tipo`
+é obrigatório e `de` e `ate` são opcionais, em dias de Lisboa, com `ate` inclusivo. Numa ficha arquivada não se registam
+ocorrências nem notas (409 `FICHA_ARQUIVADA`), mas as consultas continuam disponíveis (RF-120). Os registos são imutáveis:
+`PUT`, `PATCH` e `DELETE` em `/api/v1/fichas/{fichaId}/registos/{registoId}` respondem 405 `REGISTO_IMUTAVEL`, e os gatilhos
+`TR_Ocorrencia_Imutavel` e `TR_Nota_Imutavel` recusam qualquer alteração na base de dados (R-07, RNF-049). Ao registar uma
+ocorrência, na mesma transação, o servidor cria uma notificação `NovaOcorrencia` na aplicação para cada Cuidador e Familiar da
+ficha, exceto o autor (RF-115); a nota não gera notificações. O e-mail destas notificações pertence à F011.
 
 ## 6. Enviar uma mensagem de teste pelo serviço de e-mail
 
@@ -210,12 +284,13 @@ termina sem sucesso se existirem diferenças de formatação. A pasta `artefacto
 ## 8. Migrações do EF Core
 
 As migrações ficam em `src/DoseCerta.Infrastructure/Persistence/Migrations` (código gerado, excluído da análise estática e
-da cobertura). A migração inicial (`Inicial`) cria as 23 tabelas, as chaves, as restrições `CHECK`, os índices, os valores
-predefinidos das listas fechadas e, no fim do `Up`, os 4 gatilhos (`migrationBuilder.CriarGatilhosDoseCerta()`; o `Down`
-começa por `migrationBuilder.RemoverGatilhosDoseCerta()`), porque o EF Core não gera gatilhos. A migração
-`RetirarTarefasRecorrentes` (Issue I037) remove a F007, retirada do âmbito: o gatilho `TR_ExecucaoTarefa_Historico`, as quatro
-tabelas das tarefas e os valores da F007 nas restrições das notificações; depois dela ficam as 19 tabelas e os 3 gatilhos do
-modelo de dados v02 (secção 15).
+da cobertura). Aplicadas todas, o esquema tem as **19 tabelas e os 3 gatilhos** do modelo de dados v02 (`TR_Toma_Historico`,
+`TR_Ocorrencia_Imutavel` e `TR_Nota_Imutavel`), sem nada da F007. Esse esquema resulta de duas migrações, que não se editam:
+
+| Migração | O que faz | Tabelas e gatilhos depois dela |
+|---|---|---|
+| `Inicial` | Cria as tabelas, as chaves, as restrições `CHECK`, os índices, os valores predefinidos das listas fechadas e, no fim do `Up`, os gatilhos (`migrationBuilder.CriarGatilhosDoseCerta()`; o `Down` começa por `migrationBuilder.RemoverGatilhosDoseCerta()`), porque o EF Core não gera gatilhos. Inclui ainda as 4 tabelas e o gatilho da F007, que existiam quando foi criada | 23 tabelas e 4 gatilhos (estado intermédio) |
+| `RetirarTarefasRecorrentes` (Issues I037 e I043) | Retira a F007 do âmbito: remove o gatilho `TR_ExecucaoTarefa_Historico`, as tabelas `ExecucaoTarefa`, `TarefaDiaSemana`, `HorarioTarefa` e `TarefaRecorrente` e os valores da F007 em `CK_Notificacao_Tipo` e `CK_Notificacao_Referencia` (modelo de dados v02, secção 15) | 19 tabelas e 3 gatilhos (esquema final) |
 
 Aplicar as migrações sem arrancar a API (com a variável `ConnectionStrings__DoseCerta` definida):
 

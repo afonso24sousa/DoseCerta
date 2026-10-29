@@ -23,9 +23,19 @@ public static class ParametrosDeNegocio
     public const int JanelaMovelDias = 30;
 
     /// <summary>
+    /// Número máximo de dias de um intervalo de consulta, contando o primeiro e o último (por exemplo OP-32).
+    /// </summary>
+    public const int IntervaloMaximoConsultaDias = 31;
+
+    /// <summary>
     /// Número máximo de reenvios de um e-mail depois da primeira tentativa falhada (RF-118, RF-136).
     /// </summary>
     public const int ReenviosMaximos = 3;
+
+    /// <summary>
+    /// Antecedência do aviso de um compromisso quando não é indicada: 24 horas, em minutos (RF-080, RF-116).
+    /// </summary>
+    public const int AntecedenciaPorOmissaoMin = 1440;
 
     /// <summary>
     /// Intervalo entre as tentativas de envio de um e-mail: 5 minutos (RF-118, RF-136).
@@ -43,6 +53,11 @@ public static class ParametrosDeNegocio
     public static readonly TimeSpan ValidadeSessao = TimeSpan.FromHours(8);
 
     /// <summary>
+    /// Horizonte do calendário de tomas sincronizado na aplicação móvel: 48 horas (OP-34, RF-061).
+    /// </summary>
+    public static readonly TimeSpan JanelaSincronizacao = TimeSpan.FromHours(48);
+
+    /// <summary>
     /// Verifica se a palavra-passe cumpre o RNF-003: pelo menos 8 caracteres, com uma letra e um algarismo.
     /// </summary>
     /// <param name="palavraPasse">Palavra-passe a verificar.</param>
@@ -53,5 +68,16 @@ public static class ParametrosDeNegocio
             && palavraPasse.Length >= TamanhoMinimoPalavraPasse
             && palavraPasse.Any(char.IsLetter)
             && palavraPasse.Any(char.IsDigit);
+    }
+
+    /// <summary>
+    /// Verifica se a antecedência do aviso de um compromisso é um dos valores permitidos: 30 minutos, 1, 2, 24 ou 48 horas
+    /// (RF-116, <c>CK_Compromisso_Antecedencia</c>).
+    /// </summary>
+    /// <param name="minutos">Antecedência, em minutos.</param>
+    /// <returns><see langword="true"/> se for 30, 60, 120, 1440 ou 2880.</returns>
+    public static bool AntecedenciaValida(int minutos)
+    {
+        return minutos is 30 or 60 or 120 or 1440 or 2880;
     }
 }

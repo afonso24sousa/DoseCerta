@@ -102,4 +102,60 @@ public class CalendarioLisboaTestes
 
         Assert.Equal("07/10/2026 08:05", texto);
     }
+
+    /// <summary>
+    /// RNF-047: nas mudanças de hora, o dia de Lisboa tem 23 horas (último domingo de março) ou 25 horas (último domingo de outubro).
+    /// </summary>
+    [Fact]
+    public void DiasDaMudancaDeHoraTem23E25Horas()
+    {
+        var marco = new DateOnly(2026, 3, 29);
+        var outubro = new DateOnly(2026, 10, 25);
+
+        Assert.Equal(new DateTime(2026, 3, 29, 0, 0, 0, DateTimeKind.Utc), this.calendario.InicioDoDiaUtc(marco));
+        Assert.Equal(TimeSpan.FromHours(23), this.calendario.InicioDoDiaSeguinteUtc(marco) - this.calendario.InicioDoDiaUtc(marco));
+        Assert.Equal(new DateTime(2026, 10, 24, 23, 0, 0, DateTimeKind.Utc), this.calendario.InicioDoDiaUtc(outubro));
+        Assert.Equal(TimeSpan.FromHours(25), this.calendario.InicioDoDiaSeguinteUtc(outubro) - this.calendario.InicioDoDiaUtc(outubro));
+    }
+
+    /// <summary>
+    /// RF-085: a semana vai de segunda-feira a domingo; a semana do último domingo de outubro começa ainda em hora de verão.
+    /// </summary>
+    /// <param name="dia">Dia do mês de outubro de 2026 dentro da semana.</param>
+    [Theory]
+    [InlineData(19)]
+    [InlineData(22)]
+    [InlineData(25)]
+    public void SemanaComecaNaSegundaFeira(int dia)
+    {
+        var inicio = this.calendario.InicioDaSemanaUtc(new DateOnly(2026, 10, dia));
+
+        Assert.Equal(new DateTime(2026, 10, 18, 23, 0, 0, DateTimeKind.Utc), inicio);
+        Assert.Equal(new DateTime(2026, 10, 26, 0, 0, 0, DateTimeKind.Utc), this.calendario.InicioDaSemanaUtc(new DateOnly(2026, 10, 26)));
+    }
+
+    /// <summary>
+    /// RF-085: a semana que atravessa o mês começa na segunda-feira do mês anterior.
+    /// </summary>
+    [Fact]
+    public void SemanaQueAtravessaOMes()
+    {
+        var inicio = this.calendario.InicioDaSemanaUtc(new DateOnly(2026, 10, 1));
+
+        Assert.Equal(new DateOnly(2026, 9, 28), this.calendario.DiaLocal(inicio));
+        Assert.Equal(new DateTime(2026, 9, 27, 23, 0, 0, DateTimeKind.Utc), inicio);
+    }
+
+    /// <summary>
+    /// RF-086: o mês vai das 00:00 de Lisboa do dia 1 às 00:00 do dia 1 do mês seguinte, com a mudança de hora pelo meio.
+    /// </summary>
+    [Fact]
+    public void MesEmHoraDeLisboa()
+    {
+        var dia = new DateOnly(2026, 3, 15);
+
+        Assert.Equal(new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc), this.calendario.InicioDoMesUtc(dia));
+        Assert.Equal(new DateTime(2026, 3, 31, 23, 0, 0, DateTimeKind.Utc), this.calendario.InicioDoMesSeguinteUtc(dia));
+        Assert.Equal(new DateTime(2027, 1, 1, 0, 0, 0, DateTimeKind.Utc), this.calendario.InicioDoMesSeguinteUtc(new DateOnly(2026, 12, 31)));
+    }
 }
