@@ -4594,6 +4594,777 @@
       ]
     },
     {
+      "name": "F009 Ocorrências e notas partilhadas",
+      "item": [
+        {
+          "name": "OP-46 Registar ocorrência",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 201\", () => pm.response.to.have.status(201));",
+                  "const corpo = pm.response.json();",
+                  "pm.test(\"Ocorrência com o autor, o instante em que aconteceu e o do registo\", () => {",
+                  "    pm.expect(corpo.fichaId).to.eql(pm.collectionVariables.get(\"fichaId\"));",
+                  "    pm.expect(corpo.tipo).to.eql(\"Ocorrencia\");",
+                  "    pm.expect(corpo.descricao).to.eql(\"Queda ligeira sem lesões.\");",
+                  "    pm.expect(corpo.autor.id).to.eql(pm.collectionVariables.get(\"pessoaId\"));",
+                  "    pm.expect(corpo.autor.nome).to.eql(\"Rui Fictício\");",
+                  "    pm.expect(Date.parse(corpo.ocorridaEm)).to.eql(Date.parse(JSON.parse(pm.request.body.raw).ocorridaEm));",
+                  "    pm.expect(corpo.criadaEm).to.match(/[+-]\\d{2}:\\d{2}$/);",
+                  "});",
+                  "pm.collectionVariables.set(\"ocorrenciaId\", corpo.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaId}}/ocorrencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaId}}",
+                "ocorrencias"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descricao\": \"Queda ligeira sem lesões.\",\n  \"ocorridaEm\": \"{{agora}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-46 Erro: sem descrição nem data (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Código de erro VALIDACAO_INVALIDA\", () => pm.expect(pm.response.json().codigo).to.eql(\"VALIDACAO_INVALIDA\"));",
+                  "pm.test(\"Indica os campos em erro\", () => pm.expect(pm.response.json().campos.map(c => c.campo))",
+                  "    .to.include.members([\"descricao\", \"ocorridaEm\"]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaId}}/ocorrencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaId}}",
+                "ocorrencias"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descricao\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-46 Erro: Familiar não regista (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"Código de erro ACESSO_PROIBIDO\", () => pm.expect(pm.response.json().codigo).to.eql(\"ACESSO_PROIBIDO\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaId}}/ocorrencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaId}}",
+                "ocorrencias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descricao\": \"Queda ligeira sem lesões.\",\n  \"ocorridaEm\": \"{{agora}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-47 Registar nota partilhada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 201\", () => pm.response.to.have.status(201));",
+                  "const corpo = pm.response.json();",
+                  "pm.test(\"Nota com o autor e sem ocorridaEm\", () => {",
+                  "    pm.expect(corpo.tipo).to.eql(\"Nota\");",
+                  "    pm.expect(corpo.descricao).to.eql(\"Reforçar a hidratação durante a tarde.\");",
+                  "    pm.expect(corpo.autor.nome).to.eql(\"Rui Fictício\");",
+                  "    pm.expect(corpo.ocorridaEm).to.eql(null);",
+                  "    pm.expect(corpo.criadaEm).to.be.a(\"string\");",
+                  "});",
+                  "pm.collectionVariables.set(\"notaId\", corpo.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaId}}/notas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaId}}",
+                "notas"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descricao\": \"Reforçar a hidratação durante a tarde.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-47 Erro: nota sem texto (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Código de erro VALIDACAO_INVALIDA\", () => pm.expect(pm.response.json().codigo).to.eql(\"VALIDACAO_INVALIDA\"));",
+                  "pm.test(\"Indica o campo descricao\", () => pm.expect(pm.response.json().campos.map(c => c.campo)).to.include(\"descricao\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaId}}/notas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaId}}",
+                "notas"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descricao\": \"   \"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-47 Erro: Familiar não regista (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"Código de erro ACESSO_PROIBIDO\", () => pm.expect(pm.response.json().codigo).to.eql(\"ACESSO_PROIBIDO\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaId}}/notas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaId}}",
+                "notas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descricao\": \"Reforçar a hidratação durante a tarde.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-48 Consultar ocorrências (Familiar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const registos = pm.response.json();",
+                  "pm.test(\"O Familiar vê a ocorrência registada pelo Cuidador\", () => {",
+                  "    const ocorrencia = registos.find(r => r.id === pm.collectionVariables.get(\"ocorrenciaId\"));",
+                  "    pm.expect(ocorrencia).to.not.be.undefined;",
+                  "    pm.expect(ocorrencia.autor.nome).to.eql(\"Rui Fictício\");",
+                  "});",
+                  "pm.test(\"Só ocorrências, da mais recente para a mais antiga\", () => {",
+                  "    registos.forEach(r => pm.expect(r.tipo).to.eql(\"Ocorrencia\"));",
+                  "    const criadas = registos.map(r => Date.parse(r.criadaEm));",
+                  "    pm.expect(criadas).to.eql([...criadas].sort((a, b) => b - a));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaId}}/registos?tipo=Ocorrencia",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaId}}",
+                "registos"
+              ],
+              "query": [
+                {
+                  "key": "tipo",
+                  "value": "Ocorrencia"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-48 Consultar ocorrências de hoje (de e ate)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Inclui a ocorrência registada hoje\", () =>",
+                  "    pm.expect(pm.response.json().map(r => r.id)).to.include(pm.collectionVariables.get(\"ocorrenciaId\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaId}}/registos?tipo=Ocorrencia&de={{hoje}}&ate={{hoje}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaId}}",
+                "registos"
+              ],
+              "query": [
+                {
+                  "key": "tipo",
+                  "value": "Ocorrencia"
+                },
+                {
+                  "key": "de",
+                  "value": "{{hoje}}"
+                },
+                {
+                  "key": "ate",
+                  "value": "{{hoje}}"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-48 Erro: ficha sem associação (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Código de erro FICHA_NAO_ENCONTRADA\", () => pm.expect(pm.response.json().codigo).to.eql(\"FICHA_NAO_ENCONTRADA\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaPropriaId}}/registos?tipo=Ocorrencia",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaPropriaId}}",
+                "registos"
+              ],
+              "query": [
+                {
+                  "key": "tipo",
+                  "value": "Ocorrencia"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-49 Consultar notas partilhadas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const registos = pm.response.json();",
+                  "pm.test(\"Inclui a nota e só notas\", () => {",
+                  "    pm.expect(registos.map(r => r.id)).to.include(pm.collectionVariables.get(\"notaId\"));",
+                  "    registos.forEach(r => pm.expect(r.tipo).to.eql(\"Nota\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaId}}/registos?tipo=Nota",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaId}}",
+                "registos"
+              ],
+              "query": [
+                {
+                  "key": "tipo",
+                  "value": "Nota"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-49 Erro: Familiar não vê as notas (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"Código de erro ACESSO_PROIBIDO\", () => pm.expect(pm.response.json().codigo).to.eql(\"ACESSO_PROIBIDO\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaId}}/registos?tipo=Nota",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaId}}",
+                "registos"
+              ],
+              "query": [
+                {
+                  "key": "tipo",
+                  "value": "Nota"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-48 Erro: sem tipo (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Código de erro VALIDACAO_INVALIDA\", () => pm.expect(pm.response.json().codigo).to.eql(\"VALIDACAO_INVALIDA\"));",
+                  "pm.test(\"Indica o campo tipo\", () => pm.expect(pm.response.json().campos.map(c => c.campo)).to.include(\"tipo\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaId}}/registos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaId}}",
+                "registos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Erro: alterar uma ocorrência com PUT (405)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 405\", () => pm.response.to.have.status(405));",
+                  "pm.test(\"Código de erro REGISTO_IMUTAVEL\", () => pm.expect(pm.response.json().codigo).to.eql(\"REGISTO_IMUTAVEL\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaId}}/registos/{{ocorrenciaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaId}}",
+                "registos",
+                "{{ocorrenciaId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descricao\": \"Queda ligeira sem lesões.\",\n  \"ocorridaEm\": \"{{agora}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Erro: alterar uma ocorrência com PATCH (405)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 405\", () => pm.response.to.have.status(405));",
+                  "pm.test(\"Código de erro REGISTO_IMUTAVEL\", () => pm.expect(pm.response.json().codigo).to.eql(\"REGISTO_IMUTAVEL\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaId}}/registos/{{ocorrenciaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaId}}",
+                "registos",
+                "{{ocorrenciaId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descricao\": \"Queda ligeira sem lesões.\",\n  \"ocorridaEm\": \"{{agora}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Erro: eliminar uma ocorrência (405)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 405\", () => pm.response.to.have.status(405));",
+                  "pm.test(\"Código de erro REGISTO_IMUTAVEL\", () => pm.expect(pm.response.json().codigo).to.eql(\"REGISTO_IMUTAVEL\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaId}}/registos/{{ocorrenciaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaId}}",
+                "registos",
+                "{{ocorrenciaId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "B (Cuidador principal) regista; A (Familiar) vê as ocorrências e não vê as notas. As ocorrências e as notas não se alteram nem se eliminam (405)."
+    },
+    {
       "name": "F010 Lista diária",
       "description": "OP-50 com o Utilizador A ({{token}}). As tomas são geradas por OP-27 (F005) na ficha própria {{fichaPropriaId}} para o dia 2027-06-15; a confirmação de tomas (F006) e os compromissos (F008) ainda não têm endpoints na main, por isso os itens aparecem pendentes. O dia 2027-06-15 é futuro, por isso as tomas ainda não são confirmáveis.",
       "item": [
