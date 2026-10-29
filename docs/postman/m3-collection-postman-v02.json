@@ -3269,6 +3269,554 @@
       "description": "Ficha de terceiro ({{fichaId}}): B é o Cuidador principal e A volta a ser Familiar na preparação, para os testes de permissão de F005 a F009."
     },
     {
+      "name": "F006 Horários e confirmação de toma",
+      "item": [
+        {
+          "name": "OP-32 Listar tomas da ficha (Familiar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const v = pm.collectionVariables;",
+                  "const tomas = pm.response.json();",
+                  "// As tomas futuras foram geradas de novo em OP-30, já com a dose e o grau novos (RF-060).",
+                  "const hoje = tomas.find(t => t.previstaEm === v.get(\"hoje\") + \"T23:59:00\" + v.get(\"desvioHoje\"));",
+                  "const amanha = tomas.find(t => t.previstaEm === v.get(\"amanha\") + \"T08:00:00\" + v.get(\"desvioAmanha\"));",
+                  "pm.test(\"Inclui a toma de hoje às 23:59 e a de amanhã às 08:00, pendentes\", () => {",
+                  "    pm.expect(hoje, \"toma de hoje\").to.not.be.undefined;",
+                  "    pm.expect(amanha, \"toma de amanhã\").to.not.be.undefined;",
+                  "    [hoje, amanha].forEach(t => {",
+                  "        pm.expect(t.tratamentoId).to.eql(v.get(\"tratamentoId\"));",
+                  "        pm.expect(t.medicamento).to.eql(\"Paracetamol\");",
+                  "        pm.expect(t.dose).to.eql(\"1 g\");",
+                  "        pm.expect(t.grauImportancia).to.eql(\"Grave\");",
+                  "        pm.expect(t.estado).to.eql(\"Pendente\");",
+                  "        pm.expect(t.confirmadaPor).to.eql(null);",
+                  "    });",
+                  "});",
+                  "pm.test(\"Ordenadas por hora prevista\", () => {",
+                  "    const instantes = tomas.map(t => Date.parse(t.previstaEm));",
+                  "    pm.expect(instantes).to.eql([...instantes].sort((a, b) => a - b));",
+                  "});",
+                  "v.set(\"tomaHojeId\", hoje && hoje.id);",
+                  "v.set(\"tomaAmanhaId\", amanha && amanha.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaId}}/tomas?de={{hoje}}&ate={{amanha}}&tratamentoId={{tratamentoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaId}}",
+                "tomas"
+              ],
+              "query": [
+                {
+                  "key": "de",
+                  "value": "{{hoje}}"
+                },
+                {
+                  "key": "ate",
+                  "value": "{{amanha}}"
+                },
+                {
+                  "key": "tratamentoId",
+                  "value": "{{tratamentoId}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-32 Erro: sem data de fim (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Código de erro VALIDACAO_INVALIDA\", () => pm.expect(pm.response.json().codigo).to.eql(\"VALIDACAO_INVALIDA\"));",
+                  "pm.test(\"Indica o campo ate\", () => pm.expect(pm.response.json().campos.map(c => c.campo)).to.include(\"ate\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaId}}/tomas?de={{hoje}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaId}}",
+                "tomas"
+              ],
+              "query": [
+                {
+                  "key": "de",
+                  "value": "{{hoje}}"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-32 Erro: ficha sem associação (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Código de erro FICHA_NAO_ENCONTRADA\", () => pm.expect(pm.response.json().codigo).to.eql(\"FICHA_NAO_ENCONTRADA\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaPropriaId}}/tomas?de={{hoje}}&ate={{amanha}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaPropriaId}}",
+                "tomas"
+              ],
+              "query": [
+                {
+                  "key": "de",
+                  "value": "{{hoje}}"
+                },
+                {
+                  "key": "ate",
+                  "value": "{{amanha}}"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-33 Erro: Familiar não confirma (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"Código de erro ACESSO_PROIBIDO\", () => pm.expect(pm.response.json().codigo).to.eql(\"ACESSO_PROIBIDO\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tomas/{{tomaHojeId}}/confirmacao",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tomas",
+                "{{tomaHojeId}}",
+                "confirmacao"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-33 Confirmar toma",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const corpo = pm.response.json();",
+                  "pm.test(\"Confirmada antes da hora prevista, no mesmo dia, regista quem confirmou e quando\", () => {",
+                  "    pm.expect(corpo.id).to.eql(pm.collectionVariables.get(\"tomaHojeId\"));",
+                  "    pm.expect(corpo.estado).to.eql(\"Confirmada\");",
+                  "    pm.expect(corpo.confirmadaPor.id).to.eql(pm.collectionVariables.get(\"pessoaId\"));",
+                  "    pm.expect(corpo.confirmadaPor.nome).to.eql(\"Rui Fictício\");",
+                  "    pm.expect(corpo.confirmadaEm).to.match(/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}[+-]\\d{2}:\\d{2}$/);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tomas/{{tomaHojeId}}/confirmacao",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tomas",
+                "{{tomaHojeId}}",
+                "confirmacao"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-33 Erro: toma já confirmada (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Código de erro TOMA_JA_CONFIRMADA\", () => pm.expect(pm.response.json().codigo).to.eql(\"TOMA_JA_CONFIRMADA\"));",
+                  "pm.test(\"Indica quem confirmou primeiro\", () => {",
+                  "    const confirmacao = pm.response.json().confirmacao;",
+                  "    pm.expect(confirmacao.confirmadaPor.nome).to.eql(\"Rui Fictício\");",
+                  "    pm.expect(confirmacao.confirmadaEm).to.be.a(\"string\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tomas/{{tomaHojeId}}/confirmacao",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tomas",
+                "{{tomaHojeId}}",
+                "confirmacao"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-33 Erro: toma de amanhã fora da janela (409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Código de erro TOMA_FORA_DA_JANELA\", () => pm.expect(pm.response.json().codigo).to.eql(\"TOMA_FORA_DA_JANELA\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tomas/{{tomaAmanhaId}}/confirmacao",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tomas",
+                "{{tomaAmanhaId}}",
+                "confirmacao"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-33 Erro: toma inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Código de erro RECURSO_NAO_ENCONTRADO\", () => pm.expect(pm.response.json().codigo).to.eql(\"RECURSO_NAO_ENCONTRADO\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tomas/00000000-0000-4000-8000-000000000000/confirmacao",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tomas",
+                "00000000-0000-4000-8000-000000000000",
+                "confirmacao"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-32 Familiar vê a toma confirmada (filtro por estado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"A toma aparece confirmada pelo Rui\", () => {",
+                  "    const toma = pm.response.json().find(t => t.id === pm.collectionVariables.get(\"tomaHojeId\"));",
+                  "    pm.expect(toma).to.not.be.undefined;",
+                  "    pm.expect(toma.estado).to.eql(\"Confirmada\");",
+                  "    pm.expect(toma.confirmadaPor.nome).to.eql(\"Rui Fictício\");",
+                  "});",
+                  "pm.test(\"Só tomas confirmadas\", () => pm.response.json().forEach(t => pm.expect(t.estado).to.eql(\"Confirmada\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/fichas/{{fichaId}}/tomas?de={{hoje}}&ate={{hoje}}&estado=Confirmada",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "fichas",
+                "{{fichaId}}",
+                "tomas"
+              ],
+              "query": [
+                {
+                  "key": "de",
+                  "value": "{{hoje}}"
+                },
+                {
+                  "key": "ate",
+                  "value": "{{hoje}}"
+                },
+                {
+                  "key": "estado",
+                  "value": "Confirmada"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-34 Sincronizar o calendário de tomas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const tomas = pm.response.json();",
+                  "const ids = tomas.map(t => t.tomaId);",
+                  "pm.test(\"Inclui a toma pendente de amanhã e não a toma já confirmada\", () => {",
+                  "    pm.expect(ids).to.include(pm.collectionVariables.get(\"tomaAmanhaId\"));",
+                  "    pm.expect(ids).to.not.include(pm.collectionVariables.get(\"tomaHojeId\"));",
+                  "});",
+                  "pm.test(\"Cada toma indica a ficha, o medicamento e a dose\", () => {",
+                  "    const toma = tomas.find(t => t.tomaId === pm.collectionVariables.get(\"tomaAmanhaId\"));",
+                  "    pm.expect(toma.fichaId).to.eql(pm.collectionVariables.get(\"fichaId\"));",
+                  "    pm.expect(toma.nomeFicha).to.eql(\"Maria Fictícia Santos\");",
+                  "    pm.expect(toma.medicamento).to.eql(\"Paracetamol\");",
+                  "    pm.expect(toma.dose).to.eql(\"1 g\");",
+                  "});",
+                  "pm.test(\"Só as 48 horas seguintes\", () => tomas.forEach(t =>",
+                  "    pm.expect(Date.parse(t.previstaEm)).to.be.at.most(Date.now() + 48 * 3600 * 1000)));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/calendario/tomas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "calendario",
+                "tomas"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-34 Familiar não recebe as tomas da ficha",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Nenhuma toma da ficha em que A é Familiar\", () =>",
+                  "    pm.expect(pm.response.json().map(t => t.fichaId)).to.not.include(pm.collectionVariables.get(\"fichaId\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/calendario/tomas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "calendario",
+                "tomas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "OP-34 Erro: sem token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"Código de erro NAO_AUTENTICADO\", () => pm.expect(pm.response.json().codigo).to.eql(\"NAO_AUTENTICADO\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/calendario/tomas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "calendario",
+                "tomas"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Tomas do tratamento registado na F005: B (Cuidador principal) confirma e A (Familiar) só consulta."
+    },
+    {
       "name": "F008 Compromissos e agenda",
       "item": [
         {
