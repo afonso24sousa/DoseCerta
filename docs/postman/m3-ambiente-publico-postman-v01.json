@@ -1,0 +1,31 @@
+{
+  "id": "d3c4a5b6-1041-4e5f-9a12-d05ece27a041",
+  "name": "m3-ambiente-publico-postman-v01",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "https://dosecerta.spaincentral.cloudapp.azure.com/api/v1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "prefixoEmail",
+      "value": "postman.publico",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "palavraPasse",
+      "value": "Publico123",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "palavraPasseNova",
+      "value": "Publico456",
+      "type": "default",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}
