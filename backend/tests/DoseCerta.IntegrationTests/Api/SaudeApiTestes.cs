@@ -36,7 +36,7 @@ public class SaudeApiTestes
 
         using var resposta = await cliente.GetAsync(new Uri(ArranqueApi.CaminhoSaude, UriKind.Relative));
 
-        Assert.Equal(HttpStatusCode.OK, resposta.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, resposta.StatusCode);
         var corpo = await resposta.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal("Saudavel", corpo.GetProperty("estado").GetString());
         Assert.Equal("Saudavel", corpo.GetProperty("verificacoes").GetProperty("baseDados").GetString());
