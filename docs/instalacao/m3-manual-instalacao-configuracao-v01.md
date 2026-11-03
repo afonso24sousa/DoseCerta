@@ -45,7 +45,7 @@ Confirmar o SDK e a ferramenta do EF Core:
 ```bash
 dotnet --list-sdks          # tem de mostrar uma versão 8.0.x
 dotnet tool install --global dotnet-ef --version 8.0.31
-dotnet ef --version         # Entity Framework Core .NET Command-line Tools 8.0.31
+dotnet ef --version         # Entity Framework Core .NET Command-line Tools, seguido de 8.0.31
 ```
 
 Os pacotes NuGet não se instalam à mão: as versões estão fixadas em `backend/Directory.Packages.props` (por exemplo, EF Core 8.0.31, JwtBearer 8.0.31, Swashbuckle 6.9.0, xUnit 2.9.3) e são obtidas pelo `dotnet restore`.
@@ -205,7 +205,7 @@ Num computador limpo, confiar primeiro no certificado HTTPS de desenvolvimento d
 dotnet dev-certs https --trust
 ```
 
-No Linux **(não verificado neste ambiente)**, `--trust` só é suportado em algumas distribuições; sem ele, use `curl -k` e, no Postman, desative a verificação do certificado (secção 10).
+No Linux **(não verificado neste ambiente)**, `--trust` só é suportado em algumas distribuições. Sempre que o certificado não for de confiança, acrescente `-k` aos comandos `curl` (sem ele, o `curl` termina com o código 60), use `--insecure` no `newman` e, no Postman, desative a verificação do certificado (secção 10). No Git Bash (Windows), o `curl` pode não usar o repositório de certificados do Windows: use `-k`.
 
 Arrancar a API com o perfil `https` (ambiente `Development`):
 
@@ -217,12 +217,12 @@ dotnet run --project src/DoseCerta.Api --launch-profile https
 |---|---|
 | Projeto de arranque | `src/DoseCerta.Api` |
 | URL HTTPS | `https://localhost:7180` |
-| URL HTTP | `http://localhost:5180` (redirecionado para HTTPS) |
+| URL HTTP | `http://localhost:5180` (redirecionado para HTTPS com `307 Temporary Redirect`) |
 | Prefixo da API | `/api/v1` |
 | Verificação do estado | `GET /saude`, anónimo |
 | Documentação interativa | `https://localhost:7180/swagger` (só no ambiente `Development`) |
 
-A API fica a correr até se carregar em `Ctrl+C`. O perfil abre o browser no Swagger. O processo periódico (tomas em atraso, envio de e-mails) corre de 30 em 30 segundos enquanto a API está ativa.
+A API está pronta quando o terminal mostra `Now listening on: https://localhost:7180` (com o caminho A, depois de `Applying migration '20261014232229_Inicial'` e `Applying migration '20261020175938_RetirarTarefasRecorrentes'` na primeira execução) e fica a correr até se carregar em `Ctrl+C`. O processo periódico (tomas em atraso, envio de e-mails) corre de 30 em 30 segundos enquanto a API está ativa.
 
 ## 8. Verificação final
 
@@ -242,7 +242,7 @@ Com a API a correr, noutro terminal:
 
 2. Início de sessão com uma conta fictícia (secção 6.3). A resposta 200 tem o campo `token`.
 
-   PowerShell:
+   PowerShell (o `Invoke-RestMethod` do Windows PowerShell 5.1 exige o certificado de confiança da secção 7):
 
    ```powershell
    $sessao = Invoke-RestMethod -Method Post -Uri https://localhost:7180/api/v1/auth/login -ContentType "application/json" -Body '{"email":"ana@exemplo.pt","palavraPasse":"Demo2026x"}'
@@ -256,7 +256,7 @@ Com a API a correr, noutro terminal:
    curl -s https://localhost:7180/api/v1/fichas -H "Authorization: Bearer $TOKEN"
    ```
 
-   A lista de fichas da Ana tem a ficha de Maria Fictícia Santos e a sua ficha própria.
+   A lista de fichas da Ana tem 2 fichas: a sua ficha própria (`"nomeCompleto":"Ana Fictícia"`, `"eProprio":true`) e a de Maria Fictícia Santos.
 
 A instalação está concluída quando o `/saude` responde `Saudavel` e o início de sessão devolve um token que dá acesso às fichas.
 
@@ -326,11 +326,11 @@ A última execução contra o URL público, com 0 falhas, está no relatório de
 | Os user-secrets não têm efeito | A API não está no ambiente `Development` | Arrancar com `--launch-profile https`, ou usar variáveis de ambiente |
 | `curl` falha com um erro de certificado | Certificado de desenvolvimento não confiado | `dotnet dev-certs https --trust` (secção 7) ou `curl -k` |
 | O login responde 401 com uma conta fictícia | Os dados do script 02 não foram aplicados | Executar o script 02 (secção 6.1) |
-| O script 02 falha com chaves duplicadas | Já tinha sido aplicado | Não é preciso aplicá-lo de novo; para voltar ao estado inicial, usar o caminho B |
+| O script 02 falha com `Violation of PRIMARY KEY constraint 'PK_Utilizador'` | Já tinha sido aplicado | Não é preciso aplicá-lo de novo; para voltar ao estado inicial, usar o caminho B |
 | `sqlcmd` falha com `SET options have incorrect settings: 'QUOTED_IDENTIFIER'` | Falta a opção `-I` | Executar com `-I`, como na secção 6 |
 | Acentos errados nas listas fechadas depois dos scripts, no Windows | O `sqlcmd` leu os scripts com outra página de código | Acrescentar `-f 65001` |
 | `sqlcmd` falha com um erro de certificado do servidor | Falta a opção `-C` (confiar no certificado do servidor) | Executar com `-C` |
-| A API arrancada com o caminho B falha a aplicar as migrações | `BaseDados:AplicarMigracoesNoArranque` a `true` numa base criada pelos scripts | Pôr a chave a `false` (secção 6.2) |
+| A API termina ao arrancar com `There is already an object named 'Alergia' in the database` | `BaseDados:AplicarMigracoesNoArranque` a `true` numa base criada pelos scripts (caminho B) | Pôr a chave a `false` (secção 6.2) |
 | Testes de integração falham com `Defina a variável de ambiente DOSECERTA_TESTES_SQLSERVER` | A variável não está definida no terminal do `dotnet test` | Defini-la no mesmo terminal (secção 9) |
 | O newman local falha com `self signed certificate` | Certificado de desenvolvimento | Acrescentar `--insecure` (secção 10.1) |
 
@@ -340,11 +340,26 @@ A publicação automática no Azure (workflow `backend-cd`, máquina virtual, Do
 
 ## 13. Verificação dos comandos pelo grupo
 
-Os comandos deste manual foram executados pelo Executor num computador com Windows 11, numa cópia nova do repositório e num contentor novo do SQL Server 2022 (porta 14333 no anfitrião, por a 1433 estar ocupada), sem usar nenhuma configuração anterior. O resultado está na tabela seguinte. Os comandos de Linux não foram executados neste ambiente.
+Em 2026-11-03, entre as 18:50 e as 19:00 (UTC), o Executor seguiu este manual em Windows 11, com o .NET SDK 8.0.426, o Docker 29.8.2 e o `sqlcmd` ODBC 18. Usou uma cópia nova do repositório (`git clone` da `main`, commit `7bf212c`) e um contentor novo do SQL Server 2022 na porta 14333 do anfitrião (secção 4.1). Os user-secrets foram gravados num perfil temporário, sem nenhuma configuração anterior. No fim, o contentor e a cópia foram apagados. Os comandos de PowerShell e de bash (Git Bash) foram executados; os comandos marcados para Linux não foram executados neste ambiente.
 
 | Secção | Verificação | Resultado |
 |---|---|---|
-| Todas | Por preencher depois da execução | Por preencher |
+| 2 | `dotnet --list-sdks`; `dotnet tool install --global dotnet-ef --version 8.0.31`; `dotnet ef --version` | SDK 8.0.426; `dotnet-ef` 8.0.31 |
+| 3 | `git clone`, `dotnet restore` e `dotnet build --configuration Release` | Restauro sem erros; `Build succeeded`, 0 avisos e 0 erros |
+| 4.1 | `docker run` com `-p 14333:1433` e `docker logs` | `SQL Server is now ready for client connections` |
+| 5 | 3 comandos `dotnet user-secrets set` e `dotnet user-secrets list` | As 3 chaves gravadas |
+| 6.1 | Arranque da API com a flag a `true`; script 02 com o `sqlcmd` | Migrações `Inicial` e `RetirarTarefasRecorrentes` aplicadas; 19 tabelas, 3 gatilhos e 4 contas |
+| 6.1 | `dotnet ef database update` noutra base de dados, com `ConnectionStrings__DoseCerta` | As 2 migrações aplicadas (`Done.`); 19 tabelas e 3 gatilhos |
+| 6.1 | Script 02 executado uma segunda vez | Falha com `Violation of PRIMARY KEY constraint 'PK_Utilizador'` (secção 11) |
+| 6.2 | `repor-base-dados.sh localhost,14333 DoseCerta sa` no Git Bash | 03, 01 e 02 executados; 19 tabelas, 3 gatilhos, 4 contas e sem `__EFMigrationsHistory` |
+| 6.2 | API sobre a base do caminho B, com a flag a `true` e depois a `false` | Com `true`, termina com `There is already an object named 'Alergia'` (secção 11); com `false`, arranca e o `/saude` responde `Saudavel` |
+| 7 | `dotnet run --project src/DoseCerta.Api --launch-profile https` | `Now listening on: https://localhost:7180` e `http://localhost:5180`; o HTTP responde `307` para HTTPS |
+| 7 | `dotnet dev-certs https --trust` | **Não executado**: abre um diálogo do Windows e altera os certificados de raiz do computador. Por isso, os pedidos HTTPS foram feitos com `curl -k` e, no PowerShell, com a verificação do certificado desligada só na sessão. Sem `-k`, o `curl` termina com o código 60, como diz a secção 7 |
+| 8 | `curl -k https://localhost:7180/saude` | HTTP 200, `{"estado":"Saudavel","verificacoes":{"baseDados":"Saudavel"}}` |
+| 8 | Login com `ana@exemplo.pt` e listagem das fichas, em PowerShell e em bash | Token devolvido; 2 fichas (Ana Fictícia, própria, e Maria Fictícia Santos) |
+| 9 | Testes unitários e de integração, com `DOSECERTA_TESTES_SQLSERVER` | 454 unitários e 177 de integração, todos a passar |
+| 10.1 | `newman run ... -e m3-ambiente-local-postman-v02.json --insecure` | 130 pedidos e 277 asserções, 0 falhas |
+| 10.2 | `newman run ... -e m3-ambiente-publico-postman-v01.json` | Não repetido nesta verificação; última execução, com 0 falhas, no relatório de evidências da pipeline (secção 7.6) |
 
 ## 14. Lista de verificação para o Revisor
 
