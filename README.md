@@ -14,6 +14,17 @@ O grupo utiliza um único repositório (monorepo). Cada componente ocupa uma pas
 | `docs/` | Documentação técnica em Markdown e diagramas PlantUML |
 | `.github/` | Modelo de Pull Request e workflows do GitHub Actions |
 
+### Correspondência das pastas `docs/` com a pasta oficial `/projeto`
+
+Cada subpasta de `docs/` corresponde a uma pasta da hierarquia obrigatória (Regulamento da UC, secção 19), para onde os documentos são copiados na submissão:
+
+| Pasta no repositório | Pasta oficial |
+|---|---|
+| `docs/ci-cd/` | `/projeto/04-artefactos-tecnicos/04.16-ci-cd` |
+| `docs/postman/` | `/projeto/03-artefactos-de-qualidade-de-produto/03.01-backend/03.01.05-postman` |
+| `docs/instalacao/` | `/projeto/04-artefactos-tecnicos/04.17-manual-de-instalacao-e-configuracao` |
+| `docs/releases/` | `/projeto/04-artefactos-tecnicos/04.19-releases-e-deployment` |
+
 ## Regras de contribuição (Regulamento Interno do Grupo, secção 10)
 
 A branch `main` é a única branch permanente. Está protegida e contém apenas trabalho revisto, auditado e aceite. Não se faz push direto para a `main`.
