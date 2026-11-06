@@ -1,0 +1,536 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="DoseCerta API - F001 a F011, sem a F007 (m3, v02)" tests="128" time="8.597">
+  <testsuite name="F001 Autenticação e conta / OP-01 Registar conta (Utilizador A)" id="3685ac1d-a6dd-4010-9199-d23434b34dab" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.852">
+    <testcase name="Responde 201" time="0.852" classname="F001AutenticacaoEContaOp01RegistarContaUtilizadorA"/>
+    <testcase name="Devolve a conta sem palavra-passe" time="0.852" classname="F001AutenticacaoEContaOp01RegistarContaUtilizadorA"/>
+  </testsuite>
+  <testsuite name="F001 Autenticação e conta / OP-01 Registar conta (Utilizador B, para a F004)" id="a901cbd9-cb75-4e30-84d7-9ecad7c3173a" timestamp="2026-11-03T17:27:26.679Z" tests="1" failures="0" errors="0" time="0.122">
+    <testcase name="Responde 201" time="0.122" classname="F001AutenticacaoEContaOp01RegistarContaUtilizadorBParaAF004"/>
+  </testsuite>
+  <testsuite name="F001 Autenticação e conta / OP-01 Erro: e-mail já registado (409)" id="ed28a624-1790-4b46-8052-0d26bb41025c" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.099">
+    <testcase name="Responde 409" time="0.099" classname="F001AutenticacaoEContaOp01ErroEMailJaRegistado409"/>
+    <testcase name="Código de erro EMAIL_JA_REGISTADO" time="0.099" classname="F001AutenticacaoEContaOp01ErroEMailJaRegistado409"/>
+  </testsuite>
+  <testsuite name="F001 Autenticação e conta / OP-01 Erro: dados inválidos (400)" id="5192cb6e-70f2-4b7a-b339-faca8625b0e0" timestamp="2026-11-03T17:27:26.679Z" tests="3" failures="0" errors="0" time="0.032">
+    <testcase name="Responde 400" time="0.032" classname="F001AutenticacaoEContaOp01ErroDadosInvalidos400"/>
+    <testcase name="Código de erro VALIDACAO_INVALIDA" time="0.032" classname="F001AutenticacaoEContaOp01ErroDadosInvalidos400"/>
+    <testcase name="Indica os campos em erro" time="0.032" classname="F001AutenticacaoEContaOp01ErroDadosInvalidos400"/>
+  </testsuite>
+  <testsuite name="F001 Autenticação e conta / OP-02 Iniciar sessão (Utilizador A)" id="4a59ae9d-291d-4054-8164-c6e3284faa70" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.116">
+    <testcase name="Responde 200" time="0.116" classname="F001AutenticacaoEContaOp02IniciarSessaoUtilizadorA"/>
+    <testcase name="Devolve um token Bearer com expiração" time="0.116" classname="F001AutenticacaoEContaOp02IniciarSessaoUtilizadorA"/>
+  </testsuite>
+  <testsuite name="F001 Autenticação e conta / OP-02 Iniciar sessão (Utilizador B)" id="2ac3e871-bad3-441a-82f1-40f69feca0c4" timestamp="2026-11-03T17:27:26.679Z" tests="1" failures="0" errors="0" time="0.110">
+    <testcase name="Responde 200" time="0.110" classname="F001AutenticacaoEContaOp02IniciarSessaoUtilizadorB"/>
+  </testsuite>
+  <testsuite name="F001 Autenticação e conta / OP-02 Erro: credenciais inválidas (401)" id="d67c7d63-d83d-4a76-ae83-2c8e0e149138" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.073">
+    <testcase name="Responde 401" time="0.073" classname="F001AutenticacaoEContaOp02ErroCredenciaisInvalidas401"/>
+    <testcase name="Código de erro CREDENCIAIS_INVALIDAS" time="0.073" classname="F001AutenticacaoEContaOp02ErroCredenciaisInvalidas401"/>
+  </testsuite>
+  <testsuite name="F001 Autenticação e conta / OP-04 Consultar dados da conta" id="2eefbb24-0f5a-4624-b3be-45fd285b7b8a" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.086">
+    <testcase name="Responde 200" time="0.086" classname="F001AutenticacaoEContaOp04ConsultarDadosDaConta"/>
+    <testcase name="É a conta do Utilizador A, sem palavra-passe" time="0.086" classname="F001AutenticacaoEContaOp04ConsultarDadosDaConta"/>
+  </testsuite>
+  <testsuite name="F001 Autenticação e conta / OP-04 Erro: sem token (401)" id="db5caf67-1ed8-46a1-a15c-6f2d42dc8331" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.035">
+    <testcase name="Responde 401" time="0.035" classname="F001AutenticacaoEContaOp04ErroSemToken401"/>
+    <testcase name="Código de erro NAO_AUTENTICADO" time="0.035" classname="F001AutenticacaoEContaOp04ErroSemToken401"/>
+  </testsuite>
+  <testsuite name="F001 Autenticação e conta / OP-05 Atualizar dados da conta" id="69163a3f-9565-46c4-9411-85872a154c75" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.068">
+    <testcase name="Responde 200" time="0.068" classname="F001AutenticacaoEContaOp05AtualizarDadosDaConta"/>
+    <testcase name="Guarda o novo nome e e-mail" time="0.068" classname="F001AutenticacaoEContaOp05AtualizarDadosDaConta"/>
+  </testsuite>
+  <testsuite name="F001 Autenticação e conta / OP-05 Erro: e-mail de outra conta (409)" id="51864bec-8d62-4081-9645-976877649a85" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.033">
+    <testcase name="Responde 409" time="0.033" classname="F001AutenticacaoEContaOp05ErroEMailDeOutraConta409"/>
+    <testcase name="Código de erro EMAIL_JA_REGISTADO" time="0.033" classname="F001AutenticacaoEContaOp05ErroEMailDeOutraConta409"/>
+  </testsuite>
+  <testsuite name="F001 Autenticação e conta / OP-06 Alterar palavra-passe" id="23d7f153-a2c2-4bd0-9d13-212a45038149" timestamp="2026-11-03T17:27:26.679Z" tests="1" failures="0" errors="0" time="0.131">
+    <testcase name="Responde 204" time="0.131" classname="F001AutenticacaoEContaOp06AlterarPalavraPasse"/>
+  </testsuite>
+  <testsuite name="F001 Autenticação e conta / OP-06 Erro: palavra-passe atual incorreta (403)" id="3132f8e2-530f-4311-9b08-2982ae585e83" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.073">
+    <testcase name="Responde 403" time="0.073" classname="F001AutenticacaoEContaOp06ErroPalavraPasseAtualIncorreta403"/>
+    <testcase name="Código de erro PALAVRA_PASSE_ATUAL_INCORRETA" time="0.073" classname="F001AutenticacaoEContaOp06ErroPalavraPasseAtualIncorreta403"/>
+  </testsuite>
+  <testsuite name="F001 Autenticação e conta / OP-02 Iniciar sessão com a nova palavra-passe (sessão a terminar)" id="1f72fd55-9d03-47cd-a912-d23f677e5f90" timestamp="2026-11-03T17:27:26.679Z" tests="1" failures="0" errors="0" time="0.082">
+    <testcase name="Responde 200" time="0.082" classname="F001AutenticacaoEContaOp02IniciarSessaoComANovaPalavraPasseSessaoATerminar"/>
+  </testsuite>
+  <testsuite name="F001 Autenticação e conta / OP-03 Terminar sessão" id="c27363df-86f6-4a35-9fcd-ccce3f5df8dc" timestamp="2026-11-03T17:27:26.679Z" tests="1" failures="0" errors="0" time="0.064">
+    <testcase name="Responde 204" time="0.064" classname="F001AutenticacaoEContaOp03TerminarSessao"/>
+  </testsuite>
+  <testsuite name="F001 Autenticação e conta / OP-03 Erro: token terminado deixa de ser aceite (401)" id="1cb8ea1b-8bf0-4c37-a10a-f58f5917d751" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.031">
+    <testcase name="Responde 401" time="0.031" classname="F001AutenticacaoEContaOp03ErroTokenTerminadoDeixaDeSerAceite401"/>
+    <testcase name="Código de erro NAO_AUTENTICADO" time="0.031" classname="F001AutenticacaoEContaOp03ErroTokenTerminadoDeixaDeSerAceite401"/>
+  </testsuite>
+  <testsuite name="F002 Fichas de utentes / OP-08 Obter as listas de necessidades" id="9c096c44-1676-4d3e-9d99-11b426f65b49" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.060">
+    <testcase name="Responde 200" time="0.060" classname="F002FichasDeUtentesOp08ObterAsListasDeNecessidades"/>
+    <testcase name="Devolve as três listas fechadas" time="0.060" classname="F002FichasDeUtentesOp08ObterAsListasDeNecessidades"/>
+  </testsuite>
+  <testsuite name="F002 Fichas de utentes / OP-09 Criar ficha de terceiro" id="be7b8def-945d-4f5b-9631-5c5388bd8bd9" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.291">
+    <testcase name="Responde 201" time="0.291" classname="F002FichasDeUtentesOp09CriarFichaDeTerceiro"/>
+    <testcase name="Ficha ativa com o criador como Cuidador principal" time="0.291" classname="F002FichasDeUtentesOp09CriarFichaDeTerceiro"/>
+  </testsuite>
+  <testsuite name="F002 Fichas de utentes / OP-09 Criar ficha com convite para Cuidador principal (ficha temporária)" id="b6a84963-eeda-4152-ae32-79ff33e5d5d0" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.116">
+    <testcase name="Responde 201" time="0.116" classname="F002FichasDeUtentesOp09CriarFichaComConviteParaCuidadorPrincipalFichaTemporaria"/>
+    <testcase name="O criador fica Cuidador principal (provisório até à resposta ao convite)" time="0.116" classname="F002FichasDeUtentesOp09CriarFichaComConviteParaCuidadorPrincipalFichaTemporaria"/>
+  </testsuite>
+  <testsuite name="F002 Fichas de utentes / OP-09 Erro: dados inválidos (400)" id="12fb3a3e-d5db-4dc9-a0f7-a017ce18bbb6" timestamp="2026-11-03T17:27:26.679Z" tests="3" failures="0" errors="0" time="0.037">
+    <testcase name="Responde 400" time="0.037" classname="F002FichasDeUtentesOp09ErroDadosInvalidos400"/>
+    <testcase name="Código de erro VALIDACAO_INVALIDA" time="0.037" classname="F002FichasDeUtentesOp09ErroDadosInvalidos400"/>
+    <testcase name="Indica os campos em erro" time="0.037" classname="F002FichasDeUtentesOp09ErroDadosInvalidos400"/>
+  </testsuite>
+  <testsuite name="F002 Fichas de utentes / OP-07 Listar fichas do Utilizador" id="075d857d-dbfd-49c8-9059-0660409c3b6e" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.076">
+    <testcase name="Responde 200" time="0.076" classname="F002FichasDeUtentesOp07ListarFichasDoUtilizador"/>
+    <testcase name="Inclui as fichas criadas" time="0.076" classname="F002FichasDeUtentesOp07ListarFichasDoUtilizador"/>
+  </testsuite>
+  <testsuite name="F002 Fichas de utentes / OP-10 Consultar ficha" id="d270120a-a856-4d5f-aea9-55d9a5265764" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.144">
+    <testcase name="Responde 200" time="0.144" classname="F002FichasDeUtentesOp10ConsultarFicha"/>
+    <testcase name="Devolve a ficha pedida" time="0.144" classname="F002FichasDeUtentesOp10ConsultarFicha"/>
+  </testsuite>
+  <testsuite name="F002 Fichas de utentes / OP-10 Erro: ficha de outro utilizador (404)" id="dccee3a4-bbba-42d8-b89a-aa8563799fc1" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.035">
+    <testcase name="Responde 404" time="0.035" classname="F002FichasDeUtentesOp10ErroFichaDeOutroUtilizador404"/>
+    <testcase name="Código de erro FICHA_NAO_ENCONTRADA" time="0.035" classname="F002FichasDeUtentesOp10ErroFichaDeOutroUtilizador404"/>
+  </testsuite>
+  <testsuite name="F002 Fichas de utentes / OP-11 Editar ficha" id="6f8af89b-c562-4e0b-bba2-ab0917b066ed" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.072">
+    <testcase name="Responde 200" time="0.072" classname="F002FichasDeUtentesOp11EditarFicha"/>
+    <testcase name="Guarda as alterações" time="0.072" classname="F002FichasDeUtentesOp11EditarFicha"/>
+  </testsuite>
+  <testsuite name="F002 Fichas de utentes / OP-15 Carregar documento na ficha" id="7f531522-2d31-4e1f-a572-031a4e836664" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.122">
+    <testcase name="Responde 201" time="0.122" classname="F002FichasDeUtentesOp15CarregarDocumentoNaFicha"/>
+    <testcase name="Documento guardado com a categoria indicada" time="0.122" classname="F002FichasDeUtentesOp15CarregarDocumentoNaFicha"/>
+  </testsuite>
+  <testsuite name="F002 Fichas de utentes / OP-15 Erro: formato não suportado (415)" id="b07f0cb9-5873-4898-a2a9-95bd60adf0d8" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.045">
+    <testcase name="Responde 415" time="0.045" classname="F002FichasDeUtentesOp15ErroFormatoNaoSuportado415"/>
+    <testcase name="Código de erro FORMATO_NAO_SUPORTADO" time="0.045" classname="F002FichasDeUtentesOp15ErroFormatoNaoSuportado415"/>
+  </testsuite>
+  <testsuite name="F002 Fichas de utentes / OP-16 Listar documentos da ficha" id="f2b1a962-b3b5-489f-94b9-4e178352b1bd" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.054">
+    <testcase name="Responde 200" time="0.054" classname="F002FichasDeUtentesOp16ListarDocumentosDaFicha"/>
+    <testcase name="Inclui o documento carregado" time="0.054" classname="F002FichasDeUtentesOp16ListarDocumentosDaFicha"/>
+  </testsuite>
+  <testsuite name="F002 Fichas de utentes / OP-17 Descarregar documento" id="330455af-5206-4091-af08-df5a98e61969" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.057">
+    <testcase name="Responde 200" time="0.057" classname="F002FichasDeUtentesOp17DescarregarDocumento"/>
+    <testcase name="Devolve o PDF" time="0.057" classname="F002FichasDeUtentesOp17DescarregarDocumento"/>
+  </testsuite>
+  <testsuite name="F002 Fichas de utentes / OP-17 Erro: documento de ficha sem associação (404)" id="46fa9f8a-6f6a-48be-8f98-20eed755fbf2" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.035">
+    <testcase name="Responde 404" time="0.035" classname="F002FichasDeUtentesOp17ErroDocumentoDeFichaSemAssociacao404"/>
+    <testcase name="Código de erro DOCUMENTO_NAO_ENCONTRADO" time="0.035" classname="F002FichasDeUtentesOp17ErroDocumentoDeFichaSemAssociacao404"/>
+  </testsuite>
+  <testsuite name="F002 Fichas de utentes / OP-12 Arquivar ficha" id="0e12e518-cc47-4736-afda-e9b49808933f" timestamp="2026-11-03T17:27:26.679Z" tests="1" failures="0" errors="0" time="0.054">
+    <testcase name="Responde 204" time="0.054" classname="F002FichasDeUtentesOp12ArquivarFicha"/>
+  </testsuite>
+  <testsuite name="F002 Fichas de utentes / OP-11 Erro: ficha arquivada (409)" id="6f9b752e-02f0-430f-b5a5-4f984fbdbb91" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.039">
+    <testcase name="Responde 409" time="0.039" classname="F002FichasDeUtentesOp11ErroFichaArquivada409"/>
+    <testcase name="Código de erro FICHA_ARQUIVADA" time="0.039" classname="F002FichasDeUtentesOp11ErroFichaArquivada409"/>
+  </testsuite>
+  <testsuite name="F002 Fichas de utentes / OP-12 Erro: ficha já arquivada (409)" id="a29c1d1f-dda8-4093-9d22-e6e227a660c3" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.039">
+    <testcase name="Responde 409" time="0.039" classname="F002FichasDeUtentesOp12ErroFichaJaArquivada409"/>
+    <testcase name="Código de erro FICHA_JA_ARQUIVADA" time="0.039" classname="F002FichasDeUtentesOp12ErroFichaJaArquivada409"/>
+  </testsuite>
+  <testsuite name="F002 Fichas de utentes / OP-13 Reativar ficha" id="782ef9b3-173d-4b89-b1e1-8d0298c89765" timestamp="2026-11-03T17:27:26.679Z" tests="1" failures="0" errors="0" time="0.069">
+    <testcase name="Responde 204" time="0.069" classname="F002FichasDeUtentesOp13ReativarFicha"/>
+  </testsuite>
+  <testsuite name="F002 Fichas de utentes / OP-14 Eliminar ficha" id="d7f53025-bd6f-4efc-acbe-64186dabdb01" timestamp="2026-11-03T17:27:26.679Z" tests="1" failures="0" errors="0" time="0.134">
+    <testcase name="Responde 204" time="0.134" classname="F002FichasDeUtentesOp14EliminarFicha"/>
+  </testsuite>
+  <testsuite name="F002 Fichas de utentes / OP-10 Erro: ficha eliminada (404)" id="ef10e983-b2dc-4647-9410-731c22fe856a" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.037">
+    <testcase name="Responde 404" time="0.037" classname="F002FichasDeUtentesOp10ErroFichaEliminada404"/>
+    <testcase name="Código de erro FICHA_NAO_ENCONTRADA" time="0.037" classname="F002FichasDeUtentesOp10ErroFichaEliminada404"/>
+  </testsuite>
+  <testsuite name="F003 Ficha própria / OP-09 Criar ficha própria" id="8524e1a5-25d0-42bd-a614-562aa559a6a5" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.056">
+    <testcase name="Responde 201" time="0.056" classname="F003FichaPropriaOp09CriarFichaPropria"/>
+    <testcase name="Ficha própria com o titular como Cuidador principal" time="0.056" classname="F003FichaPropriaOp09CriarFichaPropria"/>
+  </testsuite>
+  <testsuite name="F003 Ficha própria / OP-09 Erro: segunda ficha própria (409)" id="c10b5b6a-ba2e-4ffc-9e1a-8ebd9f1e28f5" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.039">
+    <testcase name="Responde 409" time="0.039" classname="F003FichaPropriaOp09ErroSegundaFichaPropria409"/>
+    <testcase name="Código de erro FICHA_PROPRIA_JA_EXISTE" time="0.039" classname="F003FichaPropriaOp09ErroSegundaFichaPropria409"/>
+  </testsuite>
+  <testsuite name="F003 Ficha própria / OP-07 Listar fichas inclui a ficha própria" id="67b96c5a-2f85-47b6-9ff0-35d1a89f7509" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.049">
+    <testcase name="Responde 200" time="0.049" classname="F003FichaPropriaOp07ListarFichasIncluiAFichaPropria"/>
+    <testcase name="A ficha própria aparece com eProprio=true" time="0.049" classname="F003FichaPropriaOp07ListarFichasIncluiAFichaPropria"/>
+  </testsuite>
+  <testsuite name="F004 Associação / OP-19 Convidar pessoa para a ficha (Familiar)" id="2df141c2-91d9-4545-929c-e0a19eb9ec0f" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.108">
+    <testcase name="Responde 201" time="0.108" classname="F004AssociacaoOp19ConvidarPessoaParaAFichaFamiliar"/>
+    <testcase name="Convite pendente com o papel oferecido" time="0.108" classname="F004AssociacaoOp19ConvidarPessoaParaAFichaFamiliar"/>
+  </testsuite>
+  <testsuite name="F004 Associação / OP-19 Erro: convite pendente repetido (409)" id="c495773a-9899-4dba-a83e-e96967e42f5c" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.047">
+    <testcase name="Responde 409" time="0.047" classname="F004AssociacaoOp19ErroConvitePendenteRepetido409"/>
+    <testcase name="Código de erro CONVITE_PENDENTE_EXISTE" time="0.047" classname="F004AssociacaoOp19ErroConvitePendenteRepetido409"/>
+  </testsuite>
+  <testsuite name="F004 Associação / OP-20 Listar convites recebidos (Utilizador B)" id="e9a3766d-42ff-4027-8796-e86c0b69d086" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.062">
+    <testcase name="Responde 200" time="0.062" classname="F004AssociacaoOp20ListarConvitesRecebidosUtilizadorB"/>
+    <testcase name="Inclui o convite recebido" time="0.062" classname="F004AssociacaoOp20ListarConvitesRecebidosUtilizadorB"/>
+  </testsuite>
+  <testsuite name="F004 Associação / OP-21 Aceitar convite (Utilizador B)" id="79c68542-34c1-4161-8e04-8981145e45c9" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.067">
+    <testcase name="Responde 200" time="0.067" classname="F004AssociacaoOp21AceitarConviteUtilizadorB"/>
+    <testcase name="B fica associado como Familiar" time="0.067" classname="F004AssociacaoOp21AceitarConviteUtilizadorB"/>
+  </testsuite>
+  <testsuite name="F004 Associação / OP-21 Erro: convite já respondido (409)" id="0e8ac4c3-97f0-4cb9-bc9c-5fbc29639a33" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.040">
+    <testcase name="Responde 409" time="0.040" classname="F004AssociacaoOp21ErroConviteJaRespondido409"/>
+    <testcase name="Código de erro CONVITE_JA_RESPONDIDO" time="0.040" classname="F004AssociacaoOp21ErroConviteJaRespondido409"/>
+  </testsuite>
+  <testsuite name="F004 Associação / OP-10 Consultar ficha como Familiar (Utilizador B)" id="29d5e77a-ed45-411a-ad52-a4a74b17ecea" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.040">
+    <testcase name="Responde 200" time="0.040" classname="F004AssociacaoOp10ConsultarFichaComoFamiliarUtilizadorB"/>
+    <testcase name="B vê a ficha como Familiar" time="0.040" classname="F004AssociacaoOp10ConsultarFichaComoFamiliarUtilizadorB"/>
+  </testsuite>
+  <testsuite name="F004 Associação / OP-11 Erro: Familiar não edita a ficha (403)" id="cc75a5df-339a-434d-897a-cf34ce9bd4eb" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.041">
+    <testcase name="Responde 403" time="0.041" classname="F004AssociacaoOp11ErroFamiliarNaoEditaAFicha403"/>
+    <testcase name="Código de erro ACESSO_PROIBIDO" time="0.041" classname="F004AssociacaoOp11ErroFamiliarNaoEditaAFicha403"/>
+  </testsuite>
+  <testsuite name="F004 Associação / OP-18 Listar pessoas associadas à ficha" id="baf82128-9cc2-4730-9403-3c83439f3e0e" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.049">
+    <testcase name="Responde 200" time="0.049" classname="F004AssociacaoOp18ListarPessoasAssociadasAFicha"/>
+    <testcase name="A Cuidadora principal e o Familiar" time="0.049" classname="F004AssociacaoOp18ListarPessoasAssociadasAFicha"/>
+  </testsuite>
+  <testsuite name="F004 Associação / OP-23 Promover Familiar a Cuidador" id="619b6656-3727-4989-a27d-4f115bb24274" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.062">
+    <testcase name="Responde 200" time="0.062" classname="F004AssociacaoOp23PromoverFamiliarACuidador"/>
+    <testcase name="B passa a Cuidador" time="0.062" classname="F004AssociacaoOp23PromoverFamiliarACuidador"/>
+  </testsuite>
+  <testsuite name="F004 Associação / OP-26 Transferir o papel de Cuidador principal" id="ece1985c-6f43-4bb2-82d8-472bd9f827bc" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.062">
+    <testcase name="Responde 200" time="0.062" classname="F004AssociacaoOp26TransferirOPapelDeCuidadorPrincipal"/>
+    <testcase name="B passa a Cuidador principal" time="0.062" classname="F004AssociacaoOp26TransferirOPapelDeCuidadorPrincipal"/>
+  </testsuite>
+  <testsuite name="F004 Associação / OP-24 Despromover Cuidador a Familiar (B despromove A)" id="13d00ed8-1516-47ba-99c1-a4e6fb42d413" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.043">
+    <testcase name="Responde 200" time="0.043" classname="F004AssociacaoOp24DespromoverCuidadorAFamiliarBDespromoveA"/>
+    <testcase name="A passa a Familiar" time="0.043" classname="F004AssociacaoOp24DespromoverCuidadorAFamiliarBDespromoveA"/>
+  </testsuite>
+  <testsuite name="F004 Associação / OP-19 Convidar novamente para testar a recusa (B convida o e-mail C)" id="fabb0ff5-d498-4721-b29a-8e3e847da705" timestamp="2026-11-03T17:27:26.679Z" tests="1" failures="0" errors="0" time="0.053">
+    <testcase name="Responde 201" time="0.053" classname="F004AssociacaoOp19ConvidarNovamenteParaTestarARecusaBConvidaOEMailC"/>
+  </testsuite>
+  <testsuite name="F004 Associação / OP-22 Erro: recusar convite dirigido a outro e-mail (404)" id="6f2be1b2-7ac9-4a65-bb0b-d088b37f0c80" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.045">
+    <testcase name="Responde 404" time="0.045" classname="F004AssociacaoOp22ErroRecusarConviteDirigidoAOutroEMail404"/>
+    <testcase name="Código de erro CONVITE_NAO_ENCONTRADO" time="0.045" classname="F004AssociacaoOp22ErroRecusarConviteDirigidoAOutroEMail404"/>
+  </testsuite>
+  <testsuite name="F004 Associação / OP-25 Remover acesso de uma pessoa (B remove A)" id="af43716e-05c5-46bc-b5c9-8a2d156c44ea" timestamp="2026-11-03T17:27:26.679Z" tests="1" failures="0" errors="0" time="0.051">
+    <testcase name="Responde 204" time="0.051" classname="F004AssociacaoOp25RemoverAcessoDeUmaPessoaBRemoveA"/>
+  </testsuite>
+  <testsuite name="F004 Associação / OP-10 Erro: pessoa removida deixa de ver a ficha (404)" id="bde992ea-8154-4909-a8d6-81e682054d8c" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.037">
+    <testcase name="Responde 404" time="0.037" classname="F004AssociacaoOp10ErroPessoaRemovidaDeixaDeVerAFicha404"/>
+    <testcase name="Código de erro FICHA_NAO_ENCONTRADA" time="0.037" classname="F004AssociacaoOp10ErroPessoaRemovidaDeixaDeVerAFicha404"/>
+  </testsuite>
+  <testsuite name="F004 Associação / OP-19 B convida A como Familiar (para a recusa)" id="ef2fe057-1cc6-4e08-b197-1f2bb6787615" timestamp="2026-11-03T17:27:26.679Z" tests="1" failures="0" errors="0" time="0.045">
+    <testcase name="Responde 201" time="0.045" classname="F004AssociacaoOp19BConvidaAComoFamiliarParaARecusa"/>
+  </testsuite>
+  <testsuite name="F004 Associação / OP-22 Recusar convite (Utilizador A)" id="3157cd78-331b-44c0-87ac-66904635ac26" timestamp="2026-11-03T17:27:26.679Z" tests="1" failures="0" errors="0" time="0.043">
+    <testcase name="Responde 204" time="0.043" classname="F004AssociacaoOp22RecusarConviteUtilizadorA"/>
+  </testsuite>
+  <testsuite name="F004 Associação / OP-10 Depois da recusa, A continua sem acesso (404)" id="472edc54-5442-4533-b067-446b36ad9bdd" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.036">
+    <testcase name="Responde 404" time="0.036" classname="F004AssociacaoOp10DepoisDaRecusaAContinuaSemAcesso404"/>
+    <testcase name="Código de erro FICHA_NAO_ENCONTRADA" time="0.036" classname="F004AssociacaoOp10DepoisDaRecusaAContinuaSemAcesso404"/>
+  </testsuite>
+  <testsuite name="F005 Registo de medicação / Preparação: OP-19 B convida A como Familiar" id="3f43530f-5224-45fc-9168-33da676d0297" timestamp="2026-11-03T17:27:26.679Z" tests="1" failures="0" errors="0" time="0.048">
+    <testcase name="Responde 201" time="0.048" classname="F005RegistoDeMedicacaoPreparacaoOp19BConvidaAComoFamiliar"/>
+  </testsuite>
+  <testsuite name="F005 Registo de medicação / Preparação: OP-21 A aceita e fica Familiar" id="060e9977-9c46-41c6-ae54-dcfdec98466d" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.044">
+    <testcase name="Responde 200" time="0.044" classname="F005RegistoDeMedicacaoPreparacaoOp21AAceitaEFicaFamiliar"/>
+    <testcase name="A fica Familiar" time="0.044" classname="F005RegistoDeMedicacaoPreparacaoOp21AAceitaEFicaFamiliar"/>
+  </testsuite>
+  <testsuite name="F005 Registo de medicação / OP-27 Registar tratamento" id="5c74de8e-8755-42d7-a4d9-4a40be7b4afa" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.198">
+    <testcase name="Responde 201" time="0.198" classname="F005RegistoDeMedicacaoOp27RegistarTratamento"/>
+    <testcase name="Tratamento em curso com os dados pedidos" time="0.198" classname="F005RegistoDeMedicacaoOp27RegistarTratamento"/>
+  </testsuite>
+  <testsuite name="F005 Registo de medicação / OP-27 Registar tratamento com receita (multipart)" id="45fa3fba-e2fb-4769-8ddf-a675e6de068a" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.083">
+    <testcase name="Responde 201" time="0.083" classname="F005RegistoDeMedicacaoOp27RegistarTratamentoComReceitaMultipart"/>
+    <testcase name="Guarda a receita com o tratamento" time="0.083" classname="F005RegistoDeMedicacaoOp27RegistarTratamentoComReceitaMultipart"/>
+  </testsuite>
+  <testsuite name="F005 Registo de medicação / OP-27 Erro: dados inválidos (400)" id="42952822-6856-4f1f-9935-976bb46e9577" timestamp="2026-11-03T17:27:26.679Z" tests="3" failures="0" errors="0" time="0.040">
+    <testcase name="Responde 400" time="0.040" classname="F005RegistoDeMedicacaoOp27ErroDadosInvalidos400"/>
+    <testcase name="Código de erro VALIDACAO_INVALIDA" time="0.040" classname="F005RegistoDeMedicacaoOp27ErroDadosInvalidos400"/>
+    <testcase name="Indica os campos em erro" time="0.040" classname="F005RegistoDeMedicacaoOp27ErroDadosInvalidos400"/>
+  </testsuite>
+  <testsuite name="F005 Registo de medicação / OP-27 Erro: Familiar não regista (403)" id="2c367240-9808-4ac3-a8bc-5def040ce936" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.040">
+    <testcase name="Responde 403" time="0.040" classname="F005RegistoDeMedicacaoOp27ErroFamiliarNaoRegista403"/>
+    <testcase name="Código de erro ACESSO_PROIBIDO" time="0.040" classname="F005RegistoDeMedicacaoOp27ErroFamiliarNaoRegista403"/>
+  </testsuite>
+  <testsuite name="F005 Registo de medicação / OP-28 Listar tratamentos da ficha (Familiar)" id="15cd6978-9541-4efe-9133-e792f264da0c" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.069">
+    <testcase name="Responde 200" time="0.069" classname="F005RegistoDeMedicacaoOp28ListarTratamentosDaFichaFamiliar"/>
+    <testcase name="O Familiar vê os dois tratamentos" time="0.069" classname="F005RegistoDeMedicacaoOp28ListarTratamentosDaFichaFamiliar"/>
+  </testsuite>
+  <testsuite name="F005 Registo de medicação / OP-28 Erro: ficha sem associação (404)" id="fb85b64e-6eb9-4e51-9061-78782f282d38" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.035">
+    <testcase name="Responde 404" time="0.035" classname="F005RegistoDeMedicacaoOp28ErroFichaSemAssociacao404"/>
+    <testcase name="Código de erro FICHA_NAO_ENCONTRADA" time="0.035" classname="F005RegistoDeMedicacaoOp28ErroFichaSemAssociacao404"/>
+  </testsuite>
+  <testsuite name="F005 Registo de medicação / OP-29 Consultar tratamento (Familiar)" id="05d774f9-cdd2-4143-afae-d3f3f4af650a" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.056">
+    <testcase name="Responde 200" time="0.056" classname="F005RegistoDeMedicacaoOp29ConsultarTratamentoFamiliar"/>
+    <testcase name="Devolve o tratamento pedido" time="0.056" classname="F005RegistoDeMedicacaoOp29ConsultarTratamentoFamiliar"/>
+  </testsuite>
+  <testsuite name="F005 Registo de medicação / OP-29 Erro: tratamento inexistente (404)" id="29ef97e4-d178-48b5-b3c7-a03b0061a574" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.035">
+    <testcase name="Responde 404" time="0.035" classname="F005RegistoDeMedicacaoOp29ErroTratamentoInexistente404"/>
+    <testcase name="Código de erro RECURSO_NAO_ENCONTRADO" time="0.035" classname="F005RegistoDeMedicacaoOp29ErroTratamentoInexistente404"/>
+  </testsuite>
+  <testsuite name="F005 Registo de medicação / OP-30 Atualizar tratamento" id="948570f2-3811-4199-93d0-3b517906d4ad" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.085">
+    <testcase name="Responde 200" time="0.085" classname="F005RegistoDeMedicacaoOp30AtualizarTratamento"/>
+    <testcase name="Guarda a dose e o grau novos" time="0.085" classname="F005RegistoDeMedicacaoOp30AtualizarTratamento"/>
+  </testsuite>
+  <testsuite name="F005 Registo de medicação / OP-30 Erro: sem horários (400)" id="ba71357e-666f-44f5-8595-555627563bf7" timestamp="2026-11-03T17:27:26.679Z" tests="3" failures="0" errors="0" time="0.039">
+    <testcase name="Responde 400" time="0.039" classname="F005RegistoDeMedicacaoOp30ErroSemHorarios400"/>
+    <testcase name="Código de erro VALIDACAO_INVALIDA" time="0.039" classname="F005RegistoDeMedicacaoOp30ErroSemHorarios400"/>
+    <testcase name="Indica o campo horarios" time="0.039" classname="F005RegistoDeMedicacaoOp30ErroSemHorarios400"/>
+  </testsuite>
+  <testsuite name="F005 Registo de medicação / OP-30 Erro: Familiar não altera (403)" id="fa1a1ba7-1436-450e-a4bb-c3a1062d34a2" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.040">
+    <testcase name="Responde 403" time="0.040" classname="F005RegistoDeMedicacaoOp30ErroFamiliarNaoAltera403"/>
+    <testcase name="Código de erro ACESSO_PROIBIDO" time="0.040" classname="F005RegistoDeMedicacaoOp30ErroFamiliarNaoAltera403"/>
+  </testsuite>
+  <testsuite name="F005 Registo de medicação / OP-31 Terminar tratamento antecipadamente" id="a5bf9163-e986-4427-80e1-a69b4b41d04b" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.055">
+    <testcase name="Responde 200" time="0.055" classname="F005RegistoDeMedicacaoOp31TerminarTratamentoAntecipadamente"/>
+    <testcase name="O tratamento fica Terminado e mantém os dados" time="0.055" classname="F005RegistoDeMedicacaoOp31TerminarTratamentoAntecipadamente"/>
+  </testsuite>
+  <testsuite name="F005 Registo de medicação / OP-31 Erro: tratamento já terminado (409)" id="94f8fd82-cf5e-48b8-9602-bd9a6f8d4dc6" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.038">
+    <testcase name="Responde 409" time="0.038" classname="F005RegistoDeMedicacaoOp31ErroTratamentoJaTerminado409"/>
+    <testcase name="Código de erro TRATAMENTO_JA_TERMINADO" time="0.038" classname="F005RegistoDeMedicacaoOp31ErroTratamentoJaTerminado409"/>
+  </testsuite>
+  <testsuite name="F005 Registo de medicação / OP-30 Erro: tratamento terminado (409)" id="f71c1b10-753a-436c-a70c-dd6af5b09859" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.038">
+    <testcase name="Responde 409" time="0.038" classname="F005RegistoDeMedicacaoOp30ErroTratamentoTerminado409"/>
+    <testcase name="Código de erro TRATAMENTO_TERMINADO" time="0.038" classname="F005RegistoDeMedicacaoOp30ErroTratamentoTerminado409"/>
+  </testsuite>
+  <testsuite name="F005 Registo de medicação / OP-28 Listar só os tratamentos em curso" id="d49e0f14-52ef-4b5b-b087-39aee3dcc26e" timestamp="2026-11-03T17:27:26.679Z" tests="3" failures="0" errors="0" time="0.043">
+    <testcase name="Responde 200" time="0.043" classname="F005RegistoDeMedicacaoOp28ListarSoOsTratamentosEmCurso"/>
+    <testcase name="Inclui o tratamento em curso e não o terminado" time="0.043" classname="F005RegistoDeMedicacaoOp28ListarSoOsTratamentosEmCurso"/>
+    <testcase name="Todos estão EmCurso" time="0.043" classname="F005RegistoDeMedicacaoOp28ListarSoOsTratamentosEmCurso"/>
+  </testsuite>
+  <testsuite name="F006 Horários e confirmação de toma / OP-32 Listar tomas da ficha (Familiar)" id="29603d56-0685-459c-a15b-6b8e67b3fc19" timestamp="2026-11-03T17:27:26.679Z" tests="3" failures="0" errors="0" time="0.072">
+    <testcase name="Responde 200" time="0.072" classname="F006HorariosEConfirmacaoDeTomaOp32ListarTomasDaFichaFamiliar"/>
+    <testcase name="Inclui a toma de hoje às 23:59 e a de amanhã às 08:00, pendentes" time="0.072" classname="F006HorariosEConfirmacaoDeTomaOp32ListarTomasDaFichaFamiliar"/>
+    <testcase name="Ordenadas por hora prevista" time="0.072" classname="F006HorariosEConfirmacaoDeTomaOp32ListarTomasDaFichaFamiliar"/>
+  </testsuite>
+  <testsuite name="F006 Horários e confirmação de toma / OP-32 Erro: sem data de fim (400)" id="9b9b3245-71f7-40af-b597-8a861fd9d1ff" timestamp="2026-11-03T17:27:26.679Z" tests="3" failures="0" errors="0" time="0.033">
+    <testcase name="Responde 400" time="0.033" classname="F006HorariosEConfirmacaoDeTomaOp32ErroSemDataDeFim400"/>
+    <testcase name="Código de erro VALIDACAO_INVALIDA" time="0.033" classname="F006HorariosEConfirmacaoDeTomaOp32ErroSemDataDeFim400"/>
+    <testcase name="Indica o campo ate" time="0.033" classname="F006HorariosEConfirmacaoDeTomaOp32ErroSemDataDeFim400"/>
+  </testsuite>
+  <testsuite name="F006 Horários e confirmação de toma / OP-32 Erro: ficha sem associação (404)" id="33adc541-ae3d-4d47-838d-0abed2fb5962" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.036">
+    <testcase name="Responde 404" time="0.036" classname="F006HorariosEConfirmacaoDeTomaOp32ErroFichaSemAssociacao404"/>
+    <testcase name="Código de erro FICHA_NAO_ENCONTRADA" time="0.036" classname="F006HorariosEConfirmacaoDeTomaOp32ErroFichaSemAssociacao404"/>
+  </testsuite>
+  <testsuite name="F006 Horários e confirmação de toma / OP-33 Erro: Familiar não confirma (403)" id="a9dae201-f7ec-40af-8ab5-6a2007bbee7a" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.053">
+    <testcase name="Responde 403" time="0.053" classname="F006HorariosEConfirmacaoDeTomaOp33ErroFamiliarNaoConfirma403"/>
+    <testcase name="Código de erro ACESSO_PROIBIDO" time="0.053" classname="F006HorariosEConfirmacaoDeTomaOp33ErroFamiliarNaoConfirma403"/>
+  </testsuite>
+  <testsuite name="F006 Horários e confirmação de toma / OP-33 Confirmar toma" id="9d288af0-5e10-4f52-9df5-88ac8ecd1f30" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.061">
+    <testcase name="Responde 200" time="0.061" classname="F006HorariosEConfirmacaoDeTomaOp33ConfirmarToma"/>
+    <testcase name="Confirmada antes da hora prevista, no mesmo dia, regista quem confirmou e quando" time="0.061" classname="F006HorariosEConfirmacaoDeTomaOp33ConfirmarToma"/>
+  </testsuite>
+  <testsuite name="F006 Horários e confirmação de toma / OP-33 Erro: toma já confirmada (409)" id="036a4d76-c138-432c-952f-d00faf0d9e22" timestamp="2026-11-03T17:27:26.679Z" tests="3" failures="0" errors="0" time="0.045">
+    <testcase name="Responde 409" time="0.045" classname="F006HorariosEConfirmacaoDeTomaOp33ErroTomaJaConfirmada409"/>
+    <testcase name="Código de erro TOMA_JA_CONFIRMADA" time="0.045" classname="F006HorariosEConfirmacaoDeTomaOp33ErroTomaJaConfirmada409"/>
+    <testcase name="Indica quem confirmou primeiro" time="0.045" classname="F006HorariosEConfirmacaoDeTomaOp33ErroTomaJaConfirmada409"/>
+  </testsuite>
+  <testsuite name="F006 Horários e confirmação de toma / OP-33 Erro: toma de amanhã fora da janela (409)" id="e2c89275-bf05-4c6a-a215-7b082f4e2c93" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.037">
+    <testcase name="Responde 409" time="0.037" classname="F006HorariosEConfirmacaoDeTomaOp33ErroTomaDeAmanhaForaDaJanela409"/>
+    <testcase name="Código de erro TOMA_FORA_DA_JANELA" time="0.037" classname="F006HorariosEConfirmacaoDeTomaOp33ErroTomaDeAmanhaForaDaJanela409"/>
+  </testsuite>
+  <testsuite name="F006 Horários e confirmação de toma / OP-33 Erro: toma inexistente (404)" id="76514310-f1b7-483b-b459-c0c5d68b1ef8" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.039">
+    <testcase name="Responde 404" time="0.039" classname="F006HorariosEConfirmacaoDeTomaOp33ErroTomaInexistente404"/>
+    <testcase name="Código de erro RECURSO_NAO_ENCONTRADO" time="0.039" classname="F006HorariosEConfirmacaoDeTomaOp33ErroTomaInexistente404"/>
+  </testsuite>
+  <testsuite name="F006 Horários e confirmação de toma / OP-32 Familiar vê a toma confirmada (filtro por estado)" id="9bc0811a-9fb6-4799-b01f-b51b76ba622f" timestamp="2026-11-03T17:27:26.679Z" tests="3" failures="0" errors="0" time="0.051">
+    <testcase name="Responde 200" time="0.051" classname="F006HorariosEConfirmacaoDeTomaOp32FamiliarVeATomaConfirmadaFiltroPorEstado"/>
+    <testcase name="A toma aparece confirmada pelo Rui" time="0.051" classname="F006HorariosEConfirmacaoDeTomaOp32FamiliarVeATomaConfirmadaFiltroPorEstado"/>
+    <testcase name="Só tomas confirmadas" time="0.051" classname="F006HorariosEConfirmacaoDeTomaOp32FamiliarVeATomaConfirmadaFiltroPorEstado"/>
+  </testsuite>
+  <testsuite name="F006 Horários e confirmação de toma / OP-34 Sincronizar o calendário de tomas" id="3ea71214-2bd7-4d12-b6f2-dc09b5e9ca54" timestamp="2026-11-03T17:27:26.679Z" tests="4" failures="0" errors="0" time="0.072">
+    <testcase name="Responde 200" time="0.072" classname="F006HorariosEConfirmacaoDeTomaOp34SincronizarOCalendarioDeTomas"/>
+    <testcase name="Inclui a toma pendente de amanhã e não a toma já confirmada" time="0.072" classname="F006HorariosEConfirmacaoDeTomaOp34SincronizarOCalendarioDeTomas"/>
+    <testcase name="Cada toma indica a ficha, o medicamento e a dose" time="0.072" classname="F006HorariosEConfirmacaoDeTomaOp34SincronizarOCalendarioDeTomas"/>
+    <testcase name="Só as 48 horas seguintes" time="0.072" classname="F006HorariosEConfirmacaoDeTomaOp34SincronizarOCalendarioDeTomas"/>
+  </testsuite>
+  <testsuite name="F006 Horários e confirmação de toma / OP-34 Familiar não recebe as tomas da ficha" id="d6a708f9-1da7-4d6a-a9a4-b115d155c53a" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.033">
+    <testcase name="Responde 200" time="0.033" classname="F006HorariosEConfirmacaoDeTomaOp34FamiliarNaoRecebeAsTomasDaFicha"/>
+    <testcase name="Nenhuma toma da ficha em que A é Familiar" time="0.033" classname="F006HorariosEConfirmacaoDeTomaOp34FamiliarNaoRecebeAsTomasDaFicha"/>
+  </testsuite>
+  <testsuite name="F006 Horários e confirmação de toma / OP-34 Erro: sem token (401)" id="4ef9a1d0-030c-4c34-9e61-9a611aa81aa1" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.031">
+    <testcase name="Responde 401" time="0.031" classname="F006HorariosEConfirmacaoDeTomaOp34ErroSemToken401"/>
+    <testcase name="Código de erro NAO_AUTENTICADO" time="0.031" classname="F006HorariosEConfirmacaoDeTomaOp34ErroSemToken401"/>
+  </testsuite>
+  <testsuite name="F008 Compromissos e agenda / OP-41 Registar compromisso" id="1ddd3921-c8c3-44f4-8ab7-3c9b586c529b" timestamp="2026-11-03T17:27:26.679Z" tests="3" failures="0" errors="0" time="0.081">
+    <testcase name="Responde 201" time="0.081" classname="F008CompromissosEAgendaOp41RegistarCompromisso"/>
+    <testcase name="Devolve o compromisso com a data em hora de Lisboa" time="0.081" classname="F008CompromissosEAgendaOp41RegistarCompromisso"/>
+    <testcase name="Antecedência por omissão de 24 horas" time="0.081" classname="F008CompromissosEAgendaOp41RegistarCompromisso"/>
+  </testsuite>
+  <testsuite name="F008 Compromissos e agenda / OP-41 Erro: dados inválidos (400)" id="0175a31e-a308-4e70-b900-4a7163177a0d" timestamp="2026-11-03T17:27:26.679Z" tests="3" failures="0" errors="0" time="0.041">
+    <testcase name="Responde 400" time="0.041" classname="F008CompromissosEAgendaOp41ErroDadosInvalidos400"/>
+    <testcase name="Código VALIDACAO_INVALIDA" time="0.041" classname="F008CompromissosEAgendaOp41ErroDadosInvalidos400"/>
+    <testcase name="Indica os campos em falta" time="0.041" classname="F008CompromissosEAgendaOp41ErroDadosInvalidos400"/>
+  </testsuite>
+  <testsuite name="F008 Compromissos e agenda / OP-41 Erro: Familiar não regista (403)" id="2c7e4a62-1e4e-47d3-a377-e99953e172c1" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.038">
+    <testcase name="Responde 403" time="0.038" classname="F008CompromissosEAgendaOp41ErroFamiliarNaoRegista403"/>
+    <testcase name="Código ACESSO_PROIBIDO" time="0.038" classname="F008CompromissosEAgendaOp41ErroFamiliarNaoRegista403"/>
+  </testsuite>
+  <testsuite name="F008 Compromissos e agenda / OP-42 Listar compromissos da ficha (Familiar)" id="81def2a3-6716-40c4-8099-7d3aafa7470e" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.336">
+    <testcase name="Responde 200" time="0.336" classname="F008CompromissosEAgendaOp42ListarCompromissosDaFichaFamiliar"/>
+    <testcase name="Inclui o compromisso" time="0.336" classname="F008CompromissosEAgendaOp42ListarCompromissosDaFichaFamiliar"/>
+  </testsuite>
+  <testsuite name="F008 Compromissos e agenda / OP-42 Erro: ficha sem associação (404)" id="4a82f6d3-6c28-456c-a8b9-42d9f749f451" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.038">
+    <testcase name="Responde 404" time="0.038" classname="F008CompromissosEAgendaOp42ErroFichaSemAssociacao404"/>
+    <testcase name="Código FICHA_NAO_ENCONTRADA" time="0.038" classname="F008CompromissosEAgendaOp42ErroFichaSemAssociacao404"/>
+  </testsuite>
+  <testsuite name="F008 Compromissos e agenda / OP-43 Editar compromisso" id="d495a58c-7990-4108-afed-4ceecc72e8b7" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.060">
+    <testcase name="Responde 200" time="0.060" classname="F008CompromissosEAgendaOp43EditarCompromisso"/>
+    <testcase name="Guarda os dados novos" time="0.060" classname="F008CompromissosEAgendaOp43EditarCompromisso"/>
+  </testsuite>
+  <testsuite name="F008 Compromissos e agenda / OP-43 Erro: antecedência não permitida (400)" id="eb3106a7-a902-42a1-8cf7-e3ce9fac2244" timestamp="2026-11-03T17:27:26.679Z" tests="3" failures="0" errors="0" time="0.048">
+    <testcase name="Responde 400" time="0.048" classname="F008CompromissosEAgendaOp43ErroAntecedenciaNaoPermitida400"/>
+    <testcase name="Código VALIDACAO_INVALIDA" time="0.048" classname="F008CompromissosEAgendaOp43ErroAntecedenciaNaoPermitida400"/>
+    <testcase name="Indica o campo antecedenciaAvisoMinutos" time="0.048" classname="F008CompromissosEAgendaOp43ErroAntecedenciaNaoPermitida400"/>
+  </testsuite>
+  <testsuite name="F008 Compromissos e agenda / Erro: confirmar um compromisso (405)" id="2d5be0c9-5266-4fba-882f-4e59247cc95f" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.037">
+    <testcase name="Responde 405" time="0.037" classname="F008CompromissosEAgendaErroConfirmarUmCompromisso405"/>
+    <testcase name="Código COMPROMISSO_NAO_CONFIRMAVEL" time="0.037" classname="F008CompromissosEAgendaErroConfirmarUmCompromisso405"/>
+  </testsuite>
+  <testsuite name="F008 Compromissos e agenda / OP-45 Consultar agenda (vista diária)" id="d870caaa-70b9-43b5-af10-dfd633fb7398" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.086">
+    <testcase name="Responde 200" time="0.086" classname="F008CompromissosEAgendaOp45ConsultarAgendaVistaDiaria"/>
+    <testcase name="Inclui o compromisso, não confirmável e sem estado" time="0.086" classname="F008CompromissosEAgendaOp45ConsultarAgendaVistaDiaria"/>
+  </testsuite>
+  <testsuite name="F008 Compromissos e agenda / OP-45 Consultar agenda (vista semanal)" id="9c0f1880-5681-4899-a01f-0cd6c313a730" timestamp="2026-11-03T17:27:26.679Z" tests="4" failures="0" errors="0" time="0.036">
+    <testcase name="Responde 200" time="0.036" classname="F008CompromissosEAgendaOp45ConsultarAgendaVistaSemanal"/>
+    <testcase name="Inclui o compromisso de amanhã" time="0.036" classname="F008CompromissosEAgendaOp45ConsultarAgendaVistaSemanal"/>
+    <testcase name="Inclui a toma pendente de amanhã da F006, confirmável pelo Cuidador" time="0.036" classname="F008CompromissosEAgendaOp45ConsultarAgendaVistaSemanal"/>
+    <testcase name="Ordenada por hora" time="0.036" classname="F008CompromissosEAgendaOp45ConsultarAgendaVistaSemanal"/>
+  </testsuite>
+  <testsuite name="F008 Compromissos e agenda / OP-45 Consultar agenda como Familiar (vista mensal)" id="46a1e525-e5cc-49cc-9ebe-776bb45c1f3d" timestamp="2026-11-03T17:27:26.679Z" tests="3" failures="0" errors="0" time="0.036">
+    <testcase name="Responde 200" time="0.036" classname="F008CompromissosEAgendaOp45ConsultarAgendaComoFamiliarVistaMensal"/>
+    <testcase name="O Familiar vê o compromisso" time="0.036" classname="F008CompromissosEAgendaOp45ConsultarAgendaComoFamiliarVistaMensal"/>
+    <testcase name="Nada é confirmável para o Familiar" time="0.036" classname="F008CompromissosEAgendaOp45ConsultarAgendaComoFamiliarVistaMensal"/>
+  </testsuite>
+  <testsuite name="F008 Compromissos e agenda / OP-45 Erro: vista inválida (400)" id="f42e8eca-c277-4ae8-93fb-11e82097221a" timestamp="2026-11-03T17:27:26.679Z" tests="3" failures="0" errors="0" time="0.033">
+    <testcase name="Responde 400" time="0.033" classname="F008CompromissosEAgendaOp45ErroVistaInvalida400"/>
+    <testcase name="Código VALIDACAO_INVALIDA" time="0.033" classname="F008CompromissosEAgendaOp45ErroVistaInvalida400"/>
+    <testcase name="Indica o campo vista" time="0.033" classname="F008CompromissosEAgendaOp45ErroVistaInvalida400"/>
+  </testsuite>
+  <testsuite name="F008 Compromissos e agenda / OP-44 Erro: Familiar não remove (403)" id="a7fc1e58-25ab-44c2-8c0f-cec693bac4e2" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.044">
+    <testcase name="Responde 403" time="0.044" classname="F008CompromissosEAgendaOp44ErroFamiliarNaoRemove403"/>
+    <testcase name="Código ACESSO_PROIBIDO" time="0.044" classname="F008CompromissosEAgendaOp44ErroFamiliarNaoRemove403"/>
+  </testsuite>
+  <testsuite name="F008 Compromissos e agenda / OP-44 Remover compromisso" id="705f6afe-8dd2-4924-bd39-bd893d5cea16" timestamp="2026-11-03T17:27:26.679Z" tests="1" failures="0" errors="0" time="0.048">
+    <testcase name="Responde 204" time="0.048" classname="F008CompromissosEAgendaOp44RemoverCompromisso"/>
+  </testsuite>
+  <testsuite name="F008 Compromissos e agenda / OP-43 Erro: compromisso removido (404)" id="6c837e5b-1b0f-464d-ab97-806447eb8607" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.036">
+    <testcase name="Responde 404" time="0.036" classname="F008CompromissosEAgendaOp43ErroCompromissoRemovido404"/>
+    <testcase name="Código RECURSO_NAO_ENCONTRADO" time="0.036" classname="F008CompromissosEAgendaOp43ErroCompromissoRemovido404"/>
+  </testsuite>
+  <testsuite name="F008 Compromissos e agenda / OP-45 Agenda sem o compromisso removido" id="aaf141f6-7b92-446f-9e22-8b66ab23fd80" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.037">
+    <testcase name="Responde 200" time="0.037" classname="F008CompromissosEAgendaOp45AgendaSemOCompromissoRemovido"/>
+    <testcase name="O compromisso removido deixa de aparecer" time="0.037" classname="F008CompromissosEAgendaOp45AgendaSemOCompromissoRemovido"/>
+  </testsuite>
+  <testsuite name="F009 Ocorrências e notas partilhadas / OP-46 Registar ocorrência" id="0d0526a1-f78e-4f8c-b8be-0ee613baac75" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.077">
+    <testcase name="Responde 201" time="0.077" classname="F009OcorrenciasENotasPartilhadasOp46RegistarOcorrencia"/>
+    <testcase name="Ocorrência com o autor, o instante em que aconteceu e o do registo" time="0.077" classname="F009OcorrenciasENotasPartilhadasOp46RegistarOcorrencia"/>
+  </testsuite>
+  <testsuite name="F009 Ocorrências e notas partilhadas / OP-46 Erro: sem descrição nem data (400)" id="7c376319-5c7e-48e2-a387-b4953725e37f" timestamp="2026-11-03T17:27:26.679Z" tests="3" failures="0" errors="0" time="0.037">
+    <testcase name="Responde 400" time="0.037" classname="F009OcorrenciasENotasPartilhadasOp46ErroSemDescricaoNemData400"/>
+    <testcase name="Código de erro VALIDACAO_INVALIDA" time="0.037" classname="F009OcorrenciasENotasPartilhadasOp46ErroSemDescricaoNemData400"/>
+    <testcase name="Indica os campos em erro" time="0.037" classname="F009OcorrenciasENotasPartilhadasOp46ErroSemDescricaoNemData400"/>
+  </testsuite>
+  <testsuite name="F009 Ocorrências e notas partilhadas / OP-46 Erro: Familiar não regista (403)" id="50f1e15a-da95-414e-9f40-ba4ac070075f" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.044">
+    <testcase name="Responde 403" time="0.044" classname="F009OcorrenciasENotasPartilhadasOp46ErroFamiliarNaoRegista403"/>
+    <testcase name="Código de erro ACESSO_PROIBIDO" time="0.044" classname="F009OcorrenciasENotasPartilhadasOp46ErroFamiliarNaoRegista403"/>
+  </testsuite>
+  <testsuite name="F009 Ocorrências e notas partilhadas / OP-47 Registar nota partilhada" id="b8d1c0c4-adfa-4ccb-9b86-90312cde76e5" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.062">
+    <testcase name="Responde 201" time="0.062" classname="F009OcorrenciasENotasPartilhadasOp47RegistarNotaPartilhada"/>
+    <testcase name="Nota com o autor e sem ocorridaEm" time="0.062" classname="F009OcorrenciasENotasPartilhadasOp47RegistarNotaPartilhada"/>
+  </testsuite>
+  <testsuite name="F009 Ocorrências e notas partilhadas / OP-47 Erro: nota sem texto (400)" id="ed423c44-f095-4294-9eee-9c541742817b" timestamp="2026-11-03T17:27:26.679Z" tests="3" failures="0" errors="0" time="0.038">
+    <testcase name="Responde 400" time="0.038" classname="F009OcorrenciasENotasPartilhadasOp47ErroNotaSemTexto400"/>
+    <testcase name="Código de erro VALIDACAO_INVALIDA" time="0.038" classname="F009OcorrenciasENotasPartilhadasOp47ErroNotaSemTexto400"/>
+    <testcase name="Indica o campo descricao" time="0.038" classname="F009OcorrenciasENotasPartilhadasOp47ErroNotaSemTexto400"/>
+  </testsuite>
+  <testsuite name="F009 Ocorrências e notas partilhadas / OP-47 Erro: Familiar não regista (403)" id="0ad042e9-5bac-4e79-a6b2-ab3df251fc92" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.040">
+    <testcase name="Responde 403" time="0.040" classname="F009OcorrenciasENotasPartilhadasOp47ErroFamiliarNaoRegista403"/>
+    <testcase name="Código de erro ACESSO_PROIBIDO" time="0.040" classname="F009OcorrenciasENotasPartilhadasOp47ErroFamiliarNaoRegista403"/>
+  </testsuite>
+  <testsuite name="F009 Ocorrências e notas partilhadas / OP-48 Consultar ocorrências (Familiar)" id="a8a61d1f-9c8d-413c-87e4-9a54d47c388b" timestamp="2026-11-03T17:27:26.679Z" tests="3" failures="0" errors="0" time="0.062">
+    <testcase name="Responde 200" time="0.062" classname="F009OcorrenciasENotasPartilhadasOp48ConsultarOcorrenciasFamiliar"/>
+    <testcase name="O Familiar vê a ocorrência registada pelo Cuidador" time="0.062" classname="F009OcorrenciasENotasPartilhadasOp48ConsultarOcorrenciasFamiliar"/>
+    <testcase name="Só ocorrências, da mais recente para a mais antiga" time="0.062" classname="F009OcorrenciasENotasPartilhadasOp48ConsultarOcorrenciasFamiliar"/>
+  </testsuite>
+  <testsuite name="F009 Ocorrências e notas partilhadas / OP-48 Consultar ocorrências de hoje (de e ate)" id="2add4e52-26c5-4474-899c-14e74ce8591d" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.046">
+    <testcase name="Responde 200" time="0.046" classname="F009OcorrenciasENotasPartilhadasOp48ConsultarOcorrenciasDeHojeDeEAte"/>
+    <testcase name="Inclui a ocorrência registada hoje" time="0.046" classname="F009OcorrenciasENotasPartilhadasOp48ConsultarOcorrenciasDeHojeDeEAte"/>
+  </testsuite>
+  <testsuite name="F009 Ocorrências e notas partilhadas / OP-48 Erro: ficha sem associação (404)" id="23a00411-35ad-4293-8de9-f56437037f4c" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.037">
+    <testcase name="Responde 404" time="0.037" classname="F009OcorrenciasENotasPartilhadasOp48ErroFichaSemAssociacao404"/>
+    <testcase name="Código de erro FICHA_NAO_ENCONTRADA" time="0.037" classname="F009OcorrenciasENotasPartilhadasOp48ErroFichaSemAssociacao404"/>
+  </testsuite>
+  <testsuite name="F009 Ocorrências e notas partilhadas / OP-49 Consultar notas partilhadas" id="24ae076d-1377-4f0c-b597-7672d4ecc594" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.054">
+    <testcase name="Responde 200" time="0.054" classname="F009OcorrenciasENotasPartilhadasOp49ConsultarNotasPartilhadas"/>
+    <testcase name="Inclui a nota e só notas" time="0.054" classname="F009OcorrenciasENotasPartilhadasOp49ConsultarNotasPartilhadas"/>
+  </testsuite>
+  <testsuite name="F009 Ocorrências e notas partilhadas / OP-49 Erro: Familiar não vê as notas (403)" id="f5f509e0-91a2-49b8-b324-4e0457608d65" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.036">
+    <testcase name="Responde 403" time="0.036" classname="F009OcorrenciasENotasPartilhadasOp49ErroFamiliarNaoVeAsNotas403"/>
+    <testcase name="Código de erro ACESSO_PROIBIDO" time="0.036" classname="F009OcorrenciasENotasPartilhadasOp49ErroFamiliarNaoVeAsNotas403"/>
+  </testsuite>
+  <testsuite name="F009 Ocorrências e notas partilhadas / OP-48 Erro: sem tipo (400)" id="c768e1db-c04a-4241-9a77-7fe3399b1a6b" timestamp="2026-11-03T17:27:26.679Z" tests="3" failures="0" errors="0" time="0.034">
+    <testcase name="Responde 400" time="0.034" classname="F009OcorrenciasENotasPartilhadasOp48ErroSemTipo400"/>
+    <testcase name="Código de erro VALIDACAO_INVALIDA" time="0.034" classname="F009OcorrenciasENotasPartilhadasOp48ErroSemTipo400"/>
+    <testcase name="Indica o campo tipo" time="0.034" classname="F009OcorrenciasENotasPartilhadasOp48ErroSemTipo400"/>
+  </testsuite>
+  <testsuite name="F009 Ocorrências e notas partilhadas / Erro: alterar uma ocorrência com PUT (405)" id="08fbdc1e-3250-45f0-97ab-b018c4fd8908" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.035">
+    <testcase name="Responde 405" time="0.035" classname="F009OcorrenciasENotasPartilhadasErroAlterarUmaOcorrenciaComPut405"/>
+    <testcase name="Código de erro REGISTO_IMUTAVEL" time="0.035" classname="F009OcorrenciasENotasPartilhadasErroAlterarUmaOcorrenciaComPut405"/>
+  </testsuite>
+  <testsuite name="F009 Ocorrências e notas partilhadas / Erro: alterar uma ocorrência com PATCH (405)" id="3c4d32ed-7c05-49d9-be20-19fca3e04f7c" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.034">
+    <testcase name="Responde 405" time="0.034" classname="F009OcorrenciasENotasPartilhadasErroAlterarUmaOcorrenciaComPatch405"/>
+    <testcase name="Código de erro REGISTO_IMUTAVEL" time="0.034" classname="F009OcorrenciasENotasPartilhadasErroAlterarUmaOcorrenciaComPatch405"/>
+  </testsuite>
+  <testsuite name="F009 Ocorrências e notas partilhadas / Erro: eliminar uma ocorrência (405)" id="25057a7d-be6a-4e62-8cb5-718971c37168" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.034">
+    <testcase name="Responde 405" time="0.034" classname="F009OcorrenciasENotasPartilhadasErroEliminarUmaOcorrencia405"/>
+    <testcase name="Código de erro REGISTO_IMUTAVEL" time="0.034" classname="F009OcorrenciasENotasPartilhadasErroEliminarUmaOcorrencia405"/>
+  </testsuite>
+  <testsuite name="F010 Lista diária / Preparação: OP-27 Registar tratamento na ficha própria (tomas de hoje)" id="6b3ce9fa-10f8-4cfd-8e36-e65aae64a7bf" timestamp="2026-11-03T17:27:26.679Z" tests="1" failures="0" errors="0" time="0.066">
+    <testcase name="Responde 201" time="0.066" classname="F010ListaDiariaPreparacaoOp27RegistarTratamentoNaFichaPropriaTomasDeHoje"/>
+  </testsuite>
+  <testsuite name="F010 Lista diária / Preparação: OP-41 Registar compromisso de hoje na ficha própria" id="11cbc83d-5040-41f7-9b96-cef8a31eac21" timestamp="2026-11-03T17:27:26.679Z" tests="1" failures="0" errors="0" time="0.041">
+    <testcase name="Responde 201" time="0.041" classname="F010ListaDiariaPreparacaoOp41RegistarCompromissoDeHojeNaFichaPropria"/>
+  </testsuite>
+  <testsuite name="F010 Lista diária / OP-50 Consultar lista diária de hoje" id="89e85200-d18a-43f7-8d34-5a79b05c9561" timestamp="2026-11-03T17:27:26.679Z" tests="5" failures="0" errors="0" time="0.081">
+    <testcase name="Responde 200" time="0.081" classname="F010ListaDiariaOp50ConsultarListaDiariaDeHoje"/>
+    <testcase name="Só a ficha própria, em que A é Cuidador (a ficha em que é Familiar não entra)" time="0.081" classname="F010ListaDiariaOp50ConsultarListaDiariaDeHoje"/>
+    <testcase name="Ordenados por hora: o compromisso e as duas tomas" time="0.081" classname="F010ListaDiariaOp50ConsultarListaDiariaDeHoje"/>
+    <testcase name="As tomas pendentes de hoje são confirmáveis" time="0.081" classname="F010ListaDiariaOp50ConsultarListaDiariaDeHoje"/>
+    <testcase name="O compromisso não é confirmável e não tem estado" time="0.081" classname="F010ListaDiariaOp50ConsultarListaDiariaDeHoje"/>
+  </testsuite>
+  <testsuite name="F010 Lista diária / OP-50 Consultar lista diária sem data (hoje em Lisboa)" id="f24133fb-a3b0-45db-ac62-28346003cae0" timestamp="2026-11-03T17:27:26.679Z" tests="5" failures="0" errors="0" time="0.037">
+    <testcase name="Responde 200" time="0.037" classname="F010ListaDiariaOp50ConsultarListaDiariaSemDataHojeEmLisboa"/>
+    <testcase name="Só a ficha própria, em que A é Cuidador (a ficha em que é Familiar não entra)" time="0.037" classname="F010ListaDiariaOp50ConsultarListaDiariaSemDataHojeEmLisboa"/>
+    <testcase name="Ordenados por hora: o compromisso e as duas tomas" time="0.037" classname="F010ListaDiariaOp50ConsultarListaDiariaSemDataHojeEmLisboa"/>
+    <testcase name="As tomas pendentes de hoje são confirmáveis" time="0.037" classname="F010ListaDiariaOp50ConsultarListaDiariaSemDataHojeEmLisboa"/>
+    <testcase name="O compromisso não é confirmável e não tem estado" time="0.037" classname="F010ListaDiariaOp50ConsultarListaDiariaSemDataHojeEmLisboa"/>
+  </testsuite>
+  <testsuite name="F010 Lista diária / OP-50 Lista diária do Cuidador B mostra a toma que confirmou" id="e85dba2d-b3c7-4f50-b9cc-22e5a90de70b" timestamp="2026-11-03T17:27:26.679Z" tests="3" failures="0" errors="0" time="0.038">
+    <testcase name="Responde 200" time="0.038" classname="F010ListaDiariaOp50ListaDiariaDoCuidadorBMostraATomaQueConfirmou"/>
+    <testcase name="A toma confirmada na F006 aparece com quem confirmou e quando" time="0.038" classname="F010ListaDiariaOp50ListaDiariaDoCuidadorBMostraATomaQueConfirmou"/>
+    <testcase name="Não inclui a ficha própria de A, a que B não está associado" time="0.038" classname="F010ListaDiariaOp50ListaDiariaDoCuidadorBMostraATomaQueConfirmou"/>
+  </testsuite>
+  <testsuite name="F010 Lista diária / OP-50 Erro: data inválida (400)" id="7ee753c1-5cb0-47df-8a76-3eb058a01a73" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.034">
+    <testcase name="Responde 400" time="0.034" classname="F010ListaDiariaOp50ErroDataInvalida400"/>
+    <testcase name="Código VALIDACAO_INVALIDA com o campo data" time="0.034" classname="F010ListaDiariaOp50ErroDataInvalida400"/>
+  </testsuite>
+  <testsuite name="F010 Lista diária / OP-50 Erro: sem token (401)" id="4f2f2699-53ca-4ada-927b-2998c4013951" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.036">
+    <testcase name="Responde 401" time="0.036" classname="F010ListaDiariaOp50ErroSemToken401"/>
+    <testcase name="Código de erro NAO_AUTENTICADO" time="0.036" classname="F010ListaDiariaOp50ErroSemToken401"/>
+  </testsuite>
+  <testsuite name="F011 Notificações / OP-51 Consultar histórico de notificações (Familiar)" id="0ce44324-255a-4eee-9762-73525149eb05" timestamp="2026-11-03T17:27:26.679Z" tests="4" failures="0" errors="0" time="0.079">
+    <testcase name="Responde 200" time="0.079" classname="F011NotificacoesOp51ConsultarHistoricoDeNotificacoesFamiliar"/>
+    <testcase name="Cada notificação tem tipo, mensagem, ficha, criação e estado do e-mail" time="0.079" classname="F011NotificacoesOp51ConsultarHistoricoDeNotificacoesFamiliar"/>
+    <testcase name="Da mais recente para a mais antiga" time="0.079" classname="F011NotificacoesOp51ConsultarHistoricoDeNotificacoesFamiliar"/>
+    <testcase name="Inclui a nova ocorrência da F009 e os convites recebidos" time="0.079" classname="F011NotificacoesOp51ConsultarHistoricoDeNotificacoesFamiliar"/>
+  </testsuite>
+  <testsuite name="F011 Notificações / OP-51 Consultar notificações de hoje (de e ate)" id="55b1c304-33b5-4d7c-a16d-4ad08b76e8bf" timestamp="2026-11-03T17:27:26.679Z" tests="5" failures="0" errors="0" time="0.053">
+    <testcase name="Responde 200" time="0.053" classname="F011NotificacoesOp51ConsultarNotificacoesDeHojeDeEAte"/>
+    <testcase name="Cada notificação tem tipo, mensagem, ficha, criação e estado do e-mail" time="0.053" classname="F011NotificacoesOp51ConsultarNotificacoesDeHojeDeEAte"/>
+    <testcase name="Da mais recente para a mais antiga" time="0.053" classname="F011NotificacoesOp51ConsultarNotificacoesDeHojeDeEAte"/>
+    <testcase name="Inclui a nova ocorrência da F009 e os convites recebidos" time="0.053" classname="F011NotificacoesOp51ConsultarNotificacoesDeHojeDeEAte"/>
+    <testcase name="Só notificações criadas hoje em Lisboa" time="0.053" classname="F011NotificacoesOp51ConsultarNotificacoesDeHojeDeEAte"/>
+  </testsuite>
+  <testsuite name="F011 Notificações / OP-51 O autor da ocorrência não é notificado" id="81b2a8ef-9e07-4e68-b79c-c1b81376a509" timestamp="2026-11-03T17:27:26.679Z" tests="4" failures="0" errors="0" time="0.040">
+    <testcase name="Responde 200" time="0.040" classname="F011NotificacoesOp51OAutorDaOcorrenciaNaoENotificado"/>
+    <testcase name="Cada notificação tem tipo, mensagem, ficha, criação e estado do e-mail" time="0.040" classname="F011NotificacoesOp51OAutorDaOcorrenciaNaoENotificado"/>
+    <testcase name="Da mais recente para a mais antiga" time="0.040" classname="F011NotificacoesOp51OAutorDaOcorrenciaNaoENotificado"/>
+    <testcase name="B recebeu o convite de A, mas não a notificação da ocorrência que registou" time="0.040" classname="F011NotificacoesOp51OAutorDaOcorrenciaNaoENotificado"/>
+  </testsuite>
+  <testsuite name="F011 Notificações / OP-51 Erro: ate anterior a de (400)" id="4ebc4c18-c8af-4303-93a8-6e62e3b966fe" timestamp="2026-11-03T17:27:26.679Z" tests="3" failures="0" errors="0" time="0.036">
+    <testcase name="Responde 400" time="0.036" classname="F011NotificacoesOp51ErroAteAnteriorADe400"/>
+    <testcase name="Código de erro VALIDACAO_INVALIDA" time="0.036" classname="F011NotificacoesOp51ErroAteAnteriorADe400"/>
+    <testcase name="Indica o campo ate" time="0.036" classname="F011NotificacoesOp51ErroAteAnteriorADe400"/>
+  </testsuite>
+  <testsuite name="F011 Notificações / OP-51 Erro: sem token (401)" id="b1e6490f-25d4-4af7-8348-a08726abe10a" timestamp="2026-11-03T17:27:26.679Z" tests="2" failures="0" errors="0" time="0.032">
+    <testcase name="Responde 401" time="0.032" classname="F011NotificacoesOp51ErroSemToken401"/>
+    <testcase name="Código de erro NAO_AUTENTICADO" time="0.032" classname="F011NotificacoesOp51ErroSemToken401"/>
+  </testsuite>
+</testsuites>
