@@ -38,6 +38,12 @@ public static class ParametrosDeNegocio
     public const int AntecedenciaPorOmissaoMin = 1440;
 
     /// <summary>
+    /// Maior antecedência permitida para o aviso de um compromisso: 48 horas, em minutos (RF-116). Limita a procura dos avisos
+    /// por enviar aos compromissos das próximas 48 horas (RF-117).
+    /// </summary>
+    public const int AntecedenciaMaximaMin = 2880;
+
+    /// <summary>
     /// Intervalo entre as tentativas de envio de um e-mail: 5 minutos (RF-118, RF-136).
     /// </summary>
     public static readonly TimeSpan IntervaloReenvio = TimeSpan.FromMinutes(5);
@@ -78,6 +84,6 @@ public static class ParametrosDeNegocio
     /// <returns><see langword="true"/> se for 30, 60, 120, 1440 ou 2880.</returns>
     public static bool AntecedenciaValida(int minutos)
     {
-        return minutos is 30 or 60 or 120 or 1440 or 2880;
+        return minutos is 30 or 60 or 120 or 1440 or AntecedenciaMaximaMin;
     }
 }

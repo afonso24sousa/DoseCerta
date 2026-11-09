@@ -187,6 +187,27 @@ public class CompromissoServiceTestes
         Assert.Equal("Análises", editado.Motivo);
         Assert.Equal(120, editado.AntecedenciaAvisoMin);
         Assert.Null(editado.AvisoEnviadoEmUtc);
+        Assert.Equal(compromisso.Id, Assert.Single(this.repositorios.AvisosRepostos));
+    }
+
+    /// <summary>
+    /// I056 (RNF-043): editar só o local e o motivo não pede a gravação do aviso reposto, que fica como estava.
+    /// </summary>
+    /// <returns>Uma tarefa assíncrona.</returns>
+    [Fact]
+    public async Task EditarSoLocalEMotivoNaoRepoeOAviso()
+    {
+        var compromisso = this.NovoCompromisso(new DateTime(2026, 11, 12, 10, 30, 15, DateTimeKind.Utc));
+        compromisso.MarcarAvisoEnviado(Agora);
+
+        await this.servico.EditarAsync(
+            this.cuidador,
+            compromisso.Id,
+            new DadosCompromisso(Consulta, "Hospital Fictício", "Análises", compromisso.AntecedenciaAvisoMin),
+            CancellationToken.None);
+
+        Assert.Empty(this.repositorios.AvisosRepostos);
+        Assert.Equal(Agora, compromisso.AvisoEnviadoEmUtc);
     }
 
     /// <summary>

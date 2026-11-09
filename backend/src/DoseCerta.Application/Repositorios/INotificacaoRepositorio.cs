@@ -2,6 +2,7 @@
 
 using DoseCerta.Application.Notificacoes;
 using DoseCerta.Domain.Entidades;
+using DoseCerta.Domain.Enumerados;
 
 namespace DoseCerta.Application.Repositorios;
 
@@ -23,6 +24,21 @@ public interface INotificacaoRepositorio
     /// </summary>
     /// <param name="notificacao">Notificação a registar.</param>
     void Adicionar(Notificacao notificacao);
+
+    /// <summary>
+    /// Lista os destinatários que já têm uma notificação do mesmo evento (tipo, registo de origem e instante-limite), a chave
+    /// de <c>UQ_Notificacao_Origem</c> (RNF-043).
+    /// </summary>
+    /// <param name="tipo">Tipo da notificação.</param>
+    /// <param name="referenciaId">Identificador do registo de origem.</param>
+    /// <param name="instanteLimiteUtc">Instante-limite do evento, em UTC.</param>
+    /// <param name="cancelamento">Token de cancelamento.</param>
+    /// <returns>Os identificadores dos destinatários já notificados.</returns>
+    Task<IReadOnlyList<Guid>> DestinatariosDoEventoAsync(
+        TipoNotificacao tipo,
+        Guid referenciaId,
+        DateTime instanteLimiteUtc,
+        CancellationToken cancelamento);
 
     /// <summary>
     /// Lista as notificações recebidas por um Utilizador, da mais recente para a mais antiga (OP-51, RF-140,
