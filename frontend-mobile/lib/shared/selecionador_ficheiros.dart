@@ -9,11 +9,15 @@ import '../models/ficheiro_escolhido.dart';
 import 'ficheiro_recusado_erro.dart';
 import 'origem_ficheiro.dart';
 
+/// Ficheiro devolvido por uma origem e o seu nome. O nome vem à parte porque o `XFile` o tira do caminho, e um
+/// ficheiro do seletor do Android pode não ter caminho (`content://`).
+typedef FicheiroDaOrigem = ({XFile ficheiro, String nome});
+
 /// Origem dos ficheiros no dispositivo. Separada do [SelecionadorFicheiros] para os testes poderem substituir a
 /// câmara, a galeria e o seletor de ficheiros.
 abstract interface class FonteFicheiros {
   /// Abre a [origem]; devolve `null` se o Utilizador cancelar.
-  Future<XFile?> escolher(OrigemFicheiro origem);
+  Future<FicheiroDaOrigem?> escolher(OrigemFicheiro origem);
 }
 
 /// Câmara e galeria pelo `image_picker` e ficheiros pelo `file_picker`. Nenhum precisa de permissões: a câmara é a
@@ -33,11 +37,11 @@ class FonteFicheirosDispositivo implements FonteFicheiros {
   final ImagePicker imagens;
 
   @override
-  Future<XFile?> escolher(OrigemFicheiro origem) async {
+  Future<FicheiroDaOrigem?> escolher(OrigemFicheiro origem) async {
     switch (origem) {
       case OrigemFicheiro.camera:
       case OrigemFicheiro.galeria:
-        return imagens.pickImage(
+        final imagem = await imagens.pickImage(
           source: origem == OrigemFicheiro.camera
               ? ImageSource.camera
               : ImageSource.gallery,
@@ -45,12 +49,15 @@ class FonteFicheirosDispositivo implements FonteFicheiros {
           maxHeight: larguraMaxima,
           imageQuality: qualidade,
         );
+        return imagem == null ? null : (ficheiro: imagem, nome: imagem.name);
       case OrigemFicheiro.ficheiro:
         final ficheiro = await FilePicker.pickFile(
           type: FileType.custom,
           allowedExtensions: const ['pdf', 'jpg', 'jpeg', 'png'],
         );
-        return ficheiro?.xFile;
+        return ficheiro == null
+            ? null
+            : (ficheiro: ficheiro.xFile, nome: ficheiro.name);
     }
   }
 }
@@ -75,16 +82,16 @@ class SelecionadorFicheiros {
   /// Abre a [origem] e valida o ficheiro. Devolve `null` se o Utilizador cancelar; lança [FicheiroRecusadoErro]
   /// se o ficheiro não for aceite ou a origem falhar.
   Future<FicheiroEscolhido?> escolher(OrigemFicheiro origem) async {
-    final XFile? ficheiro;
+    final FicheiroDaOrigem? escolhido;
     try {
-      ficheiro = await fonte.escolher(origem);
+      escolhido = await fonte.escolher(origem);
     } on PlatformException {
       throw const FicheiroRecusadoErro(FicheiroRecusadoErro.origemIndisponivel);
     }
-    if (ficheiro == null) {
+    if (escolhido == null) {
       return null;
     }
-    return validar(ficheiro);
+    return validar(escolhido.ficheiro, nome: escolhido.nome);
   }
 
   /// Ficheiro pelo seletor de ficheiros.
@@ -97,14 +104,18 @@ class SelecionadorFicheiros {
   Future<FicheiroEscolhido?> daGaleria() => escolher(OrigemFicheiro.galeria);
 
   /// Valida o [ficheiro]: tamanho até 10 MB e conteúdo PDF, JPG ou PNG. Lança [FicheiroRecusadoErro] se não for
-  /// aceite.
-  static Future<FicheiroEscolhido> validar(XFile ficheiro) async {
+  /// aceite. O [nome] substitui o que o `XFile` tira do caminho.
+  static Future<FicheiroEscolhido> validar(
+    XFile ficheiro, {
+    String? nome,
+  }) async {
     final tamanho = await ficheiro.length();
     if (tamanho > tamanhoMaximoBytes) {
       throw const FicheiroRecusadoErro(FicheiroRecusadoErro.demasiadoGrande);
     }
     final cabecalho = <int>[];
-    await for (final bloco in ficheiro.openRead(0, 8)) {
+    // Só os primeiros bytes, sem passar do fim de um ficheiro mais pequeno.
+    await for (final bloco in ficheiro.openRead(0, tamanho < 8 ? tamanho : 8)) {
       cabecalho.addAll(bloco);
     }
     final tipo = tipoPeloConteudo(cabecalho);
@@ -114,7 +125,10 @@ class SelecionadorFicheiros {
     final caminho = ficheiro.path;
     final temCaminho = caminho.isNotEmpty && File(caminho).existsSync();
     return FicheiroEscolhido(
-      nome: _nomeSimples(ficheiro.name) ?? _nomePorOmissao(tipo),
+      nome:
+          _nomeSimples(nome ?? '') ??
+          _nomeSimples(ficheiro.name) ??
+          _nomePorOmissao(tipo),
       tipoConteudo: tipo,
       tamanhoBytes: tamanho,
       caminho: temCaminho ? caminho : null,

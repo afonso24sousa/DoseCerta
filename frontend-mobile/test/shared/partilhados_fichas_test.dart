@@ -27,12 +27,15 @@ class FonteFalsa implements FonteFicheiros {
   OrigemFicheiro? pedida;
 
   @override
-  Future<XFile?> escolher(OrigemFicheiro origem) async {
+  Future<FicheiroDaOrigem?> escolher(OrigemFicheiro origem) async {
     pedida = origem;
     if (erro != null) {
       throw erro!;
     }
-    return ficheiro;
+    final escolhido = ficheiro;
+    return escolhido == null
+        ? null
+        : (ficheiro: escolhido, nome: escolhido.name);
   }
 }
 
@@ -80,6 +83,18 @@ void main() {
         ..writeAsBytesSync(conteudo);
       return XFile(ficheiro.path, name: nome);
     }
+
+    test(
+      'um ficheiro com menos de 8 bytes é lido sem erro e recusado',
+      () async {
+        await expectLater(
+          SelecionadorFicheiros.validar(
+            XFile.fromData(Uint8List.fromList([0x25, 0x50])),
+          ),
+          throwsA(isA<FicheiroRecusadoErro>()),
+        );
+      },
+    );
 
     test('reconhece PDF, JPG e PNG pelo conteúdo', () {
       expect(SelecionadorFicheiros.tipoPeloConteudo(pdf), 'application/pdf');
@@ -141,8 +156,10 @@ void main() {
 
     test('ficheiro sem caminho (content://) segue em bytes', () async {
       final ficheiro = await SelecionadorFicheiros.validar(
-        XFile.fromData(Uint8List.fromList([...jpg, 9]), name: 'foto.jpg'),
+        XFile.fromData(Uint8List.fromList([...jpg, 9])),
+        nome: 'foto.jpg',
       );
+      expect(ficheiro.nome, 'foto.jpg');
       expect(ficheiro.caminho, isNull);
       expect(ficheiro.bytes, hasLength(9));
       expect(ficheiro.tipoConteudo, 'image/jpeg');

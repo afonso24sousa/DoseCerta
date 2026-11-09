@@ -6,6 +6,8 @@ import '../features/autenticacao/inicio_sessao_page.dart';
 import '../features/autenticacao/registo_page.dart';
 import '../features/conta/conta_page.dart';
 import '../features/fichas/lista_fichas_page.dart';
+import '../features/fichas/nova_ficha_dados_page.dart';
+import '../features/fichas/nova_ficha_documentos_page.dart';
 import '../features/navegacao/estrutura_navegacao.dart';
 import '../features/navegacao/pagina_provisoria.dart';
 import '../models/conta_criada_dto.dart';
@@ -141,17 +143,11 @@ class AppRouter {
       routes: [
         GoRoute(
           path: 'nova',
-          builder: (context, estado) => const PaginaProvisoria(
-            titulo: 'Nova ficha: dados e necessidades',
-            ecra: 'E06',
-          ),
+          builder: (context, estado) => const NovaFichaDadosPage(),
           routes: [
             GoRoute(
               path: 'documentos',
-              builder: (context, estado) => const PaginaProvisoria(
-                titulo: 'Nova ficha: documentos e Cuidador principal',
-                ecra: 'E07',
-              ),
+              builder: (context, estado) => const NovaFichaDocumentosPage(),
             ),
           ],
         ),

@@ -13,6 +13,29 @@ import 'package:dosecerta/models/ficha_dto.dart';
 import 'package:dosecerta/models/ficha_resumo_dto.dart';
 import 'package:dosecerta/models/item_dominio_dto.dart';
 import 'package:dosecerta/models/papel.dart';
+import 'package:dosecerta/shared/origem_ficheiro.dart';
+import 'package:dosecerta/shared/selecionador_ficheiros.dart';
+import 'package:image_picker/image_picker.dart';
+
+/// Câmara, galeria e seletor de ficheiros falsos: devolvem [ficheiro] ou lançam [erro].
+class FonteFicheirosFalsa implements FonteFicheiros {
+  XFile? ficheiro = XFile.fromData(
+    Uint8List.fromList([0x25, 0x50, 0x44, 0x46, 0x2D, 0x31]),
+  );
+  String nome = 'receita.pdf';
+  Object? erro;
+  final List<OrigemFicheiro> pedidas = [];
+
+  @override
+  Future<FicheiroDaOrigem?> escolher(OrigemFicheiro origem) async {
+    pedidas.add(origem);
+    if (erro != null) {
+      throw erro!;
+    }
+    final escolhido = ficheiro;
+    return escolhido == null ? null : (ficheiro: escolhido, nome: nome);
+  }
+}
 
 /// Ficha de exemplo (dados fictícios da documentação da API).
 FichaDto fichaExemplo({

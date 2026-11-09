@@ -7,6 +7,7 @@ import '../../models/estado_ficha.dart';
 import '../../models/ficha_resumo_dto.dart';
 import '../../shared/apresentacao_papel.dart';
 import '../../shared/banner_erro.dart';
+import '../../shared/nova_ficha_rascunho.dart';
 import 'lista_fichas_controller.dart';
 
 /// Ecrã E05 Fichas (protótipo de baixa fidelidade v02, página 32): as fichas a que o Utilizador está associado,
@@ -85,7 +86,10 @@ class _ListaFichasPageState extends ConsumerState<ListaFichasPage> {
               for (final ficha in fichas) _LinhaFicha(ficha: ficha),
               const SizedBox(height: 8),
               FilledButton.icon(
-                onPressed: () => context.go(AppRouter.novaFicha),
+                onPressed: () {
+                  ref.read(novaFichaRascunhoProvider.notifier).limpar();
+                  context.go(AppRouter.novaFicha);
+                },
                 icon: const Icon(Icons.add),
                 label: const Text('Nova ficha'),
               ),

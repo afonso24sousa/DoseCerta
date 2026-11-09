@@ -1,5 +1,6 @@
 import 'package:dosecerta/core/app_router.dart';
 import 'package:dosecerta/core/provedores.dart';
+import 'package:dosecerta/shared/selecionador_ficheiros.dart';
 import 'package:dosecerta/shared/tema_dosecerta.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -25,6 +26,7 @@ class AppFichas {
   final FichasRepositorioFalso fichas = FichasRepositorioFalso();
   final DominiosRepositorioFalso dominios = DominiosRepositorioFalso();
   final DocumentosRepositorioFalso documentos = DocumentosRepositorioFalso();
+  final FonteFicheirosFalsa fonte = FonteFicheirosFalsa();
 
   /// Caminho atual.
   String get local => router.routerDelegate.currentConfiguration.uri.path;
@@ -36,6 +38,9 @@ class AppFichas {
         fichasRepositorioProvider.overrideWithValue(fichas),
         dominiosRepositorioProvider.overrideWithValue(dominios),
         documentosRepositorioProvider.overrideWithValue(documentos),
+        selecionadorFicheirosProvider.overrideWithValue(
+          SelecionadorFicheiros(fonte),
+        ),
         relogioProvider.overrideWithValue(
           RelogioFixo(DateTime(2026, 11, 9, 12)),
         ),
