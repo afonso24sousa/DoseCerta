@@ -1,0 +1,24 @@
+# Check complementar da frontend-web-ci (Issue I061; mesmo modelo da backend-ci-sem-alteracoes, Issue I031).
+# Corre apenas em Pull Requests para a main que não alteram frontend-web/** nem a frontend-web-ci, para que o
+# check obrigatório qualidade-frontend-web não fique pendente (Regulamento Interno do Grupo, secção 10.1).
+# Não compila nem testa: nesses Pull Requests os quality gates QG-06, QG-08 e QG-09 não se aplicam.
+name: frontend-web-ci-sem-alteracoes
+
+on:
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - 'frontend-web/**'
+      - '.github/workflows/frontend-web-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  qualidade-frontend-web:
+    name: qualidade-frontend-web
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Sem alterações no frontend web
+        run: echo "Este Pull Request não altera frontend-web/** nem a frontend-web-ci; os quality gates QG-06, QG-08 e QG-09 não se aplicam."

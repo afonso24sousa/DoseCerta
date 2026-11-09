@@ -1,0 +1,232 @@
+# Pipeline de integração contínua do frontend mobile (Regulamento Interno do Grupo, secções 11.3, 11.4 e 11.6; Issue I061).
+# Implementa os quality gates QG-11 (dart format + flutter analyze), QG-10 (flutter build apk --debug) e QG-07
+# (integration_test em emulador Android). Qualquer gate falhado termina a pipeline sem sucesso e, com a proteção da
+# branch main, bloqueia o merge do Pull Request.
+# Enquanto frontend-mobile/ só tiver o .gitkeep (projeto Flutter da I058 ainda inexistente), os gates não se aplicam.
+# O QG-07 aplica-se a partir do primeiro cenário implementado (integration_test/*.dart).
+name: frontend-mobile-ci
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'frontend-mobile/**'
+      - '.github/workflows/frontend-mobile-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'frontend-mobile/**'
+      - '.github/workflows/frontend-mobile-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-mobile-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: 'true'
+  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 'true'
+  # Versão do Flutter fixada (canal stable). Atualizar quando a I058 fixar outra versão no projeto.
+  VERSAO_FLUTTER: '3.47.9'
+  PORTA_API: '5000'
+
+jobs:
+  qualidade-frontend-mobile:
+    name: qualidade-frontend-mobile
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: frontend-mobile
+
+    steps:
+      - name: Obter o código
+        uses: actions/checkout@v4
+
+      - name: Verificar se o projeto Flutter existe
+        id: projeto
+        run: |
+          mkdir -p artefactos/logs
+          OUTROS=$(find . -mindepth 1 -maxdepth 1 ! -name .gitkeep ! -name artefactos | wc -l)
+          if [ "$OUTROS" -eq 0 ]; then
+            MENSAGEM="QG-07, QG-10 e QG-11 ainda não aplicáveis: o projeto Flutter (I058) ainda não existe."
+            echo "$MENSAGEM" | tee artefactos/logs/projeto.log
+            echo "$MENSAGEM" >> "$GITHUB_STEP_SUMMARY"
+            echo "existe=false" >> "$GITHUB_OUTPUT"
+          elif [ ! -f pubspec.yaml ] || [ ! -f pubspec.lock ]; then
+            echo "::error::Projeto incompleto: frontend-mobile/ tem ficheiros mas falta o pubspec.yaml ou o pubspec.lock (Regulamento Interno do Grupo, secção 11.3)." \
+              | tee artefactos/logs/projeto.log
+            exit 1
+          else
+            echo "Projeto Flutter encontrado (pubspec.yaml e pubspec.lock)." | tee artefactos/logs/projeto.log
+            echo "existe=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Instalar o Java 17
+        if: steps.projeto.outputs.existe == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Instalar o Flutter
+        if: steps.projeto.outputs.existe == 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.VERSAO_FLUTTER }}
+          cache: true
+
+      - name: Instalar as dependências (flutter pub get)
+        if: steps.projeto.outputs.existe == 'true'
+        run: flutter pub get
+
+      - name: QG-11 Formatação (dart format)
+        id: qg11-formatacao
+        if: steps.projeto.outputs.existe == 'true'
+        run: |
+          set -o pipefail
+          dart format --output=none --set-exit-if-changed . 2>&1 | tee artefactos/logs/qg11-formatacao.log
+
+      - name: QG-11 Análise estática (flutter analyze)
+        id: qg11-analise
+        if: steps.projeto.outputs.existe == 'true'
+        run: |
+          set -o pipefail
+          flutter analyze --fatal-warnings 2>&1 | tee artefactos/logs/qg11-analise.log
+
+      - name: QG-10 Construção (flutter build apk --debug)
+        id: qg10
+        if: steps.projeto.outputs.existe == 'true'
+        run: |
+          set -o pipefail
+          flutter build apk --debug 2>&1 | tee artefactos/logs/qg10-build.log
+          mkdir -p artefactos/apk
+          cp build/app/outputs/flutter-apk/app-debug.apk artefactos/apk/
+
+      - name: QG-07 Verificar se há cenários integration_test
+        id: cenarios
+        if: steps.projeto.outputs.existe == 'true'
+        run: |
+          if [ -n "$(find integration_test -maxdepth 1 -name '*.dart' -print -quit 2>/dev/null)" ]; then
+            echo "Cenários integration_test encontrados:" | tee artefactos/logs/qg07-integration-test.log
+            find integration_test -maxdepth 1 -name '*.dart' | tee -a artefactos/logs/qg07-integration-test.log
+            echo "aplicavel=true" >> "$GITHUB_OUTPUT"
+          else
+            MENSAGEM="QG-07 ainda não aplicável: sem cenários implementados (Regulamento Interno, secção 11.6)."
+            echo "$MENSAGEM" | tee artefactos/logs/qg07-integration-test.log
+            echo "$MENSAGEM" >> "$GITHUB_STEP_SUMMARY"
+            echo "aplicavel=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Os testes de sistema correm contra a API real: SQL Server 2022 em contentor, base criada com os scripts
+      # do backend (esquema + dados fictícios) e a DoseCerta.Api em segundo plano. No emulador, a API está em 10.0.2.2.
+      - name: QG-07 Instalar o .NET 8 SDK
+        if: steps.cenarios.outputs.aplicavel == 'true'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: QG-07 Arrancar o SQL Server, criar a base de dados e arrancar a API
+        if: steps.cenarios.outputs.aplicavel == 'true'
+        working-directory: backend
+        env:
+          SENHA: ${{ secrets.CI_SQLSERVER_SA_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "$SENHA" ]; then
+            echo "::error::Falta o GitHub Secret CI_SQLSERVER_SA_PASSWORD (ver m3-descricao-pipeline-ci-cd-v03.md)."
+            exit 1
+          fi
+          docker run -d --name sqlserver -e ACCEPT_EULA=Y -e MSSQL_SA_PASSWORD="$SENHA" -p 1433:1433 \
+            mcr.microsoft.com/mssql/server:2022-latest
+          SQLCMD="/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P $SENHA -C -I -b"
+          for i in $(seq 1 30); do
+            docker exec sqlserver $SQLCMD -Q 'SELECT 1' -o /dev/null && break
+            sleep 5
+          done
+          docker cp scripts-base-dados sqlserver:/tmp/scripts
+          docker exec sqlserver $SQLCMD -Q 'CREATE DATABASE [DoseCerta];'
+          docker exec sqlserver $SQLCMD -d DoseCerta -i /tmp/scripts/01-criar-base-dados.sql
+          docker exec sqlserver $SQLCMD -d DoseCerta -i /tmp/scripts/02-dados-iniciais-ficticios.sql
+
+          mkdir -p "$RUNNER_TEMP/documentos" ../frontend-mobile/artefactos/logs
+          export ConnectionStrings__DoseCerta="Server=localhost,1433;Database=DoseCerta;User Id=sa;Password=${SENHA};TrustServerCertificate=true;Encrypt=false"
+          export BaseDados__AplicarMigracoesNoArranque=false
+          # Chave JWT efémera, gerada em cada execução e nunca guardada.
+          export Jwt__Chave="$(openssl rand -base64 48)"
+          export Documentos__PastaRaiz="$RUNNER_TEMP/documentos"
+          # 0.0.0.0 para o emulador chegar à API através de 10.0.2.2.
+          export ASPNETCORE_URLS="http://0.0.0.0:${PORTA_API}"
+          nohup dotnet run --project src/DoseCerta.Api/DoseCerta.Api.csproj --configuration Release \
+            > ../frontend-mobile/artefactos/logs/qg07-api.log 2>&1 &
+          for i in $(seq 1 60); do
+            curl -fsS "http://localhost:${PORTA_API}/saude" && exit 0
+            sleep 5
+          done
+          echo "::error::A API não respondeu em http://localhost:${PORTA_API}/saude."
+          exit 1
+
+      - name: QG-07 Ativar o KVM para o emulador Android
+        if: steps.cenarios.outputs.aplicavel == 'true'
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: QG-07 Testes de sistema (integration_test em emulador Android)
+        id: qg07
+        if: steps.cenarios.outputs.aplicavel == 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          working-directory: frontend-mobile
+          # O nome do --dart-define tem de coincidir com o que a app da I058 lê (String.fromEnvironment).
+          script: |
+            mkdir -p artefactos/integration-test
+            flutter test integration_test --dart-define=URL_API=http://10.0.2.2:${{ env.PORTA_API }} --reporter expanded --file-reporter json:artefactos/integration-test/resultados.json
+
+      - name: Publicar os artefactos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorios-frontend-mobile-${{ github.run_number }}
+          path: frontend-mobile/artefactos/
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Resumo dos quality gates
+        if: always()
+        run: |
+          resultado() {
+            case "$PROJETO" in
+              true) echo "$1" ;;
+              false) echo "não aplicável (sem projeto)" ;;
+              *) echo "não avaliado (projeto incompleto)" ;;
+            esac
+          }
+          QG07="$OUT_QG07"
+          if [ "$PROJETO" = "true" ] && [ "$CENARIOS" != "true" ]; then QG07="não aplicável (sem cenários)"; fi
+          {
+            echo "## Quality gates do frontend mobile"
+            echo "| Gate | Resultado |"
+            echo "|---|---|"
+            echo "| QG-11 dart format | $(resultado "$OUT_FORMATACAO") |"
+            echo "| QG-11 flutter analyze | $(resultado "$OUT_ANALISE") |"
+            echo "| QG-10 flutter build apk --debug | $(resultado "$OUT_QG10") |"
+            echo "| QG-07 integration_test | $(resultado "$QG07") |"
+          } >> "$GITHUB_STEP_SUMMARY"
+        env:
+          PROJETO: ${{ steps.projeto.outputs.existe }}
+          CENARIOS: ${{ steps.cenarios.outputs.aplicavel }}
+          OUT_FORMATACAO: ${{ steps.qg11-formatacao.outcome }}
+          OUT_ANALISE: ${{ steps.qg11-analise.outcome }}
+          OUT_QG10: ${{ steps.qg10.outcome }}
+          OUT_QG07: ${{ steps.qg07.outcome }}

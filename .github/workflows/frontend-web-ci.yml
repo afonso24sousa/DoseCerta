@@ -1,0 +1,214 @@
+# Pipeline de integração contínua do frontend web (Regulamento Interno do Grupo, secções 11.2, 11.4 e 11.6; Issue I061).
+# Implementa os quality gates QG-08 (ng build), QG-09 (ESLint + Prettier) e QG-06 (Cypress). Qualquer gate falhado
+# termina a pipeline sem sucesso e, com a proteção da branch main, bloqueia o merge do Pull Request.
+# Enquanto frontend-web/ só tiver o .gitkeep (projeto Angular da I057 ainda inexistente), os gates não se aplicam.
+# O QG-06 aplica-se a partir do primeiro cenário implementado (cypress/e2e/**/*.cy.ts).
+name: frontend-web-ci
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'frontend-web/**'
+      - '.github/workflows/frontend-web-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'frontend-web/**'
+      - '.github/workflows/frontend-web-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-web-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: 'true'
+  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 'true'
+  URL_API: http://localhost:5000
+  URL_WEB: http://localhost:4200
+
+jobs:
+  qualidade-frontend-web:
+    name: qualidade-frontend-web
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: frontend-web
+
+    steps:
+      - name: Obter o código
+        uses: actions/checkout@v4
+
+      - name: Verificar se o projeto Angular existe
+        id: projeto
+        run: |
+          mkdir -p artefactos/logs
+          OUTROS=$(find . -mindepth 1 -maxdepth 1 ! -name .gitkeep ! -name artefactos | wc -l)
+          if [ "$OUTROS" -eq 0 ]; then
+            MENSAGEM="QG-06, QG-08 e QG-09 ainda não aplicáveis: o projeto Angular (I057) ainda não existe."
+            echo "$MENSAGEM" | tee artefactos/logs/projeto.log
+            echo "$MENSAGEM" >> "$GITHUB_STEP_SUMMARY"
+            echo "existe=false" >> "$GITHUB_OUTPUT"
+          elif [ ! -f package.json ] || [ ! -f package-lock.json ]; then
+            echo "::error::Projeto incompleto: frontend-web/ tem ficheiros mas falta o package.json ou o package-lock.json (Regulamento Interno do Grupo, secção 11.2)." \
+              | tee artefactos/logs/projeto.log
+            exit 1
+          else
+            echo "Projeto Angular encontrado (package.json e package-lock.json)." | tee artefactos/logs/projeto.log
+            echo "existe=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Instalar o Node.js 20 LTS
+        if: steps.projeto.outputs.existe == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend-web/package-lock.json
+
+      - name: Instalar as dependências (npm ci)
+        if: steps.projeto.outputs.existe == 'true'
+        run: npm ci
+
+      - name: QG-09 Linter (ESLint)
+        id: qg09-eslint
+        if: steps.projeto.outputs.existe == 'true'
+        run: |
+          set -o pipefail
+          npx eslint . 2>&1 | tee artefactos/logs/qg09-eslint.log
+
+      - name: QG-09 Formatação (Prettier)
+        id: qg09-prettier
+        if: steps.projeto.outputs.existe == 'true'
+        run: |
+          set -o pipefail
+          npx prettier --check . 2>&1 | tee artefactos/logs/qg09-prettier.log
+
+      - name: QG-08 Construção (ng build)
+        id: qg08
+        if: steps.projeto.outputs.existe == 'true'
+        run: |
+          set -o pipefail
+          npx ng build --configuration production 2>&1 | tee artefactos/logs/qg08-build.log
+
+      - name: QG-06 Verificar se há cenários Cypress
+        id: cenarios
+        if: steps.projeto.outputs.existe == 'true'
+        run: |
+          if [ -d cypress/e2e ] && [ -n "$(find cypress/e2e -name '*.cy.ts' -print -quit)" ]; then
+            echo "Cenários Cypress encontrados:" | tee artefactos/logs/qg06-cypress.log
+            find cypress/e2e -name '*.cy.ts' | tee -a artefactos/logs/qg06-cypress.log
+            echo "aplicavel=true" >> "$GITHUB_OUTPUT"
+          else
+            MENSAGEM="QG-06 ainda não aplicável: sem cenários implementados (Regulamento Interno, secção 11.6)."
+            echo "$MENSAGEM" | tee artefactos/logs/qg06-cypress.log
+            echo "$MENSAGEM" >> "$GITHUB_STEP_SUMMARY"
+            echo "aplicavel=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Os testes de sistema correm contra a API real: SQL Server 2022 em contentor, base criada com os scripts
+      # do backend (esquema + dados fictícios) e a DoseCerta.Api em segundo plano.
+      - name: QG-06 Instalar o .NET 8 SDK
+        if: steps.cenarios.outputs.aplicavel == 'true'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: QG-06 Arrancar o SQL Server, criar a base de dados e arrancar a API
+        if: steps.cenarios.outputs.aplicavel == 'true'
+        working-directory: backend
+        env:
+          SENHA: ${{ secrets.CI_SQLSERVER_SA_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "$SENHA" ]; then
+            echo "::error::Falta o GitHub Secret CI_SQLSERVER_SA_PASSWORD (ver m3-descricao-pipeline-ci-cd-v03.md)."
+            exit 1
+          fi
+          docker run -d --name sqlserver -e ACCEPT_EULA=Y -e MSSQL_SA_PASSWORD="$SENHA" -p 1433:1433 \
+            mcr.microsoft.com/mssql/server:2022-latest
+          SQLCMD="/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P $SENHA -C -I -b"
+          for i in $(seq 1 30); do
+            docker exec sqlserver $SQLCMD -Q 'SELECT 1' -o /dev/null && break
+            sleep 5
+          done
+          docker cp scripts-base-dados sqlserver:/tmp/scripts
+          docker exec sqlserver $SQLCMD -Q 'CREATE DATABASE [DoseCerta];'
+          docker exec sqlserver $SQLCMD -d DoseCerta -i /tmp/scripts/01-criar-base-dados.sql
+          docker exec sqlserver $SQLCMD -d DoseCerta -i /tmp/scripts/02-dados-iniciais-ficticios.sql
+
+          mkdir -p "$RUNNER_TEMP/documentos" ../frontend-web/artefactos/logs
+          export ConnectionStrings__DoseCerta="Server=localhost,1433;Database=DoseCerta;User Id=sa;Password=${SENHA};TrustServerCertificate=true;Encrypt=false"
+          export BaseDados__AplicarMigracoesNoArranque=false
+          # Chave JWT efémera, gerada em cada execução e nunca guardada.
+          export Jwt__Chave="$(openssl rand -base64 48)"
+          export Documentos__PastaRaiz="$RUNNER_TEMP/documentos"
+          export ASPNETCORE_URLS="$URL_API"
+          nohup dotnet run --project src/DoseCerta.Api/DoseCerta.Api.csproj --configuration Release \
+            > ../frontend-web/artefactos/logs/qg06-api.log 2>&1 &
+          for i in $(seq 1 60); do
+            curl -fsS "$URL_API/saude" && exit 0
+            sleep 5
+          done
+          echo "::error::A API não respondeu em $URL_API/saude."
+          exit 1
+
+      - name: QG-06 Testes de sistema (Cypress)
+        id: qg06
+        if: steps.cenarios.outputs.aplicavel == 'true'
+        env:
+          CYPRESS_baseUrl: ${{ env.URL_WEB }}
+          CYPRESS_URL_API: ${{ env.URL_API }}
+        run: |
+          set -o pipefail
+          PASTA_BUILD=$(dirname "$(find dist -name index.html | head -1)")
+          nohup npx --yes serve@14.2.4 -s "$PASTA_BUILD" -l 4200 > artefactos/logs/qg06-servidor-web.log 2>&1 &
+          for i in $(seq 1 30); do curl -fsS -o /dev/null "$URL_WEB" && break; sleep 2; done
+          npx cypress run \
+            --config "videosFolder=artefactos/cypress/videos,screenshotsFolder=artefactos/cypress/capturas,video=true" \
+            --reporter junit --reporter-options "mochaFile=artefactos/cypress/resultados/resultado-[hash].xml" \
+            2>&1 | tee -a artefactos/logs/qg06-cypress.log
+
+      - name: Publicar os artefactos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorios-frontend-web-${{ github.run_number }}
+          path: frontend-web/artefactos/
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Resumo dos quality gates
+        if: always()
+        run: |
+          resultado() {
+            case "$PROJETO" in
+              true) echo "$1" ;;
+              false) echo "não aplicável (sem projeto)" ;;
+              *) echo "não avaliado (projeto incompleto)" ;;
+            esac
+          }
+          QG06="$OUT_QG06"
+          if [ "$PROJETO" = "true" ] && [ "$CENARIOS" != "true" ]; then QG06="não aplicável (sem cenários)"; fi
+          {
+            echo "## Quality gates do frontend web"
+            echo "| Gate | Resultado |"
+            echo "|---|---|"
+            echo "| QG-09 ESLint | $(resultado "$OUT_ESLINT") |"
+            echo "| QG-09 Prettier | $(resultado "$OUT_PRETTIER") |"
+            echo "| QG-08 ng build | $(resultado "$OUT_QG08") |"
+            echo "| QG-06 Cypress | $(resultado "$QG06") |"
+          } >> "$GITHUB_STEP_SUMMARY"
+        env:
+          PROJETO: ${{ steps.projeto.outputs.existe }}
+          CENARIOS: ${{ steps.cenarios.outputs.aplicavel }}
+          OUT_ESLINT: ${{ steps.qg09-eslint.outcome }}
+          OUT_PRETTIER: ${{ steps.qg09-prettier.outcome }}
+          OUT_QG08: ${{ steps.qg08.outcome }}
+          OUT_QG06: ${{ steps.qg06.outcome }}
