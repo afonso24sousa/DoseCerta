@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 
 import '../models/problema_api.dart';
@@ -16,7 +18,7 @@ class ErroInterceptor extends Interceptor {
     final resposta = err.response;
     if (resposta != null) {
       return ProblemaApi.daResposta(
-        resposta.data,
+        corpoJson(resposta.data),
         estadoHttp: resposta.statusCode,
       );
     }
@@ -32,6 +34,20 @@ class ErroInterceptor extends Interceptor {
       case DioExceptionType.transformTimeout:
       case DioExceptionType.cancel:
         return ProblemaApi.daResposta(null);
+    }
+  }
+
+  /// Corpo de erro como JSON. Nos pedidos de ficheiros (OP-17) a resposta é lida em bytes, também quando é um
+  /// erro; sem a descodificar perdia-se o código, por exemplo `DOCUMENTO_INDISPONIVEL` (RF-124). Um corpo que não
+  /// é JSON fica como está e dá `ERRO_INTERNO`.
+  static Object? corpoJson(Object? dados) {
+    if (dados is! List<int>) {
+      return dados;
+    }
+    try {
+      return jsonDecode(utf8.decode(dados));
+    } on FormatException {
+      return null;
     }
   }
 }

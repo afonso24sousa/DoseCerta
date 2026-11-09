@@ -1,6 +1,15 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- Acesso à API do DoseCerta: todo o acesso aos dados passa pela API. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- O pacote open_filex declara estas permissões, mas a aplicação não as usa: os documentos descarregados
+         ficam na pasta privada da aplicação e são entregues ao visualizador pelo FileProvider do pacote. A câmara
+         usa a aplicação de câmara do sistema e a galeria e os ficheiros usam os seletores do sistema, que não
+         precisam de autorização (I060). -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" tools:node="remove"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" tools:node="remove"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" tools:node="remove"/>
     <application
         android:label="DoseCerta"
         android:networkSecurityConfig="@xml/network_security_config"
