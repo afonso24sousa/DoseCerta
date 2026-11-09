@@ -1,0 +1,162 @@
+// Estilos globais simples do DoseCerta (protótipo de baixa fidelidade v02; sem biblioteca de componentes).
+:root {
+  --cor-texto: #1f2933;
+  --cor-fundo: #f5f7fa;
+  --cor-superficie: #ffffff;
+  --cor-borda: #cbd2d9;
+  --cor-primaria: #1d5fa8;
+  --cor-erro: #b42318;
+  --cor-erro-fundo: #fef3f2;
+  --cor-aviso-fundo: #fffaeb;
+  --cor-sucesso-fundo: #ecfdf3;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  color: var(--cor-texto);
+  background: var(--cor-fundo);
+  line-height: 1.5;
+}
+
+h1,
+h2 {
+  margin-top: 0;
+}
+
+.cartao {
+  max-width: 28rem;
+  margin: 1.5rem auto;
+  padding: 1.5rem;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: 8px;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+
+  input {
+    padding: 0.5rem;
+    font: inherit;
+    border: 1px solid var(--cor-borda);
+    border-radius: 4px;
+  }
+}
+
+.campo--erro input {
+  border-color: var(--cor-erro);
+}
+
+.campo__erro {
+  margin: 0;
+  color: var(--cor-erro);
+  font-size: 0.875rem;
+}
+
+.ajuda {
+  margin-top: -0.5rem;
+  font-size: 0.875rem;
+}
+
+.botao {
+  padding: 0.5rem 1rem;
+  font: inherit;
+  color: #fff;
+  background: var(--cor-primaria);
+  border: 1px solid var(--cor-primaria);
+  border-radius: 4px;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+}
+
+.botao--secundario {
+  color: var(--cor-primaria);
+  background: transparent;
+}
+
+.banner {
+  padding: 0.75rem;
+  border-radius: 4px;
+}
+
+.banner--erro {
+  color: var(--cor-erro);
+  background: var(--cor-erro-fundo);
+}
+
+.banner--aviso {
+  background: var(--cor-aviso-fundo);
+}
+
+.banner--sucesso {
+  background: var(--cor-sucesso-fundo);
+}
+
+.cabecalho {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--cor-superficie);
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.cabecalho__marca {
+  font-weight: 700;
+}
+
+.cabecalho__utilizador {
+  margin-left: auto;
+}
+
+.shell {
+  display: flex;
+  min-height: calc(100vh - 3.5rem);
+}
+
+.barra-lateral {
+  width: 13rem;
+  padding: 1rem;
+  background: var(--cor-superficie);
+  border-right: 1px solid var(--cor-borda);
+
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  a {
+    display: block;
+    padding: 0.5rem;
+    color: var(--cor-texto);
+    text-decoration: none;
+    border-radius: 4px;
+  }
+
+  a.ativa {
+    background: var(--cor-fundo);
+    font-weight: 600;
+  }
+}
+
+.shell__conteudo {
+  flex: 1;
+  padding: 1.5rem;
+
+  .cartao {
+    margin: 0 0 1.5rem;
+  }
+}
