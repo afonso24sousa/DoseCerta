@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../features/autenticacao/inicio_sessao_page.dart';
 import '../features/autenticacao/registo_page.dart';
 import '../features/conta/conta_page.dart';
+import '../features/fichas/ficha_page.dart';
 import '../features/fichas/lista_fichas_page.dart';
 import '../features/fichas/nova_ficha_dados_page.dart';
 import '../features/fichas/nova_ficha_documentos_page.dart';
@@ -49,6 +50,15 @@ class AppRouter {
 
   /// E11 Arquivar, reativar ou eliminar ficha.
   static String estadoFicha(String fichaId) => '/fichas/$fichaId/estado';
+
+  /// E15 Medicação da ficha (provisória).
+  static String medicacaoFicha(String fichaId) => '/fichas/$fichaId/medicacao';
+
+  /// E12 Pessoas da ficha (provisória).
+  static String pessoasFicha(String fichaId) => '/fichas/$fichaId/pessoas';
+
+  /// E23 Ocorrências e notas (provisória).
+  static String registosFicha(String fichaId) => '/fichas/$fichaId/registos';
 
   /// E21 Agenda (provisória).
   static const String agenda = '/agenda';
@@ -154,8 +164,11 @@ class AppRouter {
         GoRoute(
           path: ':fichaId',
           builder: (context, estado) =>
-              const PaginaProvisoria(titulo: 'Ficha', ecra: 'E08'),
+              FichaPage(fichaId: estado.pathParameters['fichaId']!),
           routes: [
+            _provisoria('medicacao', 'Medicação da ficha', 'E15'),
+            _provisoria('pessoas', 'Pessoas da ficha', 'E12'),
+            _provisoria('registos', 'Ocorrências e notas', 'E23'),
             GoRoute(
               path: 'editar',
               builder: (context, estado) =>
@@ -178,6 +191,15 @@ class AppRouter {
           ],
         ),
       ],
+    );
+  }
+
+  /// Rota provisória de um separador da ficha implementado noutra Issue (como na DD11 da I058).
+  static GoRoute _provisoria(String caminho, String titulo, String ecra) {
+    return GoRoute(
+      path: caminho,
+      builder: (context, estado) =>
+          PaginaProvisoria(titulo: titulo, ecra: ecra),
     );
   }
 
