@@ -10,12 +10,14 @@ import 'package:dosecerta/core/parte_ficheiro.dart';
 import 'package:dosecerta/models/problema_api.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../suporte/adaptador_http.dart';
+
 void main() {
-  late _AdaptadorQueGuarda adaptador;
+  late AdaptadorQueGuarda adaptador;
   late ApiClient api;
 
   setUp(() {
-    adaptador = _AdaptadorQueGuarda();
+    adaptador = AdaptadorQueGuarda();
     api = ApiClient(
       configuracao: ConfiguracaoApi.validar(
         'https://api.exemplo.pt',
@@ -186,38 +188,4 @@ void main() {
       );
     });
   });
-}
-
-/// Adaptador HTTP falso: guarda o último pedido e o corpo enviado e devolve [resposta].
-class _AdaptadorQueGuarda implements HttpClientAdapter {
-  RequestOptions? pedido;
-  List<int> corpo = const [];
-  ResponseBody? resposta;
-
-  @override
-  Future<ResponseBody> fetch(
-    RequestOptions options,
-    Stream<Uint8List>? requestStream,
-    Future<void>? cancelFuture,
-  ) async {
-    pedido = options;
-    final bytes = <int>[];
-    if (requestStream != null) {
-      await for (final bloco in requestStream) {
-        bytes.addAll(bloco);
-      }
-    }
-    corpo = bytes;
-    return resposta ??
-        ResponseBody.fromString(
-          '{}',
-          200,
-          headers: {
-            Headers.contentTypeHeader: [Headers.jsonContentType],
-          },
-        );
-  }
-
-  @override
-  void close({bool force = false}) {}
 }

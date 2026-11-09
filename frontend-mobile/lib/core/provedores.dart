@@ -3,6 +3,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../data/auth_repositorio.dart';
 import '../data/conta_repositorio.dart';
+import '../data/documentos_repositorio.dart';
+import '../data/dominios_repositorio.dart';
+import '../data/fichas_repositorio.dart';
 import 'api_client.dart';
 import 'auth_interceptor.dart';
 import 'configuracao_api.dart';
@@ -50,4 +53,19 @@ final authRepositorioProvider = Provider<AuthRepositorio>(
 /// Repositório da conta (OP-04 a OP-06).
 final contaRepositorioProvider = Provider<ContaRepositorio>(
   (ref) => ContaRepositorio(ref.watch(apiClientProvider)),
+);
+
+/// Repositório das listas de necessidades (OP-08).
+final dominiosRepositorioProvider = Provider<DominiosRepositorio>(
+  (ref) => DominiosRepositorio(ref.watch(apiClientProvider)),
+);
+
+/// Repositório das fichas (OP-07, OP-09 a OP-14).
+final fichasRepositorioProvider = Provider<FichasRepositorio>(
+  (ref) => FichasRepositorio(ref.watch(apiClientProvider)),
+);
+
+/// Repositório dos documentos (OP-15 a OP-17).
+final documentosRepositorioProvider = Provider<DocumentosRepositorio>(
+  (ref) => DocumentosRepositorio(ref.watch(apiClientProvider)),
 );
