@@ -1,5 +1,6 @@
 import 'package:dosecerta/core/app_router.dart';
 import 'package:dosecerta/core/provedores.dart';
+import 'package:dosecerta/shared/abridor_documentos.dart';
 import 'package:dosecerta/shared/selecionador_ficheiros.dart';
 import 'package:dosecerta/shared/tema_dosecerta.dart';
 import 'package:flutter/material.dart';
@@ -27,6 +28,7 @@ class AppFichas {
   final DominiosRepositorioFalso dominios = DominiosRepositorioFalso();
   final DocumentosRepositorioFalso documentos = DocumentosRepositorioFalso();
   final FonteFicheirosFalsa fonte = FonteFicheirosFalsa();
+  final AbridorDocumentosFalso abridor = AbridorDocumentosFalso();
 
   /// Caminho atual.
   String get local => router.routerDelegate.currentConfiguration.uri.path;
@@ -38,6 +40,7 @@ class AppFichas {
         fichasRepositorioProvider.overrideWithValue(fichas),
         dominiosRepositorioProvider.overrideWithValue(dominios),
         documentosRepositorioProvider.overrideWithValue(documentos),
+        abridorDocumentosProvider.overrideWithValue(abridor),
         selecionadorFicheirosProvider.overrideWithValue(
           SelecionadorFicheiros(fonte),
         ),

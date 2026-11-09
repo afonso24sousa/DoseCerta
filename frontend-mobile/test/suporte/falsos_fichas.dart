@@ -13,6 +13,7 @@ import 'package:dosecerta/models/ficha_dto.dart';
 import 'package:dosecerta/models/ficha_resumo_dto.dart';
 import 'package:dosecerta/models/item_dominio_dto.dart';
 import 'package:dosecerta/models/papel.dart';
+import 'package:dosecerta/shared/abridor_documentos.dart';
 import 'package:dosecerta/shared/origem_ficheiro.dart';
 import 'package:dosecerta/shared/selecionador_ficheiros.dart';
 import 'package:image_picker/image_picker.dart';
@@ -34,6 +35,24 @@ class FonteFicheirosFalsa implements FonteFicheiros {
     }
     final escolhido = ficheiro;
     return escolhido == null ? null : (ficheiro: escolhido, nome: nome);
+  }
+}
+
+/// Abridor de documentos falso: guarda o que lhe pedem para abrir ou lança [erro].
+class AbridorDocumentosFalso implements AbridorDocumentos {
+  final List<(String nome, String tipo, int tamanho)> abertos = [];
+  Object? erro;
+
+  @override
+  Future<void> abrir(
+    List<int> bytes, {
+    required String nome,
+    required String tipoConteudo,
+  }) async {
+    if (erro != null) {
+      throw erro!;
+    }
+    abertos.add((nome, tipoConteudo, bytes.length));
   }
 }
 
@@ -255,7 +274,9 @@ class DocumentosRepositorioFalso implements DocumentosRepositorio {
       id: 'd-${documentos.length + 1}',
       categoria: documento.categoria,
       nomeOriginal: documento.ficheiro.nome,
-      formato: 'PDF',
+      formato: documento.ficheiro.tipoConteudo == 'application/pdf'
+          ? 'PDF'
+          : 'JPG',
       tamanhoBytes: documento.ficheiro.tamanhoBytes,
       carregadoEm: '2026-11-09T20:00:00+00:00',
     );
