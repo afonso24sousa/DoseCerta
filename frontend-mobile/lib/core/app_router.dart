@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../features/autenticacao/inicio_sessao_page.dart';
 import '../features/autenticacao/registo_page.dart';
+import '../features/conta/conta_page.dart';
 import '../features/navegacao/estrutura_navegacao.dart';
 import '../features/navegacao/pagina_provisoria.dart';
 import '../models/conta_criada_dto.dart';
@@ -102,7 +103,7 @@ class AppRouter {
               notificacoes,
               const PaginaProvisoria(titulo: 'Notificações', ecra: 'E25'),
             ),
-            _ramo(conta, const PaginaProvisoria(titulo: 'Conta', ecra: 'E03')),
+            _ramo(conta, const ContaPage()),
           ],
         ),
       ],
