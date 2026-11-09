@@ -16,6 +16,9 @@ import '../suporte/app_fichas.dart';
 import '../suporte/falsos_fichas.dart';
 
 void main() {
+  // Um toque que não acerta no alvo faz o teste falhar.
+  WidgetController.hitTestWarningShouldBeFatal = true;
+
   late AppFichas app;
 
   setUp(() {
@@ -25,6 +28,9 @@ void main() {
   Finder campo(String rotulo) => find.widgetWithText(TextField, rotulo);
 
   Future<void> tocar(WidgetTester tester, Finder alvo) async {
+    // Sem foco num campo, para o ecrã não voltar a deslocar-se para ele depois de mostrar o alvo.
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
     await tester.ensureVisible(alvo);
     await tester.pumpAndSettle();
     await tester.tap(alvo);

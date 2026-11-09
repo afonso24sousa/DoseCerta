@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../features/autenticacao/inicio_sessao_page.dart';
 import '../features/autenticacao/registo_page.dart';
 import '../features/conta/conta_page.dart';
+import '../features/fichas/editar_ficha_page.dart';
 import '../features/fichas/ficha_page.dart';
 import '../features/fichas/lista_fichas_page.dart';
 import '../features/fichas/nova_ficha_dados_page.dart';
@@ -172,7 +173,7 @@ class AppRouter {
             GoRoute(
               path: 'editar',
               builder: (context, estado) =>
-                  const PaginaProvisoria(titulo: 'Editar ficha', ecra: 'E09'),
+                  EditarFichaPage(fichaId: estado.pathParameters['fichaId']!),
             ),
             GoRoute(
               path: 'documentos',
