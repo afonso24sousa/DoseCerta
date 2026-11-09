@@ -7,6 +7,7 @@ import '../features/autenticacao/registo_page.dart';
 import '../features/conta/conta_page.dart';
 import '../features/fichas/documentos_ficha_page.dart';
 import '../features/fichas/editar_ficha_page.dart';
+import '../features/fichas/estado_ficha_page.dart';
 import '../features/fichas/ficha_page.dart';
 import '../features/fichas/lista_fichas_page.dart';
 import '../features/fichas/nova_ficha_dados_page.dart';
@@ -184,10 +185,8 @@ class AppRouter {
             ),
             GoRoute(
               path: 'estado',
-              builder: (context, estado) => const PaginaProvisoria(
-                titulo: 'Arquivar, reativar ou eliminar ficha',
-                ecra: 'E11',
-              ),
+              builder: (context, estado) =>
+                  EstadoFichaPage(fichaId: estado.pathParameters['fichaId']!),
             ),
           ],
         ),
