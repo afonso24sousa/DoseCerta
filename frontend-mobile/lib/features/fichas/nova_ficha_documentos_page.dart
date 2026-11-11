@@ -91,9 +91,7 @@ class _NovaFichaDocumentosPageState
     );
     final dados = rascunho.dados;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Nova ficha: documentos e Cuidador principal'),
-      ),
+      appBar: AppBar(title: const Text('Nova ficha')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -101,7 +99,7 @@ class _NovaFichaDocumentosPageState
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Nova ficha (2 de 2)',
+                'Nova ficha (2 de 2): documentos e Cuidador principal',
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 16),

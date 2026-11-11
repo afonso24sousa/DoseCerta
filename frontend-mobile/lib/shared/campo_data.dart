@@ -15,10 +15,15 @@ class CampoData extends StatelessWidget {
     this.primeiraData,
     this.erro,
     this.ativo = true,
+    this.ajuda = 'Formato dd/mm/aaaa',
   });
 
-  /// Rótulo do campo (por exemplo «Data de nascimento (dd/mm/aaaa)»).
+  /// Rótulo do campo (por exemplo «Data de nascimento»). Curto, para não ser cortado com a letra aumentada
+  /// (RNF-026); o formato vai em [ajuda].
   final String rotulo;
+
+  /// Texto por baixo do campo (por omissão, o formato), que pode ocupar várias linhas.
+  final String ajuda;
 
   /// Controlador do texto, no formato `dd/mm/aaaa`.
   final TextEditingController controlador;
@@ -70,6 +75,7 @@ class CampoData extends StatelessWidget {
         decoration: InputDecoration(
           labelText: rotulo,
           hintText: 'dd/mm/aaaa',
+          helperText: ajuda,
           errorText: erro,
           suffixIcon: IconButton(
             tooltip: 'Escolher no calendário',

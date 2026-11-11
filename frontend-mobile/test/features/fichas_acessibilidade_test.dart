@@ -114,7 +114,7 @@ void main() {
       'Maria Fictícia Santos',
     );
     await tester.enterText(
-      find.widgetWithText(TextField, 'Data de nascimento (dd/mm/aaaa)'),
+      find.widgetWithText(TextField, 'Data de nascimento'),
       '17/05/1941',
     );
     await tester.enterText(

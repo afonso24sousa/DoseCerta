@@ -286,7 +286,7 @@ void main() {
         await tester.pumpWidget(
           app(
             CampoData(
-              rotulo: 'Data de nascimento (dd/mm/aaaa)',
+              rotulo: 'Data de nascimento',
               controlador: controlador,
               ultimaData: DateTime(2026, 11, 9),
               erro: 'Data de nascimento: não pode ser uma data futura.',

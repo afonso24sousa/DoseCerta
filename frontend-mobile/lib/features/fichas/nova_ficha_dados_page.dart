@@ -69,7 +69,7 @@ class _NovaFichaDadosPageState extends ConsumerState<NovaFichaDadosPage> {
     final erros = {...errosServidor, ...estado.erros};
     final dominios = estado.dominios;
     return Scaffold(
-      appBar: AppBar(title: const Text('Nova ficha: dados e necessidades')),
+      appBar: AppBar(title: const Text('Nova ficha')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -77,7 +77,7 @@ class _NovaFichaDadosPageState extends ConsumerState<NovaFichaDadosPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Nova ficha (1 de 2)',
+                'Nova ficha (1 de 2): dados e necessidades',
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 8),

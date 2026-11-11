@@ -44,10 +44,7 @@ void main() {
 
   Future<void> preencherDados(WidgetTester tester) async {
     await tester.enterText(campo('Nome completo'), 'Maria Fictícia Santos');
-    await tester.enterText(
-      campo('Data de nascimento (dd/mm/aaaa)'),
-      '17/05/1941',
-    );
+    await tester.enterText(campo('Data de nascimento'), '17/05/1941');
     await tester.enterText(campo('Contacto de emergência'), '+351 910 000 001');
     await tocar(tester, find.text('Diabetes'));
   }
@@ -75,10 +72,7 @@ void main() {
       (tester) async {
         await abrir(tester);
         await tester.enterText(campo('Nome completo'), 'Maria');
-        await tester.enterText(
-          campo('Data de nascimento (dd/mm/aaaa)'),
-          '01/01/2099',
-        );
+        await tester.enterText(campo('Data de nascimento'), '01/01/2099');
         await tester.enterText(campo('Contacto de emergência'), 'abc');
         await tocar(tester, find.text('Seguinte'));
 

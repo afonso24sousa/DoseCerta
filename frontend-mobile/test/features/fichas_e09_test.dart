@@ -82,10 +82,7 @@ void main() {
       await abrirEdicao(tester);
 
       await tester.enterText(campo('Nome completo'), '');
-      await tester.enterText(
-        campo('Data de nascimento (dd/mm/aaaa)'),
-        '31/02/1941',
-      );
+      await tester.enterText(campo('Data de nascimento'), '31/02/1941');
       await tocar(tester, find.text('Guardar'));
 
       expect(find.text('Nome completo: é obrigatório.'), findsOneWidget);

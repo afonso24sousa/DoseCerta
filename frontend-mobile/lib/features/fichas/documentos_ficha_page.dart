@@ -61,7 +61,7 @@ class _DocumentosFichaPageState extends ConsumerState<DocumentosFichaPage> {
       documentosFichaControllerProvider(widget.fichaId).notifier,
     );
     return Scaffold(
-      appBar: AppBar(title: const Text('Documentos da ficha')),
+      appBar: AppBar(title: const Text('Documentos')),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: controlador.carregar,

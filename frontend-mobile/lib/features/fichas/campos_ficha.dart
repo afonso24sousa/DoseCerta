@@ -45,7 +45,7 @@ class CamposFicha extends StatelessWidget {
               sugestoesPreenchimento: const [AutofillHints.name],
             ),
             CampoData(
-              rotulo: 'Data de nascimento (dd/mm/aaaa)',
+              rotulo: 'Data de nascimento',
               controlador: formulario.dataNascimento,
               ultimaData: hoje,
               erro: erros['dataNascimento'],
@@ -63,7 +63,8 @@ class CamposFicha extends StatelessWidget {
                 initialValue: formulario.grauAutonomiaId,
                 isExpanded: true,
                 decoration: InputDecoration(
-                  labelText: 'Grau de autonomia/mobilidade (lista fechada)',
+                  labelText: 'Grau de autonomia/mobilidade',
+                  helperText: 'Lista fechada',
                   errorText: erros['grauAutonomiaId'],
                 ),
                 items: [

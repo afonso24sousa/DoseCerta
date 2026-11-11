@@ -161,7 +161,7 @@ class EstadoFichaPage extends ConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Arquivar, reativar ou eliminar ficha')),
+      appBar: AppBar(title: const Text('Estado da ficha')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),

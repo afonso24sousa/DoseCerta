@@ -55,7 +55,13 @@ class MenuSeparadoresFicha extends StatelessWidget {
               child: ChoiceChip(
                 label: Text(separador.rotulo),
                 selected: separador == ativo,
-                onSelected: separador == ativo ? null : (_) => mudar(separador),
+                // O separador ativo continua ativado (com o aspeto de selecionado, não de desativado); tocar-lhe não faz
+                // nada.
+                onSelected: (_) {
+                  if (separador != ativo) {
+                    mudar(separador);
+                  }
+                },
               ),
             ),
         ],
