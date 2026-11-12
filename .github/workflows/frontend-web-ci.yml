@@ -30,7 +30,7 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 'true'
   URL_API: http://localhost:5000
-  URL_WEB: http://localhost:4200
+  URL_WEB: https://localhost:4200
 
 jobs:
   qualidade-frontend-web:
@@ -167,9 +167,14 @@ jobs:
           CYPRESS_URL_API: ${{ env.URL_API }}
         run: |
           set -o pipefail
-          PASTA_BUILD=$(dirname "$(find dist -name index.html | head -1)")
-          nohup npx --yes serve@14.2.4 -s "$PASTA_BUILD" -l 4200 > artefactos/logs/qg06-servidor-web.log 2>&1 &
-          for i in $(seq 1 30); do curl -fsS -o /dev/null "$URL_WEB" && break; sleep 2; done
+          # A build de produção aponta para a API publicada e o backend não tem CORS: os testes usam o ng serve
+          # (HTTPS, apiBaseUrl relativo) com um proxy /api para a API desta execução, na mesma origem.
+          printf '{"/api":{"target":"%s","secure":false,"changeOrigin":true,"logLevel":"warn"}}' "$URL_API" \
+            > "$RUNNER_TEMP/proxy.ci.conf.json"
+          nohup npx ng serve --configuration development --proxy-config "$RUNNER_TEMP/proxy.ci.conf.json" \
+            > artefactos/logs/qg06-servidor-web.log 2>&1 &
+          for i in $(seq 1 60); do curl -kfsS -o /dev/null "$URL_WEB" && break; sleep 5; done
+          curl -kfsS -o /dev/null "$URL_WEB" || { echo "::error::O frontend não respondeu em $URL_WEB."; exit 1; }
           npx cypress run \
             --config "videosFolder=artefactos/cypress/videos,screenshotsFolder=artefactos/cypress/capturas,video=true" \
             --reporter junit --reporter-options "mochaFile=artefactos/cypress/resultados/resultado-[hash].xml" \
