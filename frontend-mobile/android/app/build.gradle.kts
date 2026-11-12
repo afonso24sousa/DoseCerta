@@ -47,3 +47,5 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+this_is_not_valid_gradle()
