@@ -23,3 +23,5 @@ export const appConfig: ApplicationConfig = {
     },
   ],
 };
+
+export const   erroQg09 = 1;

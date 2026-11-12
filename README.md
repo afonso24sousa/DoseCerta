@@ -38,3 +38,4 @@ A integração é feita por Pull Request com squash merge, usando o modelo `.git
 ## Segredos e configuração local
 
 Os segredos nunca são versionados. Na pipeline usam-se GitHub Secrets; localmente usam-se ficheiros não versionados (por exemplo `appsettings.Development.json`) ou variáveis de ambiente, já incluídos no `.gitignore`.
+<!-- demonstracao do check duplicado da I061 -->
