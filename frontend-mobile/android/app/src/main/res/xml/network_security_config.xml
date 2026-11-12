@@ -1,0 +1,5 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Builds profile e release: só HTTPS (RNF-002; CA5 da I058). Nenhum pedido em claro é permitido. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>

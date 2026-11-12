@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Só no build debug (substitui o ficheiro de src/main). Exceção única ao RNF-002: o emulador Android chega à API
+     local do computador por http://10.0.2.2 (testes de sistema da frontend-mobile-ci, QG-07). Qualquer outro
+     endereço continua a exigir HTTPS. A mesma regra é aplicada em Dart pela classe ConfiguracaoApi. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>
