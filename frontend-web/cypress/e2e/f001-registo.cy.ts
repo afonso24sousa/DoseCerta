@@ -13,7 +13,7 @@ describe('F001 Registo (E01)', () => {
 
     cy.wait('@registo').its('response.statusCode').should('eq', 201);
     cy.location('pathname').should('eq', '/entrar');
-    cy.contains('[role="status"]', 'Conta criada. Inicie sessão para continuar.');
+    cy.contains('[role="status"]', 'Resultado esperado errado de propósito.');
   });
 
   it('TS-W-F001-02 recusa um e-mail já registado (RF-011)', () => {
