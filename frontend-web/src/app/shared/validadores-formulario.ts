@@ -7,7 +7,18 @@ export const COMPRIMENTO_MAXIMO_EMAIL = 254;
 /** Comprimento máximo do nome da conta aceite pelo servidor. */
 export const COMPRIMENTO_MAXIMO_NOME = 120;
 
+/** Comprimento máximo do nome completo de uma ficha aceite pelo servidor. */
+export const COMPRIMENTO_MAXIMO_NOME_FICHA = 150;
+
+/** Comprimento máximo do contacto de emergência aceite pelo servidor. */
+export const COMPRIMENTO_MAXIMO_TELEFONE = 30;
+
+/** Data de nascimento mais antiga aceite pelo servidor. */
+export const DATA_NASCIMENTO_MINIMA = '1900-01-01';
+
 const PADRAO_EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const PADRAO_TELEFONE = /^\+?[0-9][0-9 ]{5,}$/;
+const PADRAO_DATA = /^\d{4}-\d{2}-\d{2}$/;
 const LETRA = /\p{L}/u;
 const ALGARISMO = /\p{Nd}/u;
 
@@ -58,16 +69,68 @@ export class ValidadoresFormulario {
     };
   }
 
+  /** Contacto telefónico: algarismos, espaços e o prefixo + opcional, até 30 caracteres; vazio fica para o obrigatório. */
+  static telefone(): ValidatorFn {
+    return (controlo: AbstractControl): ValidationErrors | null => {
+      const valor = String(controlo.value ?? '').trim();
+      if (valor.length === 0) {
+        return null;
+      }
+
+      return valor.length <= COMPRIMENTO_MAXIMO_TELEFONE && PADRAO_TELEFONE.test(valor)
+        ? null
+        : {
+            telefone:
+              'Tem de ser um número de telefone com algarismos, espaços e o prefixo + opcional, até 30 caracteres, ' +
+              'por exemplo +351 910 000 001.',
+          };
+    };
+  }
+
+  /**
+   * Data de nascimento `AAAA-MM-DD` entre 1900-01-01 e hoje (na hora local, que o servidor confirma na hora de Lisboa);
+   * vazia fica para o obrigatório.
+   */
+  static dataNascimento(): ValidatorFn {
+    return (controlo: AbstractControl): ValidationErrors | null => {
+      const valor = String(controlo.value ?? '').trim();
+      if (valor.length === 0) {
+        return null;
+      }
+
+      if (!PADRAO_DATA.test(valor) || Number.isNaN(Date.parse(valor))) {
+        return { data: 'Tem de ser uma data válida.' };
+      }
+
+      if (valor > ValidadoresFormulario.hoje()) {
+        return { dataFutura: 'Não pode ser uma data futura.' };
+      }
+
+      return valor < DATA_NASCIMENTO_MINIMA
+        ? { dataMinima: 'Tem de ser igual ou posterior a 01/01/1900.' }
+        : null;
+    };
+  }
+
+  /** Data de hoje no formato `AAAA-MM-DD`, na hora local do navegador. */
+  static hoje(): string {
+    const agora = new Date();
+    const mes = String(agora.getMonth() + 1).padStart(2, '0');
+    const dia = String(agora.getDate()).padStart(2, '0');
+    return `${agora.getFullYear()}-${mes}-${dia}`;
+  }
+
   /**
    * Coloca os erros por campo devolvidos pelo servidor nos controlos com o mesmo nome, sem alterar os valores escritos
-   * (RNF-028). O erro desaparece quando o Utilizador altera o campo.
+   * (RNF-028). O erro desaparece quando o Utilizador altera o campo. Os campos com índice (por exemplo
+   * `documentos[0].categoria`) correspondem ao caminho `documentos.0.categoria` do formulário.
    *
    * @returns `true` se pelo menos um erro ficou junto de um campo.
    */
   static aplicarErrosDoServidor(formulario: FormGroup, problema: ProblemaApi): boolean {
     let aplicado = false;
     for (const erro of problema.campos ?? []) {
-      const controlo = formulario.get(erro.campo);
+      const controlo = formulario.get(erro.campo.replace(/\[(\d+)\]/g, '.$1'));
       if (controlo) {
         controlo.setErrors({ ...(controlo.errors ?? {}), servidor: erro.regra });
         controlo.markAsTouched();
@@ -76,6 +139,24 @@ export class ValidadoresFormulario {
     }
 
     return aplicado;
+  }
+
+  /**
+   * Primeira regra violada de um controlo, para mostrar junto dele, ou `null` se estiver válido ou ainda não tiver sido
+   * tocado. Uma mensagem completa (erro `mensagem`) aparece tal como está, como no {@link CampoFormularioComponent}.
+   */
+  static mensagemErro(controlo: AbstractControl): string | null {
+    if (!controlo.errors || !controlo.touched) {
+      return null;
+    }
+
+    const erros = controlo.errors as Record<string, unknown>;
+    if (typeof erros['mensagem'] === 'string') {
+      return erros['mensagem'];
+    }
+
+    const primeiro = Object.values(erros).find((v) => typeof v === 'string');
+    return typeof primeiro === 'string' ? primeiro : 'Valor inválido.';
   }
 
   /**

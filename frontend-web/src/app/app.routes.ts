@@ -43,9 +43,7 @@ export const routes: Routes = [
       },
       {
         path: 'fichas',
-        title: 'Fichas · DoseCerta',
-        data: { titulo: 'Fichas' },
-        loadComponent: emConstrucao,
+        loadChildren: () => import('./features/fichas/fichas.routes').then((m) => m.FICHAS_ROUTES),
       },
       {
         path: 'agenda',

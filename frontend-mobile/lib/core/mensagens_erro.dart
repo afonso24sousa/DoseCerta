@@ -23,6 +23,23 @@ class MensagensErro {
     'NAO_AUTENTICADO': sessaoTerminada,
     'VALIDACAO_INVALIDA': 'Verifique os campos assinalados.',
     'ERRO_INTERNO': erroInesperado,
+    // F002 e F003 (I060). Textos do protótipo v02 (E06 a E11) quando existem.
+    'ACESSO_PROIBIDO': 'O seu papel nesta ficha não permite esta operação: o Familiar só consulta os dados da ficha.',
+    'FICHA_NAO_ENCONTRADA':
+        'A ficha não existe ou já não está associado a ela.',
+    'FICHA_PROPRIA_JA_EXISTE': 'Já tem uma ficha própria. Só pode ter uma.',
+    'FICHA_ARQUIVADA': 'Ficha arquivada: só consulta. Reative-a para registar ou alterar dados.',
+    'FICHA_JA_ARQUIVADA': 'A ficha já está arquivada.',
+    'FICHA_NAO_ARQUIVADA': 'A ficha não está arquivada.',
+    'FICHA_COM_HISTORICO': 'A ficha tem medicação ou histórico e não pode ser eliminada. Arquive-a.',
+    'FICHEIRO_DEMASIADO_GRANDE':
+        'O ficheiro tem mais de 10 MB; o tamanho máximo é 10 MB.',
+    'FORMATO_NAO_SUPORTADO':
+        'O formato do ficheiro não é suportado: use PDF, JPG ou PNG.',
+    'DOCUMENTO_NAO_GUARDADO': 'O documento não foi guardado e a operação não foi feita. Tente novamente.',
+    'DOCUMENTO_NAO_ENCONTRADO':
+        'O documento não existe ou já não está associado à ficha.',
+    'DOCUMENTO_INDISPONIVEL': 'Não foi possível obter o documento.',
   };
 
   /// Traduz um erro numa mensagem geral para o `BannerErro`.
