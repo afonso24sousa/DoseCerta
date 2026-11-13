@@ -93,7 +93,39 @@ public class CompromissoTestes
     }
 
     /// <summary>
-    /// Alterar só o local ou o motivo mantém o aviso já enviado.
+    /// I056 (RF-117 CA3): um compromisso registado depois do instante do aviso tem o aviso devido logo, mas só até à sua data;
+    /// a partir da data do compromisso deixa de ser próximo e nunca é avisado.
+    /// </summary>
+    [Fact]
+    public void AvisoDevidoSoAteADataDoCompromisso()
+    {
+        var compromisso = Novo(1440);
+
+        Assert.True(compromisso.AvisoDevido(DataHora.AddMinutes(-10)));
+        Assert.True(compromisso.AvisoDevido(DataHora.AddSeconds(-1)));
+        Assert.False(compromisso.AvisoDevido(DataHora));
+        Assert.False(compromisso.AvisoDevido(DataHora.AddDays(1)));
+    }
+
+    /// <summary>
+    /// I056 (RF-117 CA3, RF-142): o aviso fica devido no instante do aviso ou, se o compromisso foi registado depois dele, no
+    /// instante do registo.
+    /// </summary>
+    [Fact]
+    public void InstanteAvisoDevidoEOMaiorEntreOAvisoEORegisto()
+    {
+        var registadoAntes = Novo(60);
+        var registoTardio = DataHora.AddMinutes(-20);
+        var registadoDepois = new Compromisso(
+            Guid.NewGuid(), DataHora, "Centro de Saúde Fictício", "Consulta de rotina", 60, Guid.NewGuid(), registoTardio);
+
+        Assert.Equal(DataHora.AddHours(-1), registadoAntes.InstanteAvisoDevido());
+        Assert.Equal(registoTardio, registadoDepois.InstanteAvisoDevido());
+        Assert.Equal(DataHora.AddHours(-1), registadoDepois.InstanteAviso());
+    }
+
+    /// <summary>
+    /// Alterar só o local ou o motivo mantém o aviso já enviado e indica que o aviso não foi reposto.
     /// </summary>
     [Fact]
     public void AtualizarSoLocalEMotivoMantemOAviso()
@@ -101,9 +133,29 @@ public class CompromissoTestes
         var compromisso = Novo(60);
         compromisso.MarcarAvisoEnviado(DataHora.AddHours(-1));
 
-        compromisso.Atualizar(DataHora, "Hospital Fictício", "Análises", 60);
+        var reposto = compromisso.Atualizar(DataHora, "Hospital Fictício", "Análises", 60);
 
+        Assert.False(reposto);
         Assert.Equal(DataHora.AddHours(-1), compromisso.AvisoEnviadoEmUtc);
+    }
+
+    /// <summary>
+    /// RF-081 e RF-117: mudar a data ou a antecedência repõe o aviso e indica-o, mesmo que o aviso ainda estivesse por enviar.
+    /// </summary>
+    /// <param name="mudaData">Se muda a data (senão muda a antecedência).</param>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void AtualizarDataOuAntecedenciaIndicaAvisoReposto(bool mudaData)
+    {
+        var compromisso = Novo(60);
+
+        var reposto = mudaData
+            ? compromisso.Atualizar(DataHora.AddHours(2), "Centro de Saúde Fictício", "Consulta de rotina", 60)
+            : compromisso.Atualizar(DataHora, "Centro de Saúde Fictício", "Consulta de rotina", 120);
+
+        Assert.True(reposto);
+        Assert.Null(compromisso.AvisoEnviadoEmUtc);
     }
 
     /// <summary>

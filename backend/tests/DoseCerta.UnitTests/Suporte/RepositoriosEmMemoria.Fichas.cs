@@ -192,4 +192,18 @@ public partial class RepositoriosEmMemoria : IFichaRepositorio, IDominiosReposit
         this.NotificacoesEliminadas.Add(fichaId);
         return Task.FromResult(0);
     }
+
+    /// <inheritdoc/>
+    public Task<IReadOnlyList<Guid>> DestinatariosDoEventoAsync(
+        TipoNotificacao tipo,
+        Guid referenciaId,
+        DateTime instanteLimiteUtc,
+        CancellationToken cancelamento)
+    {
+        IReadOnlyList<Guid> lista = this.Notificacoes
+            .Where(n => n.Tipo == tipo && n.ReferenciaId == referenciaId && n.InstanteLimiteUtc == instanteLimiteUtc)
+            .Select(n => n.DestinatarioId)
+            .ToList();
+        return Task.FromResult(lista);
+    }
 }
