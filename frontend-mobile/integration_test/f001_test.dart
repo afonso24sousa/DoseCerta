@@ -104,7 +104,7 @@ void main() {
     await tester.enterText(campo('Palavra-passe'), conta.palavraPasse);
     await tocar(tester, find.widgetWithText(FilledButton, 'Criar conta'));
 
-    await esperarPor(tester, find.textContaining('Conta criada.'));
+    await esperarPor(tester, find.textContaining('Resultado esperado errado.'));
     expect(find.text('Início de sessão'), findsOneWidget);
   });
 
