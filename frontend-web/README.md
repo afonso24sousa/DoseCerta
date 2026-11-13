@@ -40,7 +40,7 @@ npm run format        # aplica a formatação do Prettier
 | ------------------ | ------------------------------------------------------------------------------------------------------- |
 | `src/app/core`     | Configuração da API, sessão (`AuthService`, `TokenStorage`), interceptores, guardas e mensagens de erro |
 | `src/app/models`   | DTO da API e `ProblemaApi`                                                                              |
-| `src/app/api`      | Uma classe por grupo de operações da API (`AuthApi`, `ContaApi`)                                        |
+| `src/app/api`      | Uma classe por grupo de operações (`AuthApi`, `ContaApi`, `FichasApi`, `DocumentosApi`, `DominiosApi`)  |
 | `src/app/shared`   | Validadores e componentes reutilizáveis dos formulários                                                 |
 | `src/app/layout`   | Estrutura das páginas autenticadas (cabeçalho e barra lateral)                                          |
 | `src/app/features` | Páginas, por funcionalidade                                                                             |

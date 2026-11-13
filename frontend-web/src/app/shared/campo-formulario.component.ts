@@ -19,6 +19,8 @@ let sequencia = 0;
         [type]="tipo()"
         [formControl]="controlo()"
         [attr.autocomplete]="autocomplete()"
+        [attr.min]="minimo()"
+        [attr.max]="maximo()"
         [attr.aria-invalid]="erro ? 'true' : null"
         [attr.aria-describedby]="erro ? id + '-erro' : null"
       />
@@ -31,8 +33,12 @@ let sequencia = 0;
 export class CampoFormularioComponent {
   readonly rotulo = input.required<string>();
   readonly controlo = input.required<FormControl<string>>();
-  readonly tipo = input<'text' | 'email' | 'password'>('text');
+  readonly tipo = input<'text' | 'email' | 'password' | 'date' | 'tel'>('text');
   readonly autocomplete = input<string | null>(null);
+  /** Valor mínimo do campo de data (atributo `min`). */
+  readonly minimo = input<string | null>(null);
+  /** Valor máximo do campo de data (atributo `max`). */
+  readonly maximo = input<string | null>(null);
 
   protected readonly id = `campo-${++sequencia}`;
 
