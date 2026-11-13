@@ -35,5 +35,5 @@ export function iniciarSessao(email: string, palavraPasse: string): void {
   campo('E-mail').type(email);
   campo('Palavra-passe').type(palavraPasse, { log: false });
   cy.contains('button', 'Entrar').click();
-  cy.location('pathname').should('eq', '/lista-diaria');
+  cy.location('pathname').should('eq', '/hoje');
 }
