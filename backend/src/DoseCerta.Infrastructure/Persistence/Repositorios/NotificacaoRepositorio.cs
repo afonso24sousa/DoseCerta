@@ -38,6 +38,21 @@ public sealed class NotificacaoRepositorio : INotificacaoRepositorio
     }
 
     /// <inheritdoc/>
+    public async Task<IReadOnlyList<Guid>> DestinatariosDoEventoAsync(
+        TipoNotificacao tipo,
+        Guid referenciaId,
+        DateTime instanteLimiteUtc,
+        CancellationToken cancelamento)
+    {
+        return await this.contexto.Notificacoes
+            .AsNoTracking()
+            .Where(n => n.Tipo == tipo && n.ReferenciaId == referenciaId && n.InstanteLimiteUtc == instanteLimiteUtc)
+            .Select(n => n.DestinatarioId)
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc/>
     public async Task<IReadOnlyList<ItemNotificacao>> DoUtilizadorAsync(
         Guid utilizadorId,
         DateTime? deUtc,

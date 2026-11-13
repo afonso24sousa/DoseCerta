@@ -103,7 +103,7 @@ public sealed class EnvioEmailService
     }
 
     /// <summary>
-    /// Passo 6 do processo periódico: regista os e-mails das notificações que ainda não o têm e submete cada e-mail pendente
+    /// Passo 7 do processo periódico: regista os e-mails das notificações que ainda não o têm e submete cada e-mail pendente
     /// cuja próxima tentativa chegou, de convite ou de notificação, e regista o resultado, cada um na sua própria transação. Uma
     /// falha agenda o reenvio 5 minutos depois; depois de 3 reenvios falhados o e-mail fica não entregue, o que o histórico de
     /// notificações mostra (RF-118, RF-119, RF-136). Uma exceção do serviço de e-mail conta como falha, para o e-mail não ficar preso.

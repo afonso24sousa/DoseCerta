@@ -96,6 +96,41 @@ public sealed class NotificacaoService
     }
 
     /// <summary>
+    /// Notifica todas as pessoas associadas à ficha, Cuidadores (incluindo o principal) e Familiares, uma só vez cada, na
+    /// transação de quem a chama (RF-117, RNF-043). Quem já tem a notificação do mesmo evento (a chave de
+    /// <c>UQ_Notificacao_Origem</c>) não é notificado de novo: por exemplo, um compromisso editado cujo instante do aviso ficou
+    /// igual ao do aviso já enviado.
+    /// </summary>
+    /// <param name="ficha">Ficha, com as associações.</param>
+    /// <param name="tipo">Tipo da notificação.</param>
+    /// <param name="referenciaTipo">Tipo do registo de origem.</param>
+    /// <param name="referenciaId">Identificador do registo de origem.</param>
+    /// <param name="instanteLimiteUtc">Instante-limite do evento, que o identifica (DM-20, RNF-043).</param>
+    /// <param name="mensagem">Mensagem em português europeu.</param>
+    /// <param name="agoraUtc">Instante da criação, em UTC.</param>
+    /// <param name="cancelamento">Token de cancelamento.</param>
+    /// <returns>As notificações criadas; vazia se a ficha estiver arquivada.</returns>
+    public async Task<IReadOnlyList<Notificacao>> NotificarTodosAsync(
+        Ficha ficha,
+        TipoNotificacao tipo,
+        TipoReferencia referenciaTipo,
+        Guid referenciaId,
+        DateTime instanteLimiteUtc,
+        string mensagem,
+        DateTime agoraUtc,
+        CancellationToken cancelamento)
+    {
+        ArgumentNullException.ThrowIfNull(ficha);
+        var jaNotificados = await this.notificacoes
+            .DestinatariosDoEventoAsync(tipo, referenciaId, instanteLimiteUtc, cancelamento)
+            .ConfigureAwait(false);
+        var associados = ficha.Associacoes.Select(a => a.UtilizadorId).Except(jaNotificados);
+        return await this.NotificarAsync(
+            ficha, associados, new Origem(tipo, referenciaTipo, referenciaId, instanteLimiteUtc, mensagem), agoraUtc, cancelamento)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// OP-51: lista as notificações recebidas pelo Utilizador, da mais recente para a mais antiga, e nunca as de outros
     /// Utilizadores, com o estado do e-mail (RF-119, RF-140).
     /// </summary>
