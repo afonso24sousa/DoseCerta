@@ -54,6 +54,20 @@ Future<void> esperarPor(WidgetTester tester, Finder alvo) async {
   expect(alvo, findsWidgets);
 }
 
+/// Fecha o aviso temporário (SnackBar) que estiver aberto e espera que saia do ecrã, para não ficar por cima de
+/// um botão no fundo do ecrã e receber o toque.
+Future<void> fecharAviso(WidgetTester tester) async {
+  final aviso = find.byType(SnackBar);
+  if (aviso.evaluate().isEmpty) {
+    return;
+  }
+  ScaffoldMessenger.of(tester.element(aviso.first)).removeCurrentSnackBar();
+  for (var i = 0; i < 25 && aviso.evaluate().isNotEmpty; i++) {
+    await tester.pump(const Duration(milliseconds: 200));
+  }
+  expect(aviso, findsNothing);
+}
+
 /// Arranca a aplicação sem sessão guardada, para cada cenário ser independente.
 Future<void> arrancarSemSessao(WidgetTester tester) async {
   await const FlutterSecureStorage().deleteAll();
@@ -191,6 +205,8 @@ void main() {
         find.widgetWithText(OutlinedButton, 'Alterar palavra-passe'),
       );
       await esperarPor(tester, find.text('Palavra-passe alterada.'));
+      // O aviso «Palavra-passe alterada.» fica por cima de «Terminar sessão», no fundo do ecrã.
+      await fecharAviso(tester);
 
       await tocar(
         tester,
