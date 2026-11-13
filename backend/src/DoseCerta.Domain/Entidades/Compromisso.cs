@@ -97,11 +97,16 @@ public class Compromisso
     /// <param name="local">Local.</param>
     /// <param name="motivo">Motivo.</param>
     /// <param name="antecedenciaAvisoMin">Antecedência do aviso, em minutos.</param>
+    /// <returns>
+    /// <see langword="true"/> se a data ou a antecedência mudaram e o aviso foi reposto; quem grava tem de escrever o aviso
+    /// por enviar mesmo que já estivesse a <see langword="null"/> quando foi lido (RNF-043).
+    /// </returns>
     /// <exception cref="ArgumentOutOfRangeException">Se a antecedência não for um dos valores permitidos.</exception>
-    public void Atualizar(DateTime dataHoraUtc, string local, string motivo, int antecedenciaAvisoMin)
+    public bool Atualizar(DateTime dataHoraUtc, string local, string motivo, int antecedenciaAvisoMin)
     {
         ExigirAntecedenciaValida(antecedenciaAvisoMin);
-        if (dataHoraUtc != this.DataHoraUtc || antecedenciaAvisoMin != this.AntecedenciaAvisoMin)
+        var avisoReposto = dataHoraUtc != this.DataHoraUtc || antecedenciaAvisoMin != this.AntecedenciaAvisoMin;
+        if (avisoReposto)
         {
             this.AvisoEnviadoEmUtc = null;
         }
@@ -110,6 +115,7 @@ public class Compromisso
         this.Local = local;
         this.Motivo = motivo;
         this.AntecedenciaAvisoMin = antecedenciaAvisoMin;
+        return avisoReposto;
     }
 
     /// <summary>
@@ -122,14 +128,27 @@ public class Compromisso
     }
 
     /// <summary>
-    /// Indica se o aviso já devia ser enviado: o instante do aviso chegou e ainda não foi enviado. Um compromisso registado
-    /// depois desse instante tem o aviso devido de imediato (RF-117).
+    /// Obtém o instante em que o aviso ficou devido: o instante do aviso ou, se o compromisso foi registado depois dele, o
+    /// instante do registo (RF-117 CA3). É este instante que se compara com a reativação da ficha: só os avisos que ficaram
+    /// devidos enquanto a ficha esteve arquivada são descartados (RF-142).
+    /// </summary>
+    /// <returns>O instante, em UTC.</returns>
+    public DateTime InstanteAvisoDevido()
+    {
+        var instanteAviso = this.InstanteAviso();
+        return this.CriadoEmUtc > instanteAviso ? this.CriadoEmUtc : instanteAviso;
+    }
+
+    /// <summary>
+    /// Indica se o aviso já devia ser enviado: o instante do aviso chegou, o aviso ainda não foi enviado e o compromisso ainda
+    /// não aconteceu. Um compromisso registado depois do instante do aviso, mas antes da sua data, tem o aviso devido de
+    /// imediato (RF-117 CA3); um compromisso cuja data já passou deixa de ser próximo e nunca é avisado (decisão da I056).
     /// </summary>
     /// <param name="agoraUtc">Instante atual, em UTC.</param>
-    /// <returns><see langword="true"/> se o aviso estiver por enviar e o instante do aviso tiver chegado.</returns>
+    /// <returns><see langword="true"/> se o aviso estiver por enviar, o instante do aviso tiver chegado e a data não.</returns>
     public bool AvisoDevido(DateTime agoraUtc)
     {
-        return this.AvisoEnviadoEmUtc is null && agoraUtc >= this.InstanteAviso();
+        return this.AvisoEnviadoEmUtc is null && agoraUtc >= this.InstanteAviso() && agoraUtc < this.DataHoraUtc;
     }
 
     /// <summary>

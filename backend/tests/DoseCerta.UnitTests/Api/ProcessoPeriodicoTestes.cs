@@ -17,7 +17,7 @@ namespace DoseCerta.UnitTests.Api;
 
 /// <summary>
 /// Testes unitários do <see cref="ProcessoPeriodico"/> (Modelo de Classes do Backend, secção 8.1; passos 1 e 5 das tomas,
-/// RF-060 e RF-068, passo 4 dos tratamentos, RF-056, passo dos e-mails, RF-136, e passo 7 das credenciais, RF-016).
+/// RF-060 e RF-068, passo 4 dos tratamentos, RF-056, passo dos e-mails, RF-136, e passo 8 das credenciais, RF-016).
 /// </summary>
 public class ProcessoPeriodicoTestes
 {
@@ -52,7 +52,7 @@ public class ProcessoPeriodicoTestes
     }
 
     /// <summary>
-    /// Passos 4 e 7 (RF-056, RF-016): o ciclo termina o tratamento cuja data de fim já passou e elimina as credenciais
+    /// Passos 4 e 8 (RF-056, RF-016): o ciclo termina o tratamento cuja data de fim já passou e elimina as credenciais
     /// terminadas que já expiraram, mantendo as que ainda estão dentro da validade.
     /// </summary>
     /// <returns>Uma tarefa assíncrona.</returns>
