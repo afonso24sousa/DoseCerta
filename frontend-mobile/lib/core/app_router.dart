@@ -5,6 +5,13 @@ import 'package:go_router/go_router.dart';
 import '../features/autenticacao/inicio_sessao_page.dart';
 import '../features/autenticacao/registo_page.dart';
 import '../features/conta/conta_page.dart';
+import '../features/fichas/documentos_ficha_page.dart';
+import '../features/fichas/editar_ficha_page.dart';
+import '../features/fichas/estado_ficha_page.dart';
+import '../features/fichas/ficha_page.dart';
+import '../features/fichas/lista_fichas_page.dart';
+import '../features/fichas/nova_ficha_dados_page.dart';
+import '../features/fichas/nova_ficha_documentos_page.dart';
 import '../features/navegacao/estrutura_navegacao.dart';
 import '../features/navegacao/pagina_provisoria.dart';
 import '../models/conta_criada_dto.dart';
@@ -25,8 +32,36 @@ class AppRouter {
   /// E04 Lista de tarefas diária (provisória).
   static const String hoje = '/hoje';
 
-  /// E05 Fichas (provisória).
+  /// E05 Fichas.
   static const String fichas = '/fichas';
+
+  /// E06 Nova ficha: dados e necessidades.
+  static const String novaFicha = '/fichas/nova';
+
+  /// E07 Nova ficha: documentos e Cuidador principal.
+  static const String novaFichaDocumentos = '/fichas/nova/documentos';
+
+  /// E08 Ficha.
+  static String ficha(String fichaId) => '/fichas/$fichaId';
+
+  /// E09 Editar ficha.
+  static String editarFicha(String fichaId) => '/fichas/$fichaId/editar';
+
+  /// E10 Documentos da ficha.
+  static String documentosFicha(String fichaId) =>
+      '/fichas/$fichaId/documentos';
+
+  /// E11 Arquivar, reativar ou eliminar ficha.
+  static String estadoFicha(String fichaId) => '/fichas/$fichaId/estado';
+
+  /// E15 Medicação da ficha (provisória).
+  static String medicacaoFicha(String fichaId) => '/fichas/$fichaId/medicacao';
+
+  /// E12 Pessoas da ficha (provisória).
+  static String pessoasFicha(String fichaId) => '/fichas/$fichaId/pessoas';
+
+  /// E23 Ocorrências e notas (provisória).
+  static String registosFicha(String fichaId) => '/fichas/$fichaId/registos';
 
   /// E21 Agenda (provisória).
   static const String agenda = '/agenda';
@@ -91,10 +126,7 @@ class AppRouter {
                 ecra: 'E04',
               ),
             ),
-            _ramo(
-              fichas,
-              const PaginaProvisoria(titulo: 'Fichas', ecra: 'E05'),
-            ),
+            StatefulShellBranch(routes: [rotasFichas()]),
             _ramo(
               agenda,
               const PaginaProvisoria(titulo: 'Agenda', ecra: 'E21'),
@@ -113,6 +145,62 @@ class AppRouter {
       sessaoIniciada.dispose();
     });
     return router;
+  }
+
+  /// Rotas do ramo Fichas (modelo de classes, secção 8.1). `nova` vem antes de `:fichaId`, para não ser lida como
+  /// um identificador de ficha.
+  static GoRoute rotasFichas() {
+    return GoRoute(
+      path: fichas,
+      builder: (context, estado) => const ListaFichasPage(),
+      routes: [
+        GoRoute(
+          path: 'nova',
+          builder: (context, estado) => const NovaFichaDadosPage(),
+          routes: [
+            GoRoute(
+              path: 'documentos',
+              builder: (context, estado) => const NovaFichaDocumentosPage(),
+            ),
+          ],
+        ),
+        GoRoute(
+          path: ':fichaId',
+          builder: (context, estado) =>
+              FichaPage(fichaId: estado.pathParameters['fichaId']!),
+          routes: [
+            _provisoria('medicacao', 'Medicação da ficha', 'E15'),
+            _provisoria('pessoas', 'Pessoas da ficha', 'E12'),
+            _provisoria('registos', 'Ocorrências e notas', 'E23'),
+            GoRoute(
+              path: 'editar',
+              builder: (context, estado) =>
+                  EditarFichaPage(fichaId: estado.pathParameters['fichaId']!),
+            ),
+            GoRoute(
+              path: 'documentos',
+              builder: (context, estado) => DocumentosFichaPage(
+                fichaId: estado.pathParameters['fichaId']!,
+              ),
+            ),
+            GoRoute(
+              path: 'estado',
+              builder: (context, estado) =>
+                  EstadoFichaPage(fichaId: estado.pathParameters['fichaId']!),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// Rota provisória de um separador da ficha implementado noutra Issue (como na DD11 da I058).
+  static GoRoute _provisoria(String caminho, String titulo, String ecra) {
+    return GoRoute(
+      path: caminho,
+      builder: (context, estado) =>
+          PaginaProvisoria(titulo: titulo, ecra: ecra),
+    );
   }
 
   static StatefulShellBranch _ramo(String caminho, Widget pagina) {
