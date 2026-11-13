@@ -129,7 +129,12 @@ public sealed class CompromissoService
             {
                 var compromisso = await this.ObterComAcessoAsync(utilizadorId, compromissoId, cancelamento).ConfigureAwait(false);
                 var validados = Validar(dados);
-                compromisso.Atualizar(validados.DataHoraUtc, validados.Local, validados.Motivo, validados.AntecedenciaMin);
+                if (compromisso.Atualizar(validados.DataHoraUtc, validados.Local, validados.Motivo, validados.AntecedenciaMin))
+                {
+                    // Se o processo periódico marcou o aviso entre a leitura e a gravação, a gravação repõe-no (RNF-043).
+                    this.compromissos.GravarAvisoReposto(compromisso);
+                }
+
                 return compromisso;
             },
             cancelamento).ConfigureAwait(false);
