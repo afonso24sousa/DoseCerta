@@ -30,6 +30,7 @@
     "@angular/cli": "18.2.21",
     "@angular/compiler-cli": "18.2.14",
     "angular-eslint": "18.4.3",
+    "cypress": "13.17.0",
     "eslint": "9.39.5",
     "eslint-config-prettier": "10.1.8",
     "prettier": "3.9.10",
