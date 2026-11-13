@@ -1,0 +1,22 @@
+# Análise estática do frontend mobile (Regulamento Interno do Grupo, secções 11.3 e 11.4).
+# Regras recomendadas do flutter_lints; na pipeline, `flutter analyze --fatal-warnings` bloqueia erros e avisos.
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    # Código gerado automaticamente (exclusão prevista na secção 11.4).
+    - "**/*.g.dart"
+    # Pastas sem código Dart de autoria do grupo: resultados da compilação e projeto Gradle do Android.
+    - build/**
+    - android/**
+  language:
+    strict-casts: true
+    strict-raw-types: true
+
+linter:
+  rules:
+    - always_declare_return_types
+    - prefer_final_locals
+    - prefer_single_quotes
+    - require_trailing_commas
+    - unawaited_futures
