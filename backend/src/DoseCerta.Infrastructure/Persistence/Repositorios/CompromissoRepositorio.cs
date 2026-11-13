@@ -1,7 +1,9 @@
 // Copyright (c) Grupo G07 - DoseCerta. Todos os direitos reservados.
 
 using DoseCerta.Application.Repositorios;
+using DoseCerta.Domain.Comum;
 using DoseCerta.Domain.Entidades;
+using DoseCerta.Domain.Enumerados;
 using Microsoft.EntityFrameworkCore;
 
 namespace DoseCerta.Infrastructure.Persistence.Repositorios;
@@ -63,6 +65,52 @@ public sealed class CompromissoRepositorio : ICompromissoRepositorio
             .ThenBy(c => c.Id)
             .ToListAsync(cancelamento)
             .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<Guid>> PorAvisarAsync(DateTime agoraUtc, CancellationToken cancelamento)
+    {
+        // O intervalo da data (agora, agora + 48 h] usa o índice filtrado IX_Compromisso_AvisoPendente; os compromissos já
+        // passados ficam fora do intervalo sem precisarem de marca (RF-117, modelo de dados, secção 6.15). A última condição é
+        // Compromisso.InstanteAvisoDevido() >= AtivaDesdeUtc, escrita como max(a, b) >= x <=> a >= x || b >= x (RF-142).
+        var dataAteUtc = agoraUtc.AddMinutes(ParametrosDeNegocio.AntecedenciaMaximaMin);
+        return await (
+            from c in this.contexto.Compromissos.AsNoTracking()
+            join ficha in this.contexto.Fichas on c.FichaId equals ficha.Id
+            where c.AvisoEnviadoEmUtc == null
+                && ficha.Estado == EstadoFicha.Ativa
+                && c.DataHoraUtc > agoraUtc
+                && c.DataHoraUtc <= dataAteUtc
+                && c.DataHoraUtc.AddMinutes(-c.AntecedenciaAvisoMin) <= agoraUtc
+                && (c.DataHoraUtc.AddMinutes(-c.AntecedenciaAvisoMin) >= ficha.AtivaDesdeUtc || c.CriadoEmUtc >= ficha.AtivaDesdeUtc)
+            orderby c.DataHoraUtc, c.Id
+            select c.Id)
+            .ToListAsync(cancelamento)
+            .ConfigureAwait(false);
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> MarcarAvisoEnviadoAsync(Compromisso lido, DateTime agoraUtc, CancellationToken cancelamento)
+    {
+        ArgumentNullException.ThrowIfNull(lido);
+
+        // UPDATE condicional na transação em curso: uma execução concorrente espera pelo bloqueio da linha e, depois do
+        // commit desta, já não a encontra por enviar (0 linhas), sem violar UQ_Notificacao_Origem (RNF-043).
+        var alteradas = await this.contexto.Compromissos
+            .Where(c => c.Id == lido.Id
+                && c.AvisoEnviadoEmUtc == null
+                && c.DataHoraUtc == lido.DataHoraUtc
+                && c.AntecedenciaAvisoMin == lido.AntecedenciaAvisoMin)
+            .ExecuteUpdateAsync(s => s.SetProperty(c => c.AvisoEnviadoEmUtc, agoraUtc), cancelamento)
+            .ConfigureAwait(false);
+        return alteradas == 1;
+    }
+
+    /// <inheritdoc/>
+    public void GravarAvisoReposto(Compromisso compromisso)
+    {
+        ArgumentNullException.ThrowIfNull(compromisso);
+        this.contexto.Entry(compromisso).Property(c => c.AvisoEnviadoEmUtc).IsModified = true;
     }
 
     /// <inheritdoc/>

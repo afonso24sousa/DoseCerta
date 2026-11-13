@@ -46,6 +46,7 @@ public static class InjecaoDependencias
         servicos.AddScoped<OcorrenciaService>();
         servicos.AddScoped<NotificacaoService>();
         servicos.AddScoped<AtrasoTomaService>();
+        servicos.AddScoped<AvisoCompromissoService>();
         return servicos;
     }
 }
