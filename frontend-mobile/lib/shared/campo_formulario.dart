@@ -15,6 +15,7 @@ class CampoFormulario extends StatelessWidget {
     this.sugestoesPreenchimento,
     this.acaoTeclado = TextInputAction.next,
     this.aoSubmeter,
+    this.aoMudar,
     this.ativo = true,
   });
 
@@ -45,6 +46,9 @@ class CampoFormulario extends StatelessWidget {
   /// Chamado quando o Utilizador submete o campo no teclado.
   final ValueChanged<String>? aoSubmeter;
 
+  /// Chamado a cada alteração do texto.
+  final ValueChanged<String>? aoMudar;
+
   /// Indica se o campo aceita edição.
   final bool ativo;
 
@@ -62,6 +66,7 @@ class CampoFormulario extends StatelessWidget {
         autofillHints: sugestoesPreenchimento,
         textInputAction: acaoTeclado,
         onSubmitted: aoSubmeter,
+        onChanged: aoMudar,
         decoration: InputDecoration(
           labelText: rotulo,
           helperText: ajuda,
