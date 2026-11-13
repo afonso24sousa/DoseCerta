@@ -78,9 +78,12 @@ export class ValidadoresFormulario {
     return aplicado;
   }
 
-  /** Coloca uma mensagem de erro do servidor num campo concreto (por exemplo o e-mail já registado). */
+  /**
+   * Coloca uma mensagem completa do servidor junto de um campo concreto (por exemplo o e-mail já registado); é mostrada
+   * tal como está, sem o rótulo do campo antes.
+   */
   static erroNoCampo(controlo: AbstractControl | null, mensagem: string): void {
-    controlo?.setErrors({ ...(controlo.errors ?? {}), servidor: mensagem });
+    controlo?.setErrors({ ...(controlo.errors ?? {}), mensagem });
     controlo?.markAsTouched();
   }
 }

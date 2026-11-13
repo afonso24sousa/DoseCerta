@@ -29,14 +29,14 @@ export const routes: Routes = [
     canActivate: [authGuard],
     canActivateChild: [authGuard],
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'lista-diaria' },
+      { path: '', pathMatch: 'full', redirectTo: 'hoje' },
       {
         path: 'conta',
         title: 'Conta · DoseCerta',
         loadComponent: () => import('./features/conta/conta.page').then((m) => m.ContaPage),
       },
       {
-        path: 'lista-diaria',
+        path: 'hoje',
         title: 'Lista diária · DoseCerta',
         data: { titulo: 'Lista diária' },
         loadComponent: emConstrucao,

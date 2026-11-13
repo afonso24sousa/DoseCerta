@@ -2,8 +2,8 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from './auth.service';
 
-/** Rota inicial depois de iniciar sessão. */
-export const ROTA_INICIAL = '/lista-diaria';
+/** Rota inicial depois de iniciar sessão: E04, `/hoje` (modelo de classes do frontend web v02, secção 7.1). */
+export const ROTA_INICIAL = '/hoje';
 
 /** Exige sessão iniciada; sem sessão vai para o início de sessão (RF-017). */
 export const authGuard: CanActivateFn = () => {

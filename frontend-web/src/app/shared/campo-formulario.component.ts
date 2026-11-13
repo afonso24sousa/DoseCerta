@@ -36,16 +36,24 @@ export class CampoFormularioComponent {
 
   protected readonly id = `campo-${++sequencia}`;
 
-  /** Primeira regra violada, ou `null` se o campo estiver válido ou ainda não tiver sido tocado. */
+  /**
+   * Primeiro erro, ou `null` se o campo estiver válido ou ainda não tiver sido tocado. Uma regra de validação aparece
+   * com o rótulo do campo, como no protótipo v02 («Palavra-passe: tem de ter…», RNF-028); uma mensagem completa
+   * (erro `mensagem`, por exemplo «Já existe uma conta com este e-mail.») aparece tal como está.
+   */
   protected get erro(): string | null {
     const controlo = this.controlo();
     if (!controlo.errors || !controlo.touched) {
       return null;
     }
 
-    const primeiro = Object.values(controlo.errors as Record<string, unknown>).find(
-      (v) => typeof v === 'string',
-    );
-    return typeof primeiro === 'string' ? primeiro : 'Valor inválido.';
+    const erros = controlo.errors as Record<string, unknown>;
+    if (typeof erros['mensagem'] === 'string') {
+      return erros['mensagem'];
+    }
+
+    const regra = Object.values(erros).find((v) => typeof v === 'string');
+    const texto = typeof regra === 'string' ? regra : 'Valor inválido.';
+    return `${this.rotulo()}: ${texto.charAt(0).toLocaleLowerCase('pt-PT')}${texto.slice(1)}`;
   }
 }

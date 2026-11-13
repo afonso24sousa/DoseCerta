@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable, catchError, finalize, map, of, switchMap, tap } from 'rxjs';
+import { Observable, catchError, finalize, map, of, tap } from 'rxjs';
 import { AuthApi } from '../api/auth.api';
 import { ContaApi } from '../api/conta.api';
 import {
@@ -52,11 +52,13 @@ export class AuthService {
     return this.authApi.registar(dados);
   }
 
-  /** OP-02 e OP-04: inicia sessão, guarda o token e carrega os dados da conta (RF-012). */
+  /**
+   * OP-02: inicia sessão e guarda o token (RF-012). Os dados da conta (OP-04) são carregados pelo `ShellComponent` ao
+   * abrir a primeira página autenticada, para uma falha nesse pedido não impedir a entrada.
+   */
   iniciarSessao(credenciais: CredenciaisDto): Observable<void> {
     return this.authApi.iniciarSessao(credenciais).pipe(
       tap((sessao) => this.ativar(sessao)),
-      switchMap(() => this.carregarUtilizador()),
       map(() => undefined),
     );
   }

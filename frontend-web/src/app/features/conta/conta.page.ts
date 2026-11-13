@@ -17,7 +17,7 @@ import { COMPRIMENTO_MAXIMO_NOME, ValidadoresFormulario as V } from '../../share
   standalone: true,
   imports: [ReactiveFormsModule, CampoFormularioComponent, BannerErroComponent],
   template: `
-    <h1>Conta</h1>
+    <h1>A minha conta</h1>
     <app-banner-erro [mensagem]="erroCarregar()" />
 
     <section class="cartao">
@@ -34,7 +34,7 @@ import { COMPRIMENTO_MAXIMO_NOME, ValidadoresFormulario as V } from '../../share
           autocomplete="email"
           [controlo]="dados.controls.email"
         />
-        <button type="submit" class="botao" [disabled]="aGuardarDados()">Guardar</button>
+        <button type="submit" class="botao" [disabled]="aGuardarDados()">Guardar dados</button>
       </form>
     </section>
 
@@ -128,7 +128,10 @@ export class ContaPage implements OnInit {
       error: (problema: ProblemaApi) => {
         this.aGuardarDados.set(false);
         if (problema.codigo === 'EMAIL_JA_REGISTADO') {
-          V.erroNoCampo(this.dados.controls.email, this.mensagens.mensagem(problema));
+          V.erroNoCampo(
+            this.dados.controls.email,
+            this.mensagens.mensagem(problema, { EMAIL_JA_REGISTADO: 'Este e-mail pertence a outra conta.' }),
+          );
         } else if (!V.aplicarErrosDoServidor(this.dados, problema)) {
           this.erroDados.set(this.mensagens.mensagem(problema));
         }

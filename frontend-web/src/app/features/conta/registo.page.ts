@@ -39,7 +39,7 @@ import { COMPRIMENTO_MAXIMO_NOME, ValidadoresFormulario as V } from '../../share
         <button type="submit" class="botao" [disabled]="aEnviar()">Criar conta</button>
       </form>
 
-      <p>Já tem conta? <a routerLink="/entrar">Iniciar sessão</a></p>
+      <p><a routerLink="/entrar">Já tenho conta</a></p>
     </section>
   `,
 })

@@ -13,16 +13,23 @@ export class MensagensErroService {
     EMAIL_JA_REGISTADO: 'Já existe uma conta com este e-mail.',
     CREDENCIAIS_INVALIDAS: 'E-mail ou palavra-passe incorretos.',
     NAO_AUTENTICADO: 'A sessão terminou. Inicie sessão de novo.',
-    PALAVRA_PASSE_ATUAL_INCORRETA: 'A palavra-passe atual está incorreta.',
+    PALAVRA_PASSE_ATUAL_INCORRETA:
+      'A palavra-passe atual está incorreta. A palavra-passe anterior mantém-se.',
     ERRO_INTERNO: 'Ocorreu um erro inesperado. Tente novamente mais tarde.',
   };
 
-  /** Mensagem a mostrar ao Utilizador para um problema. */
-  mensagem(problema: ProblemaApi): string {
+  /**
+   * Mensagem a mostrar ao Utilizador para um problema.
+   *
+   * @param problema Problema devolvido pela API.
+   * @param doEcra Textos próprios de um ecrã, quando o protótipo usa outro texto para o mesmo código (por exemplo
+   * `EMAIL_JA_REGISTADO` em E03).
+   */
+  mensagem(problema: ProblemaApi, doEcra?: Readonly<Record<string, string>>): string {
     if (problema.codigo === CODIGO_SEM_LIGACAO) {
       return problema.mensagem;
     }
 
-    return this.mensagens[problema.codigo] ?? problema.mensagem;
+    return doEcra?.[problema.codigo] ?? this.mensagens[problema.codigo] ?? problema.mensagem;
   }
 }

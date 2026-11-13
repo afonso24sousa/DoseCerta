@@ -31,7 +31,7 @@ interface EntradaNavegacao {
 })
 export class BarraLateralComponent {
   protected readonly entradas: readonly EntradaNavegacao[] = [
-    { rotulo: 'Lista diária', caminho: '/lista-diaria' },
+    { rotulo: 'Lista diária', caminho: '/hoje' },
     { rotulo: 'Fichas', caminho: '/fichas' },
     { rotulo: 'Agenda', caminho: '/agenda' },
     { rotulo: 'Convites', caminho: '/convites' },
