@@ -150,7 +150,7 @@ jobs:
           export Jwt__Chave="$(openssl rand -base64 48)"
           export Documentos__PastaRaiz="$RUNNER_TEMP/documentos"
           export ASPNETCORE_URLS="$URL_API"
-          nohup dotnet run --project src/DoseCerta.Api/DoseCerta.Api.csproj --configuration Release \
+          ASPNETCORE_ENVIRONMENT=Development nohup dotnet run --no-launch-profile --project src/DoseCerta.Api/DoseCerta.Api.csproj --configuration Release \
             > ../frontend-web/artefactos/logs/qg06-api.log 2>&1 &
           for i in $(seq 1 60); do
             curl -fsS "$URL_API/saude" && exit 0
