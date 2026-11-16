@@ -17,6 +17,7 @@ import '../features/medicacao/medicacao_ficha_page.dart';
 import '../features/medicacao/tratamento_page.dart';
 import '../features/navegacao/estrutura_navegacao.dart';
 import '../features/navegacao/pagina_provisoria.dart';
+import '../features/pessoas/convidar_pessoa_page.dart';
 import '../features/pessoas/convites_recebidos_page.dart';
 import '../features/pessoas/pessoas_ficha_page.dart';
 import '../models/conta_criada_dto.dart';
@@ -76,6 +77,10 @@ class AppRouter {
 
   /// E12 Pessoas da ficha.
   static String pessoasFicha(String fichaId) => '/fichas/$fichaId/pessoas';
+
+  /// E13 Convidar pessoa.
+  static String convidarPessoa(String fichaId) =>
+      '/fichas/$fichaId/pessoas/convidar';
 
   /// E23 Ocorrências e notas (provisória).
   static String registosFicha(String fichaId) => '/fichas/$fichaId/registos';
@@ -194,6 +199,14 @@ class AppRouter {
               path: 'pessoas',
               builder: (context, estado) =>
                   PessoasFichaPage(fichaId: estado.pathParameters['fichaId']!),
+              routes: [
+                GoRoute(
+                  path: 'convidar',
+                  builder: (context, estado) => ConvidarPessoaPage(
+                    fichaId: estado.pathParameters['fichaId']!,
+                  ),
+                ),
+              ],
             ),
             _provisoria('registos', 'Ocorrências e notas', 'E23'),
             GoRoute(

@@ -13,9 +13,9 @@ import 'pessoas_ficha_controller.dart';
 
 /// Ecrã E12 Pessoas da ficha (protótipo de baixa fidelidade v02, página 35): as pessoas associadas, com o papel de
 /// cada uma e o Cuidador principal, incluindo o provisório (RF-025). O Cuidador, numa ficha ativa, tem as ações num
-/// menu por pessoa, com confirmação (RF-049, RF-130 a RF-132); o Familiar e a ficha arquivada só consultam (RF-048,
-/// RF-120). Se o servidor recusar uma ação, a explicação aparece e a lista fica como estava (RF-033, RF-034,
-/// RF-133, RF-134).
+/// menu por pessoa, com confirmação (RF-049, RF-130 a RF-132), e o botão «Convidar pessoa» (E13); o Familiar e a
+/// ficha arquivada só consultam (RF-048, RF-120). Se o servidor recusar uma ação, a explicação aparece e a lista
+/// fica como estava (RF-033, RF-034, RF-133, RF-134).
 class PessoasFichaPage extends ConsumerStatefulWidget {
   /// Cria o ecrã da ficha [fichaId].
   const PessoasFichaPage({super.key, required this.fichaId});
@@ -66,6 +66,19 @@ class _PessoasFichaPageState extends ConsumerState<PessoasFichaPage> {
         );
       case ResultadoAcaoPessoa.falhou:
         break;
+    }
+  }
+
+  /// Abre E13 e, enviado o convite, volta a pedir a lista: um convite para Cuidador principal pode tornar o
+  /// criador Cuidador principal provisório (RF-025).
+  Future<void> _convidar() async {
+    final enviado = await context.push<Object?>(
+      AppRouter.convidarPessoa(widget.fichaId),
+    );
+    if (enviado != null && mounted) {
+      await ref
+          .read(pessoasFichaControllerProvider(widget.fichaId).notifier)
+          .carregar();
     }
   }
 
@@ -123,6 +136,14 @@ class _PessoasFichaPageState extends ConsumerState<PessoasFichaPage> {
                   ativo: !estado.aAlterar,
                   aoEscolher: (acao) => _executar(acao, pessoa),
                 ),
+              if (podeGerir) ...[
+                const SizedBox(height: 8),
+                FilledButton.icon(
+                  onPressed: estado.aAlterar ? null : _convidar,
+                  icon: const Icon(Icons.person_add_alt),
+                  label: const Text('Convidar pessoa'),
+                ),
+              ],
               if (estado.pessoas.any((p) => p.provisorio))
                 const Padding(
                   padding: EdgeInsets.only(top: 8),
