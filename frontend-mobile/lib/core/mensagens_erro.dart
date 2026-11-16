@@ -45,6 +45,11 @@ class MensagensErro {
         'O convite não existe ou já não está dirigido a si.',
     'CONVITE_JA_RESPONDIDO': 'Este convite já foi aceite ou recusado.',
     'PESSOA_JA_ASSOCIADA': 'Esta pessoa já está associada à ficha.',
+    'PESSOA_NAO_ENCONTRADA': 'Esta pessoa já não está associada à ficha.',
+    'CUIDADOR_PRINCIPAL_SEM_SUBSTITUTO': 'Indique outro Cuidador para assumir o papel antes de despromover ou remover o Cuidador principal.',
+    'FICHA_SEM_CUIDADOR': 'A ficha tem de ficar com pelo menos um Cuidador.',
+    'CUIDADOR_PRINCIPAL_PROTEGIDO': 'Na ficha própria o titular é sempre o Cuidador principal: não pode ser despromovido, removido nem substituído.',
+    'DESTINATARIO_NAO_E_CUIDADOR': 'Só um Cuidador pode passar a Cuidador principal. Promova a pessoa a Cuidador primeiro.',
   };
 
   /// Traduz um erro numa mensagem geral para o `BannerErro`.

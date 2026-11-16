@@ -1,5 +1,6 @@
 import 'package:dosecerta/core/app_router.dart';
 import 'package:dosecerta/core/provedores.dart';
+import 'package:dosecerta/core/sessao_store.dart';
 import 'package:dosecerta/shared/abridor_documentos.dart';
 import 'package:dosecerta/shared/selecionador_ficheiros.dart';
 import 'package:dosecerta/shared/tema_dosecerta.dart';
@@ -34,6 +35,10 @@ class AppFichas {
   final AbridorDocumentosFalso abridor = AbridorDocumentosFalso();
   final TratamentosRepositorioFalso tratamentos = TratamentosRepositorioFalso();
   final ConvitesRepositorioFalso convites = ConvitesRepositorioFalso();
+  final PessoasRepositorioFalso pessoas = PessoasRepositorioFalso();
+
+  /// Identificador do Utilizador da sessão de teste.
+  static const String utilizadorId = 'u-eu';
 
   /// Caminho atual.
   String get local => router.routerDelegate.currentConfiguration.uri.path;
@@ -47,6 +52,14 @@ class AppFichas {
         documentosRepositorioProvider.overrideWithValue(documentos),
         tratamentosRepositorioProvider.overrideWithValue(tratamentos),
         convitesRepositorioProvider.overrideWithValue(convites),
+        pessoasRepositorioProvider.overrideWithValue(pessoas),
+        sessaoInicialProvider.overrideWithValue(
+          SessaoGuardada(
+            token: 't',
+            expiraEm: DateTime(2026, 11, 10),
+            utilizadorId: utilizadorId,
+          ),
+        ),
         abridorDocumentosProvider.overrideWithValue(abridor),
         selecionadorFicheirosProvider.overrideWithValue(
           SelecionadorFicheiros(fonte),

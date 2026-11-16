@@ -18,6 +18,7 @@ import '../features/medicacao/tratamento_page.dart';
 import '../features/navegacao/estrutura_navegacao.dart';
 import '../features/navegacao/pagina_provisoria.dart';
 import '../features/pessoas/convites_recebidos_page.dart';
+import '../features/pessoas/pessoas_ficha_page.dart';
 import '../models/conta_criada_dto.dart';
 import 'provedores.dart';
 import 'sessao_controller.dart';
@@ -73,7 +74,7 @@ class AppRouter {
   static String editarTratamento(String fichaId, String tratamentoId) =>
       '/fichas/$fichaId/medicacao/$tratamentoId/editar';
 
-  /// E12 Pessoas da ficha (provisória).
+  /// E12 Pessoas da ficha.
   static String pessoasFicha(String fichaId) => '/fichas/$fichaId/pessoas';
 
   /// E23 Ocorrências e notas (provisória).
@@ -189,7 +190,11 @@ class AppRouter {
               FichaPage(fichaId: estado.pathParameters['fichaId']!),
           routes: [
             rotasMedicacao(),
-            _provisoria('pessoas', 'Pessoas da ficha', 'E12'),
+            GoRoute(
+              path: 'pessoas',
+              builder: (context, estado) =>
+                  PessoasFichaPage(fichaId: estado.pathParameters['fichaId']!),
+            ),
             _provisoria('registos', 'Ocorrências e notas', 'E23'),
             GoRoute(
               path: 'editar',
