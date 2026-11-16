@@ -40,6 +40,11 @@ class MensagensErro {
     'DOCUMENTO_NAO_ENCONTRADO':
         'O documento não existe ou já não está associado à ficha.',
     'DOCUMENTO_INDISPONIVEL': 'Não foi possível obter o documento.',
+    // F004 (I065).
+    'CONVITE_NAO_ENCONTRADO':
+        'O convite não existe ou já não está dirigido a si.',
+    'CONVITE_JA_RESPONDIDO': 'Este convite já foi aceite ou recusado.',
+    'PESSOA_JA_ASSOCIADA': 'Esta pessoa já está associada à ficha.',
   };
 
   /// Traduz um erro numa mensagem geral para o `BannerErro`.

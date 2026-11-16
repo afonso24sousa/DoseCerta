@@ -11,14 +11,16 @@ import 'package:go_router/go_router.dart';
 
 import 'falsos.dart';
 import 'falsos_fichas.dart';
+import 'falsos_pessoas.dart';
 import 'falsos_tratamentos.dart';
 
-/// Aplicação de teste com as rotas reais do ramo Fichas (sem a barra inferior), a começar em [inicio].
+/// Aplicação de teste com as rotas reais do ramo Fichas, incluindo E14 (sem a barra inferior), a começar em
+/// [inicio].
 class AppFichas {
   AppFichas({String inicio = AppRouter.fichas, this.outras = const []})
     : router = GoRouter(
         initialLocation: inicio,
-        routes: [AppRouter.rotasFichas()],
+        routes: [AppRouter.rotasFichas(), AppRouter.rotaConvites()],
       );
 
   final GoRouter router;
@@ -31,6 +33,7 @@ class AppFichas {
   final FonteFicheirosFalsa fonte = FonteFicheirosFalsa();
   final AbridorDocumentosFalso abridor = AbridorDocumentosFalso();
   final TratamentosRepositorioFalso tratamentos = TratamentosRepositorioFalso();
+  final ConvitesRepositorioFalso convites = ConvitesRepositorioFalso();
 
   /// Caminho atual.
   String get local => router.routerDelegate.currentConfiguration.uri.path;
@@ -43,6 +46,7 @@ class AppFichas {
         dominiosRepositorioProvider.overrideWithValue(dominios),
         documentosRepositorioProvider.overrideWithValue(documentos),
         tratamentosRepositorioProvider.overrideWithValue(tratamentos),
+        convitesRepositorioProvider.overrideWithValue(convites),
         abridorDocumentosProvider.overrideWithValue(abridor),
         selecionadorFicheirosProvider.overrideWithValue(
           SelecionadorFicheiros(fonte),

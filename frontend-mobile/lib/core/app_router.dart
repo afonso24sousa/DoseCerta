@@ -17,6 +17,7 @@ import '../features/medicacao/medicacao_ficha_page.dart';
 import '../features/medicacao/tratamento_page.dart';
 import '../features/navegacao/estrutura_navegacao.dart';
 import '../features/navegacao/pagina_provisoria.dart';
+import '../features/pessoas/convites_recebidos_page.dart';
 import '../models/conta_criada_dto.dart';
 import 'provedores.dart';
 import 'sessao_controller.dart';
@@ -77,6 +78,9 @@ class AppRouter {
 
   /// E23 Ocorrências e notas (provisória).
   static String registosFicha(String fichaId) => '/fichas/$fichaId/registos';
+
+  /// E14 Convites recebidos.
+  static const String convites = '/convites';
 
   /// E21 Agenda (provisória).
   static const String agenda = '/agenda';
@@ -141,7 +145,7 @@ class AppRouter {
                 ecra: 'E04',
               ),
             ),
-            StatefulShellBranch(routes: [rotasFichas()]),
+            StatefulShellBranch(routes: [rotasFichas(), rotaConvites()]),
             _ramo(
               agenda,
               const PaginaProvisoria(titulo: 'Agenda', ecra: 'E21'),
@@ -240,6 +244,15 @@ class AppRouter {
           ],
         ),
       ],
+    );
+  }
+
+  /// Rota de E14 (modelo de classes, secção 8). Fica no ramo Fichas, porque E14 abre-se a partir de E05 (protótipo
+  /// v02, página 36); E05 abre-a com `push`, para o ecrã ter a seta de voltar.
+  static GoRoute rotaConvites() {
+    return GoRoute(
+      path: convites,
+      builder: (context, estado) => const ConvitesRecebidosPage(),
     );
   }
 
