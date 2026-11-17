@@ -12,6 +12,9 @@ import '../features/fichas/ficha_page.dart';
 import '../features/fichas/lista_fichas_page.dart';
 import '../features/fichas/nova_ficha_dados_page.dart';
 import '../features/fichas/nova_ficha_documentos_page.dart';
+import '../features/medicacao/formulario_tratamento_page.dart';
+import '../features/medicacao/medicacao_ficha_page.dart';
+import '../features/medicacao/tratamento_page.dart';
 import '../features/navegacao/estrutura_navegacao.dart';
 import '../features/navegacao/pagina_provisoria.dart';
 import '../models/conta_criada_dto.dart';
@@ -54,8 +57,20 @@ class AppRouter {
   /// E11 Arquivar, reativar ou eliminar ficha.
   static String estadoFicha(String fichaId) => '/fichas/$fichaId/estado';
 
-  /// E15 Medicação da ficha (provisória).
+  /// E15 Medicação da ficha.
   static String medicacaoFicha(String fichaId) => '/fichas/$fichaId/medicacao';
+
+  /// E16 Registar tratamento.
+  static String novoTratamento(String fichaId) =>
+      '/fichas/$fichaId/medicacao/novo';
+
+  /// E17 Detalhe do tratamento.
+  static String tratamento(String fichaId, String tratamentoId) =>
+      '/fichas/$fichaId/medicacao/$tratamentoId';
+
+  /// E16 Editar tratamento.
+  static String editarTratamento(String fichaId, String tratamentoId) =>
+      '/fichas/$fichaId/medicacao/$tratamentoId/editar';
 
   /// E12 Pessoas da ficha (provisória).
   static String pessoasFicha(String fichaId) => '/fichas/$fichaId/pessoas';
@@ -169,7 +184,7 @@ class AppRouter {
           builder: (context, estado) =>
               FichaPage(fichaId: estado.pathParameters['fichaId']!),
           routes: [
-            _provisoria('medicacao', 'Medicação da ficha', 'E15'),
+            rotasMedicacao(),
             _provisoria('pessoas', 'Pessoas da ficha', 'E12'),
             _provisoria('registos', 'Ocorrências e notas', 'E23'),
             GoRoute(
@@ -187,6 +202,40 @@ class AppRouter {
               path: 'estado',
               builder: (context, estado) =>
                   EstadoFichaPage(fichaId: estado.pathParameters['fichaId']!),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// Rotas da medicação da ficha (E15 a E17). `novo` vem antes de `:tratamentoId`, para não ser lido como um
+  /// identificador de tratamento.
+  static GoRoute rotasMedicacao() {
+    return GoRoute(
+      path: 'medicacao',
+      builder: (context, estado) =>
+          MedicacaoFichaPage(fichaId: estado.pathParameters['fichaId']!),
+      routes: [
+        GoRoute(
+          path: 'novo',
+          builder: (context, estado) => FormularioTratamentoPage(
+            fichaId: estado.pathParameters['fichaId']!,
+          ),
+        ),
+        GoRoute(
+          path: ':tratamentoId',
+          builder: (context, estado) => TratamentoPage(
+            fichaId: estado.pathParameters['fichaId']!,
+            tratamentoId: estado.pathParameters['tratamentoId']!,
+          ),
+          routes: [
+            GoRoute(
+              path: 'editar',
+              builder: (context, estado) => FormularioTratamentoPage(
+                fichaId: estado.pathParameters['fichaId']!,
+                tratamentoId: estado.pathParameters['tratamentoId'],
+              ),
             ),
           ],
         ),
