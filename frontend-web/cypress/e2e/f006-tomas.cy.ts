@@ -43,10 +43,10 @@ describe('F006 Calendário e confirmação de tomas', () => {
     );
   }
 
-  /** Abre o calendário e espera pela lista (OP-32). */
+  /** Abre E15 diretamente no separador «Calendário de tomas» e espera pela lista (OP-32). */
   function abrirCalendario(fichaId: string): void {
     cy.intercept('GET', '/api/v1/fichas/*/tomas*').as('tomas');
-    cy.visit(`/fichas/${fichaId}/tomas`);
+    cy.visit(`/fichas/${fichaId}/medicacao?vista=calendario`);
     cy.wait('@tomas');
   }
 
@@ -65,7 +65,10 @@ describe('F006 Calendário e confirmação de tomas', () => {
         entrar(conta);
         cy.intercept('GET', '/api/v1/fichas/*/tomas*').as('tomas');
         cy.visit(`/fichas/${fichaId}`);
-        cy.contains('a', 'Calendário de tomas').click();
+        cy.contains('a', 'Medicação').click();
+        cy.contains('[role="tab"]', 'Calendário de tomas')
+          .click()
+          .should('have.attr', 'aria-selected', 'true');
         cy.wait('@tomas');
 
         cy.contains(`Tomas de ${dataApresentada(dataLisboa(-1))} a ${dataApresentada(dataLisboa(5))}`);
