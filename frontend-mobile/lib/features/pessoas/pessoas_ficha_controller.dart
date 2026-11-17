@@ -31,8 +31,7 @@ enum AcaoPessoa {
 
   /// Explicação do efeito, mostrada na confirmação.
   String efeito(String nome) => switch (this) {
-    promover =>
-      '$nome passa a Cuidador e fica com acesso completo à ficha (RF-047).',
+    promover => '$nome passa a Cuidador e fica com acesso completo à ficha.',
     despromover => '$nome passa a Familiar e fica só com consulta.',
     remover => '$nome deixa de ter acesso à ficha.',
     tornarPrincipal =>
