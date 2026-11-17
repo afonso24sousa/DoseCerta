@@ -36,11 +36,12 @@ npm run format        # aplica a formatação do Prettier
 
 ## Estrutura
 
-| Pasta              | Conteúdo                                                                                                |
-| ------------------ | ------------------------------------------------------------------------------------------------------- |
-| `src/app/core`     | Configuração da API, sessão (`AuthService`, `TokenStorage`), interceptores, guardas e mensagens de erro |
-| `src/app/models`   | DTO da API e `ProblemaApi`                                                                              |
-| `src/app/api`      | Uma classe por grupo de operações (`AuthApi`, `ContaApi`, `FichasApi`, `DocumentosApi`, `DominiosApi`)  |
-| `src/app/shared`   | Validadores e componentes reutilizáveis dos formulários                                                 |
-| `src/app/layout`   | Estrutura das páginas autenticadas (cabeçalho e barra lateral)                                          |
-| `src/app/features` | Páginas, por funcionalidade                                                                             |
+| Pasta                                                 | Conteúdo                                                                                                     |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `src/app/core`                                        | Configuração da API, sessão (`AuthService`, `TokenStorage`), interceptores, guardas e mensagens de erro      |
+| `src/app/models`                                      | DTO da API e `ProblemaApi`                                                                                   |
+| `src/app/api`                                         | Uma classe por grupo de operações (`AuthApi`, `ContaApi`, `FichasApi`, `DocumentosApi`, `DominiosApi`)       |
+| `src/app/shared`                                      | Validadores e componentes reutilizáveis dos formulários                                                      |
+| `src/app/layout`                                      | Estrutura das páginas autenticadas (cabeçalho e barra lateral)                                               |
+| `src/app/features`                                    | Páginas, por funcionalidade                                                                                  |
+| `src/app/features/medicacao/lista-tomas.component.ts` | Calendário de tomas da ficha no separador de E15: consulta (OP-32) e confirmação com um clique (OP-33), F006 |
