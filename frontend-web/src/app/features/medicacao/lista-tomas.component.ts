@@ -57,7 +57,9 @@ const ESTADOS_RECUSA: readonly number[] = [403, 409];
       </div>
 
       @if (eFamiliar()) {
-        <p class="banner banner--aviso">Como Familiar, pode consultar as tomas, mas não as confirmar.</p>
+        <p class="banner banner--aviso" role="status">
+          Como Familiar, pode consultar as tomas, mas não as confirmar.
+        </p>
       }
       @if (arquivada()) {
         <p class="banner banner--aviso" role="status">
