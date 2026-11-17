@@ -48,6 +48,13 @@ const RESULTADOS: Readonly<Record<string, string>> = {
   [ResultadoFicha.editada]: 'Alterações guardadas.',
 };
 
+/** Avisos vindos da rota, quando uma guarda reencaminhou para a ficha (`cuidadorGuard`, `fichaAtivaGuard`). */
+const AVISOS: Readonly<Record<string, string>> = {
+  [ResultadoFicha.soConsultaFamiliar]: 'Como Familiar, só pode consultar esta ficha.',
+  [ResultadoFicha.soConsultaArquivada]:
+    'A ficha está arquivada e só pode ser consultada. Reative-a para a alterar.',
+};
+
 /** Códigos que indicam que a ficha mudou entretanto: a página volta a carregá-la para ficar coerente. */
 const CODIGOS_RECARREGAR = new Set([
   'FICHA_ARQUIVADA',
@@ -73,6 +80,9 @@ const CODIGOS_RECARREGAR = new Set([
     @if (sucesso(); as mensagem) {
       <p class="banner banner--sucesso" role="status">{{ mensagem }}</p>
     }
+    @if (aviso(); as mensagem) {
+      <p class="banner banner--aviso" role="status">{{ mensagem }}</p>
+    }
     <app-banner-erro [mensagem]="erro()" />
 
     @if (ficha(); as f) {
@@ -86,6 +96,7 @@ const CODIGOS_RECARREGAR = new Set([
         }
         <span class="etiqueta">O meu papel: {{ papel() }}</span>
       </div>
+      <p><a [routerLink]="['/fichas', f.id, 'pessoas']">Pessoas da ficha</a></p>
 
       @if (f.estado === 'Arquivada') {
         <p class="banner banner--aviso" role="status">
@@ -291,6 +302,7 @@ export class FichaPage implements OnChanges {
   protected readonly erro = signal<string | null>(null);
   protected readonly erroDocumentos = signal<string | null>(null);
   protected readonly sucesso = signal<string | null>(null);
+  protected readonly aviso = signal<string | null>(null);
 
   protected readonly porConfirmar = signal<AcaoFicha | null>(null);
   protected readonly aExecutar = signal(false);
@@ -332,6 +344,7 @@ export class FichaPage implements OnChanges {
     this.erro.set(null);
     this.porConfirmar.set(null);
     this.sucesso.set(RESULTADOS[this.resultado() ?? ''] ?? null);
+    this.aviso.set(AVISOS[this.resultado() ?? ''] ?? null);
     this.carregarFicha();
   }
 
@@ -346,6 +359,7 @@ export class FichaPage implements OnChanges {
   protected pedirConfirmacao(acao: AcaoFicha): void {
     this.erro.set(null);
     this.sucesso.set(null);
+    this.aviso.set(null);
     this.porConfirmar.set(acao);
   }
 

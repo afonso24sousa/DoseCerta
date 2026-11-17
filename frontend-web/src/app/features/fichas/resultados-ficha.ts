@@ -11,4 +11,10 @@ export const ResultadoFicha = {
   editada: 'editada',
   /** Ficha eliminada (OP-14); a página de destino é a lista. */
   eliminada: 'eliminada',
+  /** A ficha não existe ou o Utilizador não está associado a ela (`fichaGuard`, 404); a página de destino é a lista. */
+  semAcesso: 'sem-acesso',
+  /** Um Familiar abriu um ecrã de alteração (`cuidadorGuard`); a página de destino é E08. */
+  soConsultaFamiliar: 'so-consulta-familiar',
+  /** Ficha arquivada aberta num ecrã de alteração (`fichaAtivaGuard`); a página de destino é E08. */
+  soConsultaArquivada: 'so-consulta-arquivada',
 } as const;
