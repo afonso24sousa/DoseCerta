@@ -181,6 +181,9 @@ jobs:
       - name: QG-07 Testes de sistema (integration_test em emulador Android)
         id: qg07
         if: steps.cenarios.outputs.aplicavel == 'true'
+        # Limite próprio do QG-07 (I070): um emulador encravado falha o gate em vez de esgotar o job inteiro, como na
+        # execução 23 do PR #112. Os 25 minutos deixam margem para os passos de resumo dentro dos 45 minutos do job.
+        timeout-minutes: 25
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
