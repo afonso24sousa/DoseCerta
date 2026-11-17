@@ -40,3 +40,8 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Saídas locais do Cypress (testes de sistema)
+/cypress/downloads
+/cypress/screenshots
+/cypress/videos
