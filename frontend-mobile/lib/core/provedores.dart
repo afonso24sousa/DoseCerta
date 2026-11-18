@@ -1,6 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../avisos_locais/agendador_avisos.dart';
+import '../avisos_locais/agendador_flutter_local_notifications.dart';
+import '../avisos_locais/avisos_locais_service.dart';
+import '../avisos_locais/permissao_notificacoes.dart';
+import '../avisos_locais/sincronizador_calendario.dart';
+import '../avisos_locais/tomas_sincronizadas_store.dart';
 import '../data/auth_repositorio.dart';
 import '../data/calendario_repositorio.dart';
 import '../data/conta_repositorio.dart';
@@ -98,4 +104,37 @@ final tomasRepositorioProvider = Provider<TomasRepositorio>(
 /// Repositório do calendário de tomas para o dispositivo (OP-34).
 final calendarioRepositorioProvider = Provider<CalendarioRepositorio>(
   (ref) => CalendarioRepositorio(ref.watch(apiClientProvider)),
+);
+
+/// Agendador dos avisos no sistema operativo (os testes substituem-no por um falso).
+final agendadorAvisosProvider = Provider<AgendadorAvisos>(
+  (ref) => const AgendadorFlutterLocalNotifications(),
+);
+
+/// Autorizações das notificações e dos alarmes exatos (os testes substituem-nas por falsas).
+final permissaoNotificacoesProvider = Provider<PermissaoNotificacoes>(
+  (ref) => const PermissaoNotificacoesAndroid(),
+);
+
+/// Tomas sincronizadas guardadas no dispositivo.
+final tomasSincronizadasStoreProvider = Provider<TomasSincronizadasStore>(
+  (ref) => const TomasSincronizadasStore(),
+);
+
+/// Serviço dos avisos locais.
+final avisosLocaisServiceProvider = Provider<AvisosLocaisService>(
+  (ref) => AvisosLocaisService(
+    ref.watch(agendadorAvisosProvider),
+    ref.watch(relogioProvider),
+  ),
+);
+
+/// Sincronização das tomas das 48 horas seguintes (OP-34) e dos avisos.
+final sincronizadorCalendarioProvider = Provider<SincronizadorCalendario>(
+  (ref) => SincronizadorCalendario(
+    repositorio: ref.watch(calendarioRepositorioProvider),
+    store: ref.watch(tomasSincronizadasStoreProvider),
+    avisos: ref.watch(avisosLocaisServiceProvider),
+    relogio: ref.watch(relogioProvider),
+  ),
 );

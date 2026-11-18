@@ -10,6 +10,8 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        // O flutter_local_notifications usa APIs de data e hora do Java 8 também nas versões antigas do Android (I069).
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -46,4 +48,9 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Desugaring exigido pelo flutter_local_notifications para os avisos agendados (I069).
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }

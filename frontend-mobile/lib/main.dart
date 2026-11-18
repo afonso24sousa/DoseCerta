@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'avisos_locais/observador_avisos_locais.dart';
 import 'core/app_router.dart';
 import 'core/inicializador_app.dart';
 import 'shared/tema_dosecerta.dart';
@@ -12,7 +13,7 @@ Future<void> main() async {
   runApp(ProviderScope(overrides: substituicoes, child: const DoseCertaApp()));
 }
 
-/// Aplicação DoseCerta: tema, língua (português europeu, RNF-020) e rotas.
+/// Aplicação DoseCerta: tema, língua (português europeu, RNF-020), rotas e avisos locais das tomas (I069).
 class DoseCertaApp extends ConsumerWidget {
   /// Cria a aplicação.
   const DoseCertaApp({super.key});
@@ -26,6 +27,7 @@ class DoseCertaApp extends ConsumerWidget {
       supportedLocales: const [Locale('pt', 'PT')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       routerConfig: ref.watch(appRouterProvider),
+      builder: (context, rotas) => ObservadorAvisosLocais(child: rotas!),
       debugShowCheckedModeBanner: false,
     );
   }
