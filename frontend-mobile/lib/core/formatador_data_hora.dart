@@ -1,7 +1,13 @@
-/// Apresenta as datas como `dd/mm/aaaa` e converte o que o Utilizador escreve para `AAAA-MM-DD`, o formato da API
-/// (RNF-029). Nesta versão só trata datas simples (F002); as horas e os instantes chegam com a F006 e a F008.
+import 'package:timezone/data/latest_10y.dart' as fusos;
+import 'package:timezone/timezone.dart' as tz;
+
+/// Apresenta as datas como `dd/mm/aaaa` e as horas como `hh:mm` e converte o que o Utilizador escreve para
+/// `AAAA-MM-DD`, o formato da API (RNF-029). Os instantes da API já vêm em hora de Lisboa, com o desvio, por isso a
+/// data e a hora apresentadas são as que vêm no texto, sem conversão para o fuso do telemóvel (F006).
 class FormatadorDataHora {
   const FormatadorDataHora._();
+
+  static tz.Location? _lisboa;
 
   static final RegExp _dataApresentada = RegExp(
     r'^(\d{1,2})/(\d{1,2})/(\d{4})$',
@@ -17,6 +23,32 @@ class FormatadorDataHora {
     final mes = iso.substring(5, 7);
     final dia = iso.substring(8, 10);
     return '$dia/$mes/$ano';
+  }
+
+  /// Apresenta a hora de um instante da API (`AAAA-MM-DDThh:mm:ss+hh:mm`) como `hh:mm`, tal como vem.
+  static String apresentarHora(String iso) {
+    if (iso.length < 16) {
+      return iso;
+    }
+    return iso.substring(11, 16);
+  }
+
+  /// Devolve o dia de Lisboa (sem hora) no [instante], que é o calendário do servidor. O telemóvel e a pipeline
+  /// podem estar noutro fuso (por exemplo UTC), o que muda o dia perto da meia-noite.
+  static DateTime diaDeLisboa(DateTime instante) {
+    final lisboa = _lisboa ??= () {
+      fusos.initializeTimeZones();
+      return tz.getLocation('Europe/Lisbon');
+    }();
+    final local = tz.TZDateTime.from(instante, lisboa);
+    return DateTime(local.year, local.month, local.day);
+  }
+
+  /// Apresenta um [DateTime] como `AAAA-MM-DD`, o formato das datas da API.
+  static String paraIso(DateTime data) {
+    final mes = data.month.toString().padLeft(2, '0');
+    final dia = data.day.toString().padLeft(2, '0');
+    return '${data.year.toString().padLeft(4, '0')}-$mes-$dia';
   }
 
   /// Apresenta um [DateTime] como `dd/mm/aaaa`.

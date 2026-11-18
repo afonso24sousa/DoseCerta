@@ -61,6 +61,9 @@ class TomasRepositorioFalso implements TomasRepositorio {
   /// Erro da OP-33.
   Object? erroConfirmar;
 
+  /// Se indicado, a OP-33 só responde quando este futuro terminar.
+  Future<void>? espera;
+
   /// Estado devolvido pela OP-33.
   EstadoToma estadoConfirmado = EstadoToma.confirmada;
 
@@ -86,6 +89,7 @@ class TomasRepositorioFalso implements TomasRepositorio {
   @override
   Future<TomaDto> confirmar(String tomaId) async {
     confirmadas.add(tomaId);
+    await espera;
     final erro = erroConfirmar;
     if (erro != null) {
       throw erro;

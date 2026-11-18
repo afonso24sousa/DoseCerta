@@ -9,17 +9,27 @@ import '../../models/tratamento_dto.dart';
 import '../../shared/banner_erro.dart';
 import '../../shared/menu_separadores_ficha.dart';
 import 'apresentacao_tratamento.dart';
+import 'lista_tomas.dart';
+import 'lista_tomas_controller.dart';
 import 'medicacao_ficha_controller.dart';
+import 'vista_medicacao.dart';
 
 /// Ecrã E15 Medicação da ficha: Cuidadores e Familiares associados consultam os tratamentos em curso e os
 /// terminados (RF-054, RF-057). «Registar tratamento» só aparece ao Cuidador numa ficha ativa (RF-050, RF-120); o
-/// Familiar só consulta (RF-048).
+/// Familiar só consulta (RF-048). O separador «Calendário de tomas» mostra o `ListaTomas` (I069).
 class MedicacaoFichaPage extends ConsumerWidget {
-  /// Cria o ecrã da ficha [fichaId].
-  const MedicacaoFichaPage({super.key, required this.fichaId});
+  /// Cria o ecrã da ficha [fichaId], no separador [vista].
+  const MedicacaoFichaPage({
+    super.key,
+    required this.fichaId,
+    this.vista = VistaMedicacao.tratamentos,
+  });
 
   /// Identificador da ficha.
   final String fichaId;
+
+  /// Separador aberto (`?vista=calendario` abre o calendário de tomas).
+  final VistaMedicacao vista;
 
   void _mudar(BuildContext context, SeparadorFicha separador) {
     final destino = switch (separador) {
@@ -36,9 +46,11 @@ class MedicacaoFichaPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final acesso = ref.watch(fichaAcessoProvider(fichaId)).value;
+    final calendario = vista == VistaMedicacao.calendario;
     final lista = ref.watch(tratamentosFichaProvider(fichaId));
-    Future<void> recarregar() =>
-        ref.refresh(tratamentosFichaProvider(fichaId).future);
+    Future<void> recarregar() => calendario
+        ? ref.read(listaTomasProvider(fichaId).notifier).atualizar()
+        : ref.refresh(tratamentosFichaProvider(fichaId).future);
 
     final List<Widget> conteudo;
     switch (lista) {
@@ -89,21 +101,39 @@ class MedicacaoFichaPage extends ConsumerWidget {
                 mudar: (separador) => _mudar(context, separador),
               ),
               const SizedBox(height: 16),
-              if (acesso != null && !acesso.ativa)
-                BannerErro(
-                  MensagensErro.catalogo['FICHA_ARQUIVADA']!,
-                  informativo: true,
+              SegmentedButton<VistaMedicacao>(
+                segments: [
+                  for (final opcao in VistaMedicacao.values)
+                    ButtonSegment(value: opcao, label: Text(opcao.rotulo)),
+                ],
+                selected: {vista},
+                showSelectedIcon: false,
+                onSelectionChanged: (escolha) => context.go(
+                  escolha.single == VistaMedicacao.calendario
+                      ? AppRouter.calendarioTomas(fichaId)
+                      : AppRouter.medicacaoFicha(fichaId),
                 ),
-              if (acesso != null && acesso.podeRegistar) ...[
-                FilledButton.icon(
-                  onPressed: () =>
-                      context.go(AppRouter.novoTratamento(fichaId)),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Registar tratamento'),
-                ),
-                const SizedBox(height: 16),
+              ),
+              const SizedBox(height: 16),
+              if (calendario)
+                ListaTomas(fichaId: fichaId)
+              else ...[
+                if (acesso != null && !acesso.ativa)
+                  BannerErro(
+                    MensagensErro.catalogo['FICHA_ARQUIVADA']!,
+                    informativo: true,
+                  ),
+                if (acesso != null && acesso.podeRegistar) ...[
+                  FilledButton.icon(
+                    onPressed: () =>
+                        context.go(AppRouter.novoTratamento(fichaId)),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Registar tratamento'),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                ...conteudo,
               ],
-              ...conteudo,
             ],
           ),
         ),
