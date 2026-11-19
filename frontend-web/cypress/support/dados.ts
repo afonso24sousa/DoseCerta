@@ -15,7 +15,7 @@ export function pedidoApi<T>(
   token: string,
   method: string,
   url: string,
-  body?: unknown,
+  body?: Cypress.RequestBody,
 ): Cypress.Chainable<Cypress.Response<T>> {
   return cy.request<T>({
     method,
@@ -205,14 +205,17 @@ export function dataApresentada(data: string): string {
 }
 
 /** Ficheiro fictício para `selectFile`, gerado em tempo de execução (nada fica no repositório). */
+/** Conteúdo binário de um ficheiro do Cypress. */
+type Conteudo = ReturnType<typeof Cypress.Buffer.from>;
+
 export interface FicheiroFicticio {
-  contents: Cypress.Buffer;
+  contents: Conteudo;
   fileName: string;
   mimeType: string;
   lastModified: number;
 }
 
-function ficheiro(fileName: string, mimeType: string, contents: Cypress.Buffer): FicheiroFicticio {
+function ficheiro(fileName: string, mimeType: string, contents: Conteudo): FicheiroFicticio {
   return { contents, fileName, mimeType, lastModified: Date.now() };
 }
 

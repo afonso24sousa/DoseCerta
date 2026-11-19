@@ -31,7 +31,7 @@ Esta especificação descreve os cenários de sistema do frontend web, segundo o
 | Backend | API real (`DoseCerta.Api`) e SQL Server 2022 criados e destruídos em cada execução da frontend-web-ci (QG-06) |
 | Localização dos elementos | Rótulo exato do campo (`<label for>`), texto do botão ou da ligação e papel acessível (`role="alert"`, `role="status"`), nunca a posição nem as classes de estilo (a única exceção é `.cabecalho`, a região do cabeçalho, nos cenários da F001 da I063) |
 | Esperas | Pelas respostas da API (`cy.intercept` com alias) e pelos elementos; sem esperas fixas |
-| Duplos | `cy.intercept` com resposta substituída só nas falhas impossíveis de provocar no backend real (plano, secção 5.3): `503` `DOCUMENTO_NAO_GUARDADO` e `503` `DOCUMENTO_INDISPONIVEL`. Os cenários com duplo têm «[duplo 503]» no título; cada funcionalidade tem também cenários contra o backend real |
+| Duplos | `cy.intercept` com resposta substituída só nas condições impossíveis de provocar no backend real (plano, secção 5.3): `503` `DOCUMENTO_NAO_GUARDADO` e `503` `DOCUMENTO_INDISPONIVEL`; na F006, as tomas que precisam de tempo real a passar (secção 6.2). Os cenários com duplo têm «[duplo 503]» ou «[duplo]» no título; cada funcionalidade tem também cenários contra o backend real |
 | Comando local | `npx cypress run` em `frontend-web/`, com a aplicação servida e a API ativa |
 | Quality gate | QG-06: 100% dos cenários passam. A falha de um cenário termina a pipeline sem sucesso |
 
@@ -94,13 +94,13 @@ Esta especificação descreve os cenários de sistema do frontend web, segundo o
 | TS-W-F005-09 | RF-056 (permitido em ficha arquivada); RF-120 (E15, E17) | Tratamento registado e ficha arquivada pela API | «Paracetamol 1 g» | 1. Abrir E15 e E17. 2. «Terminar tratamento» e confirmar | E15 com o aviso de ficha arquivada e sem «Novo tratamento»; E17 sem «Editar»; o tratamento é terminado |
 | TS-W-F005-10 | RF-054 (recusa); RNF-005 (E15) | Ficha de outra conta com um tratamento | «Lisinopril 10 mg»; conta «Gil Fictício» | 1. A conta não associada abre `/fichas/{id}/medicacao` | O `fichaGuard` reencaminha para E05 com «A ficha não existe ou não tem acesso a ela.»; o tratamento não aparece |
 | TS-W-F006-01 | RF-063 Calendário de tomas; RNF-027; RNF-029 (E15, separador «Calendário de tomas» da I068) | Tratamento contínuo registado hoje pela API (Moderado, 08:00) | Medicamento único `Metformina TS-W-F006-01 <carimbo>`, «850 mg» | 1. Em E08, «Medicação». 2. Em E15, separador «Calendário de tomas». 3. «Período seguinte» | Cabeçalho «Tomas de <ontem> a <hoje + 5>»; a toma com «08:00», o medicamento, a dose, «Moderado» e «Pendente» (texto e ícone); depois, «Tomas de <hoje + 6> a <hoje + 12>» |
-| TS-W-F006-02 | RF-064 Confirmar uma toma; RF-065 Autor e momento; RNF-021 (uma interação) | Toma de hoje à hora certa de Lisboa (por exemplo 14:00), grau Leve | — | 1. «Confirmar toma» (um só clique) | OP-33 200; «Toma confirmada.» (`role="status"`); a toma fica «Confirmada», com «Confirmada por Ana Fictícia em <hoje> às …», sem botão |
-| TS-W-F006-03 | RF-067 Toma confirmada fora da tolerância | Toma de há 90 minutos (hora de Lisboa), grau Grave (tolerância de 30 min); entre as 00:00 e as 01:30 de Lisboa, a toma é de ontem | — | 1. «Confirmar toma» | «Toma confirmada com atraso.»; a toma fica «Confirmada com atraso», com quem confirmou e quando |
+| TS-W-F006-02 | RF-064 Confirmar uma toma; RF-065 Autor e momento; RNF-021 (uma interação) | Toma de hoje às 23:59, grau Leve (backend real) | — | 1. «Confirmar toma» (um só clique) | OP-33 200; «Toma confirmada.» (`role="status"`); a toma fica «Confirmada», com «Confirmada por Ana Fictícia em <hoje> às …», sem botão |
+| TS-W-F006-03 | RF-067 Toma confirmada fora da tolerância. **Duplo:** `cy.intercept` responde à OP-33 `200` com o estado `ConfirmadaComAtraso` | Toma de hoje às 23:59, grau Grave (backend real) | — | 1. «Confirmar toma» | «Toma confirmada com atraso.»; a toma fica «Confirmada com atraso», com «Confirmada por Ana Fictícia em <hoje> às 23:59» |
 | TS-W-F006-04 | RF-064 (recusa: fora da janela) | Toma de amanhã às 09:00 | — | 1. «Confirmar toma» | OP-33 409 `TOMA_FORA_DA_JANELA`; «A toma só pode ser confirmada a partir das 00:00 do dia previsto.» (`role="alert"`); a lista é carregada de novo e a toma continua «Pendente» |
-| TS-W-F006-05 | RF-068 só pela apresentação (toma não confirmada) | Toma de há 3 dias; espera-se pela OP-32 até o processo periódico do servidor a passar a `NaoConfirmada` | — | 1. «Período anterior» | A toma aparece «Não confirmada», sem «Confirmar toma» |
-| TS-W-F006-06 | RF-105 Impedir a confirmação repetida (E18 no web: confirmação no calendário) | Toma de hoje; outro Cuidador («Carla Fictícia») associado confirma pela API depois de o ecrã abrir | — | 1. «Confirmar toma» | OP-33 409 `TOMA_JA_CONFIRMADA`; «A toma já foi confirmada por Carla Fictícia em …»; a lista é carregada de novo e mostra «Confirmada por Carla Fictícia em …» |
-| TS-W-F006-07 | RF-048 Restringir o Familiar a consulta | Familiar associado pela API | — | 1. O Familiar abre o calendário | «Como Familiar, pode consultar as tomas, mas não as confirmar.»; a toma aparece «Pendente», sem botão |
-| TS-W-F006-08 | RF-120 e RF-064 (ficha arquivada: ainda se confirma o que ficou por confirmar) | Toma de hoje; ficha arquivada pela API depois de criar o tratamento | — | 1. «Confirmar toma» | Aviso «Ficha arquivada: …» (`role="status"`); «Toma confirmada.» |
+| TS-W-F006-05 | RF-068 Toma não confirmada (recusa `TOMA_NAO_CONFIRMAVEL`). **Duplo:** `cy.intercept` responde à OP-33 `409` `TOMA_NAO_CONFIRMAVEL` e, depois da recusa, devolve a toma da OP-32 com o estado `NaoConfirmada` | Toma de hoje às 23:59, grau Leve (backend real) | — | 1. «Confirmar toma» | «A toma ficou não confirmada e já não pode ser confirmada.» (`role="alert"`); a lista é carregada de novo e a toma aparece «Não confirmada», sem «Confirmar toma» |
+| TS-W-F006-06 | RF-105 Impedir a confirmação repetida (E18 no web: confirmação no calendário) | Toma de hoje às 23:59; outro Cuidador («Carla Fictícia») associado confirma pela API depois de o ecrã abrir | — | 1. «Confirmar toma» | OP-33 409 `TOMA_JA_CONFIRMADA`; «A toma já foi confirmada por Carla Fictícia em …»; a lista é carregada de novo e mostra «Confirmada por Carla Fictícia em …» |
+| TS-W-F006-07 | RF-048 Restringir o Familiar a consulta | Toma de hoje às 23:59; Familiar associado pela API | — | 1. O Familiar abre o calendário | «Como Familiar, pode consultar as tomas, mas não as confirmar.» (`role="status"`); a toma aparece «Pendente», sem botão |
+| TS-W-F006-08 | RF-120 e RF-064 (ficha arquivada: ainda se confirma o que ficou por confirmar). **Duplo:** `cy.intercept` acrescenta à OP-32 a toma que ficou por confirmar antes do arquivo e responde à OP-33 `200` `Confirmada` | Toma de hoje às 23:59; ficha arquivada pela API (backend real), o que remove as tomas futuras por confirmar | — | 1. «Confirmar toma» | Aviso «Ficha arquivada: …» (`role="status"`); «Toma confirmada.»; «Confirmada por Ana Fictícia em …» |
 
 ## 5. Rastreabilidade
 
@@ -142,10 +142,11 @@ Para cada requisito funcional de F002 a F006 com componente web: os cenários de
 | RF-055 Atualizar tratamento em curso (Essencial) | TS-W-F005-06 | TS-W-F005-06 (tratamento terminado) |
 | RF-056 Terminar tratamento antecipadamente (Importante) | TS-W-F005-07, 09 | TS-W-F005-08 (o Familiar não termina) |
 | RF-057 Preservar histórico de tratamentos terminados (Essencial) | TS-W-F005-07 | TS-W-F005-06 (o terminado não se edita) |
-| RF-063 Calendário de tomas (Essencial) | TS-W-F006-01 | TS-W-F006-05 (toma não confirmada) |
+| RF-063 Calendário de tomas (Essencial) | TS-W-F006-01 | TS-W-F006-04 (recusa com a lista carregada de novo) |
 | RF-064 Confirmar uma toma (Essencial) | TS-W-F006-02, 08 | TS-W-F006-04, 06 |
 | RF-065 Autor e momento da confirmação (Essencial) | TS-W-F006-02, 03 | TS-W-F006-06 (mostra o autor da primeira confirmação) |
-| RF-067 Toma confirmada fora da tolerância (Essencial) | TS-W-F006-03 | TS-W-F006-02 (dentro da tolerância não fica com atraso) |
+| RF-067 Toma confirmada fora da tolerância (Essencial) | TS-W-F006-03 (duplo) | TS-W-F006-02 (dentro da tolerância não fica com atraso) |
+| RF-068 Toma não confirmada (Essencial) | Regra do servidor (processo periódico), testada no backend | TS-W-F006-05 (duplo: recusa `TOMA_NAO_CONFIRMAVEL` e toma «Não confirmada» sem botão) |
 | RF-120 Arquivar ficha (Essencial) | TS-W-F002-09 | TS-W-F004-07, TS-W-F005-09 (alterações indisponíveis) |
 | RF-121 Reativar ficha (Essencial) | TS-W-F002-10 | TS-W-F002-09 (sem edição antes de reativar) |
 | RF-122 Suspender tarefas, avisos e notificações de fichas arquivadas (Essencial) | Regra do servidor, testada no backend; no frontend, a ficha só de consulta (TS-W-F002-09) e as tomas por confirmar (TS-W-F006-08) | TS-W-F004-07 |
@@ -160,7 +161,7 @@ Para cada requisito funcional de F002 a F006 com componente web: os cenários de
 | RF-136 Reenviar e-mail de convite (Importante) | Regra do servidor, testada no backend (plano, secção 4.2); E13 informa o reenvio até 3 vezes | — |
 | RNF-008 Formatos e tamanho dos documentos | TS-W-F002-05 | TS-W-F002-06, TS-W-F005-04 |
 | RNF-021 Interações para confirmar uma toma | TS-W-F006-02 (um só clique, sem diálogo) | — |
-| RNF-027 Estados sem dependência exclusiva da cor | TS-W-F006-01 a 05 (estado em texto) | — |
+| RNF-027 Estados sem dependência exclusiva da cor | TS-W-F006-01 a 05 (estado em texto e ícone) | — |
 | RNF-028 Mensagens de erro de validação | — | TS-W-F002-03, 04, 14, TS-W-F004-01, TS-W-F005-03 |
 | RNF-054 Autenticação por token | TS-W-F001-03, TS-W-F001-07 | — |
 
@@ -176,10 +177,11 @@ Os cenários TS-W-F006-01 a TS-W-F006-08 testam o calendário de tomas da I068 (
 
 O servidor usa a hora de Lisboa e a pipeline corre em UTC. As datas e as horas das precondições são calculadas na hora de Lisboa (`agoraLisboa` e `dataLisboa`, em `cypress/support/dados.ts`), nunca na hora do navegador:
 
-- «Confirmada» (TS-W-F006-02, 06, 07, 08): toma de hoje à hora certa atual (por exemplo 14:00), grau Leve (tolerância de 2 horas). A toma já existe e a confirmação acontece no máximo 59 minutos depois, a qualquer hora do dia.
-- «Confirmada com atraso» (TS-W-F006-03): toma de há 90 minutos, grau Grave (tolerância de 30 minutos). Entre as 00:00 e as 01:30 de Lisboa essa toma é de ontem, que está no período por omissão.
-- Fora da janela (TS-W-F006-04): toma de amanhã.
-- Não confirmada (TS-W-F006-05): toma de há 3 dias; o cenário espera pela OP-32, sem esperas fixas, até o processo periódico do servidor (de 30 em 30 segundos) a passar a `NaoConfirmada`.
+O servidor só gera tomas a partir do momento em que a ficha foi criada (`Ficha.AtivaDesdeUtc`, RF-060) e, ao arquivar, remove as tomas futuras por confirmar (RF-122). Como cada cenário cria a sua ficha, não existem tomas passadas: uma toma «com atraso» só existiria mais de 30 minutos depois da hora prevista e uma toma «não confirmada» 24 horas depois. Por isso:
+
+- «Confirmada» (TS-W-F006-02, 06, 07): toma de hoje às 23:59, contra o backend real. A janela de confirmação abre às 00:00 do dia previsto e a confirmação antes da hora prevista fica dentro da tolerância (estado `Confirmada`). O cenário só não funciona se começar no último minuto do dia (23:59 de Lisboa).
+- Fora da janela (TS-W-F006-04): toma de amanhã, contra o backend real.
+- «Confirmada com atraso» (TS-W-F006-03), «Não confirmada» (TS-W-F006-05) e a toma que ficou por confirmar numa ficha arquivada (TS-W-F006-08): duplos da OP-32 e da OP-33 (plano, secção 5.3: condição impossível de provocar no backend real sem esperar 30 minutos ou 24 horas), sobre uma toma real e com a ficha e o arquivo reais. A regra que decide o estado (tolerâncias, 24 horas, janela) é do servidor e está coberta pelos testes do backend; estes cenários verificam a apresentação do estado, as mensagens e a recarga da lista. `TOMA_NAO_CONFIRMAVEL` só se consegue mostrar assim, porque o botão «Confirmar toma» só aparece nas tomas pendentes (contrato da F006, secção 6).
 
 Os tratamentos de F005 também usam a data de hoje em Lisboa.
 

@@ -19,7 +19,7 @@ describe('F004 Pessoas da ficha (E12)', () => {
     });
   }
 
-  const linha = (nome: string): Cypress.Chainable<JQuery<HTMLElement>> => cy.contains('tr', nome);
+  const linha = (nome: string): Cypress.Chainable<JQuery<HTMLTableRowElement>> => cy.contains('tr', nome);
 
   it('TS-W-F004-08 promove um Familiar a Cuidador e despromove-o (RF-047, RF-049, RF-130)', () => {
     fichaComPessoas('f004-promover');
