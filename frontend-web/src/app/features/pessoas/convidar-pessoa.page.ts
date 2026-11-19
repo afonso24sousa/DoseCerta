@@ -64,6 +64,11 @@ import { ResultadoPessoas } from './resultados-pessoas';
           <input type="checkbox" [formControl]="formulario.controls.paraPrincipal" />
           Oferecer o papel de Cuidador principal
         </label>
+        <p class="ajuda">
+          Até à resposta, o Cuidador principal atual fica provisório. Se o convite for aceite, o papel passa
+          para a pessoa convidada e o Cuidador principal atual deixa de estar associado à ficha; se for
+          recusado, mantém-se.
+        </p>
         @if (formulario.controls.papel.value !== 'Cuidador') {
           <p class="ajuda">O papel de Cuidador principal só pode ser oferecido com o papel Cuidador.</p>
         }

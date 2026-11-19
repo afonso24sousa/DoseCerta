@@ -109,7 +109,9 @@ const CODIGOS_RECARREGAR = new Set([
           Ficha arquivada: as pessoas associadas só podem ser consultadas.
         </p>
       } @else if (f.meuPapel === 'Familiar') {
-        <p class="banner banner--aviso">Como Familiar, pode consultar as pessoas associadas à ficha.</p>
+        <p class="banner banner--aviso" role="status">
+          Como Familiar, pode consultar as pessoas associadas à ficha.
+        </p>
       }
 
       <section class="cartao cartao--largo">
@@ -298,7 +300,7 @@ export class PessoasFichaPage implements OnChanges {
     this.sucesso.set(RESULTADOS[this.resultado() ?? ''] ?? null);
     const atual = this.contexto.ficha();
     this.ficha.set(atual?.id === this.fichaId() ? atual : null);
-    this.carregar();
+    this.carregar(false);
   }
 
   /**
@@ -373,11 +375,15 @@ export class PessoasFichaPage implements OnChanges {
     });
   }
 
-  /** OP-10 (papel e estado da ficha) e OP-18 (pessoas). */
-  private carregar(): void {
+  /**
+   * OP-10 (papel e estado da ficha) e OP-18 (pessoas). Na primeira carga reutiliza a OP-10 que o `fichaGuard` já pediu
+   * (`obter`); depois de uma ação pede-a de novo (`carregar`), porque o papel ou o estado podem ter mudado.
+   */
+  private carregar(recarregarFicha = true): void {
     const id = this.fichaId();
     this.aCarregar.set(this.ficha() === null);
-    this.contexto.carregar(id).subscribe({
+    const ficha$ = recarregarFicha ? this.contexto.carregar(id) : this.contexto.obter(id);
+    ficha$.subscribe({
       next: (ficha) => {
         this.ficha.set(ficha);
         this.aCarregar.set(false);

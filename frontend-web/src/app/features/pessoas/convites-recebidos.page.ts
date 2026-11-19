@@ -108,8 +108,8 @@ const CODIGOS_RECARREGAR = new Set([
         </table>
         @if (temParaPrincipal()) {
           <p class="ajuda">
-            Aceitar o convite para Cuidador principal transfere esse papel: o criador deixa de estar associado
-            à ficha. Recusar mantém o criador.
+            Aceitar o convite para Cuidador principal transfere esse papel: o Cuidador principal atual deixa
+            de estar associado à ficha. Recusar mantém o Cuidador principal atual.
           </p>
         }
       }
@@ -141,12 +141,12 @@ export class ConvitesRecebidosPage implements OnInit {
     const { convite, resposta } = pedido;
     if (resposta === 'recusar') {
       return convite.paraPrincipal
-        ? `Recusar o convite para Cuidador principal da ficha «${convite.nomeFicha}»? Quem criou a ficha mantém-se como Cuidador principal.`
+        ? `Recusar o convite para Cuidador principal da ficha «${convite.nomeFicha}»? O Cuidador principal atual mantém-se.`
         : `Recusar o convite para a ficha «${convite.nomeFicha}»? Não fica associado à ficha.`;
     }
 
     return convite.paraPrincipal
-      ? `Aceitar ser Cuidador principal da ficha «${convite.nomeFicha}»? Quem criou a ficha deixa de estar associado a ela.`
+      ? `Aceitar ser Cuidador principal da ficha «${convite.nomeFicha}»? O Cuidador principal atual deixa de estar associado à ficha.`
       : `Aceitar o convite para a ficha «${convite.nomeFicha}» como ${convite.papelOferecido}?`;
   });
 
