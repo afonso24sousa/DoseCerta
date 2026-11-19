@@ -245,9 +245,16 @@ Future<void> esperarPor(WidgetTester tester, Finder alvo) async {
 /// Campo de texto pelo rótulo.
 Finder campo(String rotulo) => find.widgetWithText(TextField, rotulo);
 
-/// Toca no alvo depois de o mostrar.
+/// Toca no alvo depois de o mostrar. Fecha antes a `SnackBar` que estiver visível, que pode tapar o alvo no fundo do
+/// ecrã (por exemplo «Ficha arquivada.» sobre «Reativar ou eliminar»); as mensagens já foram verificadas antes do toque.
 Future<void> tocar(WidgetTester tester, Finder alvo) async {
   FocusManager.instance.primaryFocus?.unfocus();
+  final mensageiro = find.byType(ScaffoldMessenger);
+  if (mensageiro.evaluate().isNotEmpty) {
+    tester
+        .state<ScaffoldMessengerState>(mensageiro.first)
+        .removeCurrentSnackBar();
+  }
   await tester.pump();
   await tester.ensureVisible(alvo.first);
   await tester.pump();
