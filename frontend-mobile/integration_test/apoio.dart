@@ -5,6 +5,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dosecerta/core/inicializador_app.dart';
+import 'package:dosecerta/core/sessao_store.dart';
 import 'package:dosecerta/main.dart';
 import 'package:dosecerta/shared/origem_ficheiro.dart';
 import 'package:dosecerta/shared/selecionador_ficheiros.dart';
@@ -237,21 +238,69 @@ class FonteFicticia implements FonteFicheiros {
   }
 }
 
-/// Arranca a aplicação sem sessão guardada, com a [fonte] de ficheiros falsa no lugar dos seletores nativos.
-Future<void> arrancar(WidgetTester tester, FonteFicticia fonte) async {
-  await const FlutterSecureStorage().deleteAll();
-  final substituicoes = await const InicializadorApp().iniciar();
+/// Armazenamento da sessão em memória, no lugar do `FlutterSecureStorage` do Android. No emulador da pipeline, as
+/// chamadas ao armazenamento seguro (Keystore) bloqueiam de vez em quando no arranque de um cenário e encravam o QG-07
+/// (execução 23 do PR #112 e PR #121). A aplicação usa-o pelo `SessaoStore`, que recebe o armazenamento no
+/// `InicializadorApp`: o código de produção (`lib/`) não muda. Os valores mantêm-se entre arranques do mesmo cenário,
+/// para a reabertura da aplicação ler o que ficou guardado (TS-M-F001-07).
+class ArmazenamentoMemoria implements FlutterSecureStorage {
+  /// Valores guardados, partilhados por todos os arranques.
+  static final Map<String, String> valores = {};
+
+  @override
+  dynamic noSuchMethod(Invocation invocacao) {
+    final chave = invocacao.namedArguments[#key] as String?;
+    switch (invocacao.memberName) {
+      case #read:
+        return Future<String?>.value(valores[chave]);
+      case #write:
+        final valor = invocacao.namedArguments[#value] as String?;
+        if (valor == null) {
+          valores.remove(chave);
+        } else {
+          valores[chave!] = valor;
+        }
+        return Future<void>.value();
+      case #delete:
+        valores.remove(chave);
+        return Future<void>.value();
+      case #deleteAll:
+        valores.clear();
+        return Future<void>.value();
+      case #containsKey:
+        return Future<bool>.value(valores.containsKey(chave));
+      case #readAll:
+        return Future<Map<String, String>>.value(Map.of(valores));
+    }
+    return super.noSuchMethod(invocacao);
+  }
+}
+
+/// Abre a aplicação com a sessão que estiver no [ArmazenamentoMemoria] e, se for indicada, a [fonte] de ficheiros
+/// falsa no lugar dos seletores nativos. Cada abertura cria um `ProviderScope` novo, como um arranque a frio.
+Future<void> abrirAplicacao(WidgetTester tester, {FonteFicticia? fonte}) async {
+  final substituicoes = await InicializadorApp(
+    armazenamento: SessaoStore(ArmazenamentoMemoria()),
+  ).iniciar();
   await tester.pumpWidget(
     ProviderScope(
+      key: UniqueKey(),
       overrides: [
         ...substituicoes,
-        selecionadorFicheirosProvider.overrideWithValue(
-          SelecionadorFicheiros(fonte),
-        ),
+        if (fonte != null)
+          selecionadorFicheirosProvider.overrideWithValue(
+            SelecionadorFicheiros(fonte),
+          ),
       ],
       child: const DoseCertaApp(),
     ),
   );
+}
+
+/// Arranca a aplicação sem sessão guardada, com a [fonte] de ficheiros falsa no lugar dos seletores nativos.
+Future<void> arrancar(WidgetTester tester, FonteFicticia fonte) async {
+  ArmazenamentoMemoria.valores.clear();
+  await abrirAplicacao(tester, fonte: fonte);
   await esperarPor(tester, find.text('Início de sessão'));
 }
 
