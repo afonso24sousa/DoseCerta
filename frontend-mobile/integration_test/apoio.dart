@@ -40,14 +40,38 @@ class RespostaApi {
   List<Object?> get lista => corpo! as List<Object?>;
 }
 
-/// Pedido JSON à API, com o token se for indicado.
+/// Pedido JSON à API, com o token se for indicado. Cada tentativa tem um limite de tempo e são feitas até 3: no
+/// arranque a frio do emulador, um pedido sem limite pode ficar pendurado e encravar o QG-07 inteiro.
 Future<RespostaApi> pedido(
   String metodo,
   String caminho, {
   String? token,
   Object? corpo,
 }) async {
-  final cliente = HttpClient();
+  for (var tentativa = 1; ; tentativa++) {
+    try {
+      return await _pedidoUnico(
+        metodo,
+        caminho,
+        token: token,
+        corpo: corpo,
+      ).timeout(const Duration(seconds: 30));
+    } on Exception catch (erro) {
+      if (tentativa >= 3) {
+        throw StateError('$metodo $caminho falhou 3 vezes: $erro');
+      }
+      await Future<void>.delayed(const Duration(seconds: 2));
+    }
+  }
+}
+
+Future<RespostaApi> _pedidoUnico(
+  String metodo,
+  String caminho, {
+  String? token,
+  Object? corpo,
+}) async {
+  final cliente = HttpClient()..connectionTimeout = const Duration(seconds: 10);
   try {
     final req = await cliente.openUrl(
       metodo,
