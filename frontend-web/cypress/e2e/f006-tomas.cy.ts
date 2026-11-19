@@ -1,7 +1,6 @@
 import {
   ContaComToken,
   TomaApi,
-  agoraLisboa,
   arquivarNaApi,
   associarNaApi,
   confirmarTomaNaApi,
@@ -10,18 +9,24 @@ import {
   dataLisboa,
   entrar,
   fichaNaApi,
+  respostaErro,
   tomasNaApi,
   tratamentoNaApi,
 } from '../support/dados';
 
 // Especificação: m4-especificacao-testes-sistema-frontend-web-v02.md (F006, calendário de tomas da I068). Os textos são
 // os do contrato de interface da F006 (Sprint 08). As horas e as datas são as de Lisboa, que é a hora do servidor.
+//
+// O servidor só gera tomas a partir do momento em que a ficha foi criada (Ficha.AtivaDesdeUtc, RF-060). Numa ficha
+// criada pelo cenário não há tomas passadas: a toma de hoje confirmável é a das 23:59, confirmada antes da hora prevista
+// (dentro da tolerância). Os estados que precisam de tempo real a passar (confirmada com atraso, mais de 30 minutos;
+// não confirmada, 24 horas) usam duplos da resposta da API, identificados com «[duplo]» (especificação, secção 6.2).
 describe('F006 Calendário e confirmação de tomas', () => {
   /** Medicamento único por cenário, para isolar as suas tomas na lista. */
   const medicamento = (id: string): string => `Metformina ${id} ${Date.now()}`;
 
-  /** Hora certa de agora em Lisboa (por exemplo «14:00»): a toma de hoje já existe e está dentro da tolerância. */
-  const horaCerta = (): string => `${agoraLisboa().hora.slice(0, 2)}:00`;
+  /** Hora da toma de hoje: já existe na ficha acabada de criar e a confirmação fica dentro da tolerância. */
+  const HORA_DE_HOJE = '23:59';
 
   /** Cuidador com uma ficha e um tratamento com tomas só no dia `data`, à `hora`. */
   function fichaComToma(
@@ -43,6 +48,14 @@ describe('F006 Calendário e confirmação de tomas', () => {
     );
   }
 
+  /** Toma de hoje às 23:59 de um tratamento só de hoje. */
+  const tomaDeHoje = (
+    prefixo: string,
+    nome: string,
+    grau: 'Leve' | 'Grave' = 'Leve',
+  ): Cypress.Chainable<{ cuidador: ContaComToken; fichaId: string }> =>
+    fichaComToma(prefixo, nome, { data: dataLisboa(0), hora: HORA_DE_HOJE, grau });
+
   /** Abre E15 diretamente no separador «Calendário de tomas» e espera pela lista (OP-32). */
   function abrirCalendario(fichaId: string): void {
     cy.intercept('GET', '/api/v1/fichas/*/tomas*').as('tomas');
@@ -54,6 +67,7 @@ describe('F006 Calendário e confirmação de tomas', () => {
     const nome = medicamento('TS-W-F006-01');
     contaNaApi('f006-calendario').then(({ conta, token }) => {
       fichaNaApi(token, 'Clara Fictícia').then((fichaId) => {
+        // Tratamento contínuo: a toma das 08:00 existe hoje (se ainda não passou) ou amanhã, sempre no período.
         tratamentoNaApi(token, fichaId, {
           medicamento: nome,
           dose: '850 mg',
@@ -88,42 +102,50 @@ describe('F006 Calendário e confirmação de tomas', () => {
 
   it('TS-W-F006-02 confirma uma toma com um só clique e mostra quem confirmou e quando (RF-064, RF-065, RNF-021)', () => {
     const nome = medicamento('TS-W-F006-02');
-    fichaComToma('f006-confirmar', nome, { data: dataLisboa(0), hora: horaCerta(), grau: 'Leve' }).then(
-      ({ cuidador, fichaId }) => {
-        entrar(cuidador.conta);
-        abrirCalendario(fichaId);
-        cy.intercept('POST', '/api/v1/tomas/*/confirmacao').as('confirmar');
-        cy.contains('li', nome).within(() => cy.contains('button', 'Confirmar toma').click());
+    tomaDeHoje('f006-confirmar', nome).then(({ cuidador, fichaId }) => {
+      entrar(cuidador.conta);
+      abrirCalendario(fichaId);
+      cy.intercept('POST', '/api/v1/tomas/*/confirmacao').as('confirmar');
+      cy.contains('li', nome).within(() => cy.contains('button', 'Confirmar toma').click());
 
-        cy.wait('@confirmar').its('response.statusCode').should('eq', 200);
-        cy.contains('[role="status"]', 'Toma confirmada.');
-        cy.contains('li', nome)
-          .should('contain', 'Confirmada')
-          .and('not.contain', 'Confirmada com atraso')
-          .and('contain', `Confirmada por Ana Fictícia em ${dataApresentada(dataLisboa(0))} às`)
-          .find('button')
-          .should('not.exist');
-      },
-    );
+      cy.wait('@confirmar').its('response.statusCode').should('eq', 200);
+      cy.contains('[role="status"]', 'Toma confirmada.');
+      cy.contains('li', nome)
+        .should('contain', 'Confirmada')
+        .and('not.contain', 'Confirmada com atraso')
+        .and('contain', `Confirmada por Ana Fictícia em ${dataApresentada(dataLisboa(0))} às`)
+        .find('button')
+        .should('not.exist');
+    });
   });
 
-  it('TS-W-F006-03 uma toma confirmada fora da tolerância fica confirmada com atraso (RF-067)', () => {
+  it('TS-W-F006-03 [duplo] uma toma confirmada fora da tolerância fica confirmada com atraso (RF-067)', () => {
     const nome = medicamento('TS-W-F006-03');
-    // Grave (tolerância de 30 minutos): a toma de há 90 minutos já passou a tolerância. Entre as 00:00 e as 01:30 de
-    // Lisboa essa hora é de ontem, que está no período por omissão (de ontem a hoje + 5 dias).
-    const antes = agoraLisboa(-90);
-    fichaComToma('f006-atraso', nome, { data: antes.data, hora: antes.hora, grau: 'Grave' }).then(
-      ({ cuidador, fichaId }) => {
+    tomaDeHoje('f006-atraso', nome, 'Grave').then(({ cuidador, fichaId }) => {
+      tomasNaApi(cuidador.token, fichaId, dataLisboa(0), dataLisboa(0)).then((tomas) => {
+        const toma = tomas.find((t) => t.medicamento === nome)!;
+        // Duplo da OP-33: a resposta que o servidor dá quando a confirmação passa a tolerância de 30 minutos do grau Grave.
+        cy.intercept('POST', `/api/v1/tomas/${toma.id}/confirmacao`, {
+          statusCode: 200,
+          body: {
+            ...toma,
+            estado: 'ConfirmadaComAtraso',
+            confirmadaPor: { id: '00000000-0000-0000-0000-000000000001', nome: 'Ana Fictícia' },
+            confirmadaEm: toma.previstaEm.replace(/T\d{2}:\d{2}/, 'T23:59'),
+          },
+        }).as('confirmar');
+
         entrar(cuidador.conta);
         abrirCalendario(fichaId);
         cy.contains('li', nome).within(() => cy.contains('button', 'Confirmar toma').click());
 
+        cy.wait('@confirmar');
         cy.contains('[role="status"]', 'Toma confirmada com atraso.');
         cy.contains('li', nome)
           .should('contain', 'Confirmada com atraso')
-          .and('contain', 'Confirmada por Ana Fictícia em');
-      },
-    );
+          .and('contain', `Confirmada por Ana Fictícia em ${dataApresentada(dataLisboa(0))} às 23:59`);
+      });
+    });
   });
 
   it('TS-W-F006-04 recusa confirmar uma toma de amanhã antes das 00:00 desse dia (RF-064)', () => {
@@ -143,86 +165,116 @@ describe('F006 Calendário e confirmação de tomas', () => {
     );
   });
 
-  it('TS-W-F006-05 uma toma sem confirmação 24 horas depois fica não confirmada, sem «Confirmar toma» (RF-068)', () => {
+  it('TS-W-F006-05 [duplo] uma toma sem confirmação 24 horas depois é recusada e fica não confirmada (RF-068)', () => {
     const nome = medicamento('TS-W-F006-05');
-    const dia = dataLisboa(-3);
-    fichaComToma('f006-nao-confirmada', nome, { data: dia, hora: '09:00', grau: 'Leve' }).then(
-      ({ cuidador, fichaId }) => {
-        // O processo periódico do servidor (de 30 em 30 segundos) passa a toma a NaoConfirmada; espera-se pela API.
-        const esperarNaoConfirmada = (tentativas: number): void => {
-          tomasNaApi(cuidador.token, fichaId, dia, dia).then((tomas: TomaApi[]) => {
-            if (tomas.some((t) => t.estado === 'NaoConfirmada')) {
-              return;
-            }
-            expect(tentativas, 'tentativas até a toma passar a NaoConfirmada').to.be.greaterThan(0);
-            esperarNaoConfirmada(tentativas - 1);
-          });
-        };
-        esperarNaoConfirmada(600);
+    tomaDeHoje('f006-nao-confirmada', nome).then(({ cuidador, fichaId }) => {
+      // Duplo da OP-33 (409 TOMA_NAO_CONFIRMAVEL) e, a partir da recusa, da OP-32 com o estado que o servidor passa a
+      // devolver (NaoConfirmada): a toma real só passaria a esse estado 24 horas depois da hora prevista.
+      let recusada = false;
+      cy.intercept('POST', '/api/v1/tomas/*/confirmacao', (req) => {
+        recusada = true;
+        req.reply(
+          respostaErro(
+            409,
+            'TOMA_NAO_CONFIRMAVEL',
+            'A toma já não pode ser confirmada: passaram 24 horas da hora prevista.',
+          ),
+        );
+      }).as('confirmar');
+      cy.intercept('GET', '/api/v1/fichas/*/tomas*', (req) => {
+        req.continue((res) => {
+          if (recusada) {
+            res.body = (res.body as TomaApi[]).map((t) =>
+              t.medicamento === nome ? { ...t, estado: 'NaoConfirmada' } : t,
+            );
+          }
+        });
+      }).as('tomas');
 
-        entrar(cuidador.conta);
-        abrirCalendario(fichaId);
-        cy.contains('button', 'Período anterior').click();
-        cy.wait('@tomas');
-        cy.contains('li', nome).should('contain', 'Não confirmada').find('button').should('not.exist');
-      },
-    );
+      entrar(cuidador.conta);
+      cy.visit(`/fichas/${fichaId}/medicacao?vista=calendario`);
+      cy.wait('@tomas');
+      cy.contains('li', nome).within(() => cy.contains('button', 'Confirmar toma').click());
+
+      cy.wait('@confirmar');
+      cy.contains('[role="alert"]', 'A toma ficou não confirmada e já não pode ser confirmada.');
+      cy.wait('@tomas');
+      cy.contains('li', nome).should('contain', 'Não confirmada').find('button').should('not.exist');
+    });
   });
 
   it('TS-W-F006-06 confirmação repetida: a recusa indica quem confirmou e a lista mostra o estado atual (RF-105)', () => {
     const nome = medicamento('TS-W-F006-06');
     contaNaApi('f006-outra', 'Carla Fictícia').then((carla) => {
-      fichaComToma('f006-repetida', nome, { data: dataLisboa(0), hora: horaCerta(), grau: 'Leve' }).then(
-        ({ cuidador, fichaId }) => {
-          associarNaApi(cuidador.token, fichaId, carla, 'Cuidador');
-          entrar(cuidador.conta);
-          abrirCalendario(fichaId);
-          cy.contains('li', nome).within(() => cy.contains('button', 'Confirmar toma'));
+      tomaDeHoje('f006-repetida', nome).then(({ cuidador, fichaId }) => {
+        associarNaApi(cuidador.token, fichaId, carla, 'Cuidador');
+        entrar(cuidador.conta);
+        abrirCalendario(fichaId);
+        cy.contains('li', nome).within(() => cy.contains('button', 'Confirmar toma'));
 
-          // Outro Cuidador confirma entretanto (OP-33).
-          tomasNaApi(carla.token, fichaId, dataLisboa(0), dataLisboa(0)).then((tomas) => {
-            confirmarTomaNaApi(carla.token, tomas.find((t) => t.medicamento === nome)!.id);
-          });
-          cy.intercept('POST', '/api/v1/tomas/*/confirmacao').as('confirmar');
-          cy.contains('li', nome).within(() => cy.contains('button', 'Confirmar toma').click());
+        // Outro Cuidador confirma entretanto (OP-33).
+        tomasNaApi(carla.token, fichaId, dataLisboa(0), dataLisboa(0)).then((tomas) => {
+          confirmarTomaNaApi(carla.token, tomas.find((t) => t.medicamento === nome)!.id);
+        });
+        cy.intercept('POST', '/api/v1/tomas/*/confirmacao').as('confirmar');
+        cy.contains('li', nome).within(() => cy.contains('button', 'Confirmar toma').click());
 
-          cy.wait('@confirmar').its('response.statusCode').should('eq', 409);
-          cy.contains('[role="alert"]', 'A toma já foi confirmada por Carla Fictícia em');
-          cy.wait('@tomas');
-          cy.contains('li', nome).should('contain', 'Confirmada por Carla Fictícia em');
-        },
-      );
+        cy.wait('@confirmar').its('response.statusCode').should('eq', 409);
+        cy.contains('[role="alert"]', 'A toma já foi confirmada por Carla Fictícia em');
+        cy.wait('@tomas');
+        cy.contains('li', nome).should('contain', 'Confirmada por Carla Fictícia em');
+      });
     });
   });
 
   it('TS-W-F006-07 o Familiar consulta as tomas sem as poder confirmar (RF-048)', () => {
     const nome = medicamento('TS-W-F006-07');
     contaNaApi('f006-familiar', 'Filipe Fictício').then((familiar) => {
-      fichaComToma('f006-cuidador', nome, { data: dataLisboa(0), hora: horaCerta(), grau: 'Leve' }).then(
-        ({ cuidador, fichaId }) => {
-          associarNaApi(cuidador.token, fichaId, familiar, 'Familiar');
-          entrar(familiar.conta);
-          abrirCalendario(fichaId);
+      tomaDeHoje('f006-cuidador', nome).then(({ cuidador, fichaId }) => {
+        associarNaApi(cuidador.token, fichaId, familiar, 'Familiar');
+        entrar(familiar.conta);
+        abrirCalendario(fichaId);
 
-          cy.contains('Como Familiar, pode consultar as tomas, mas não as confirmar.');
-          cy.contains('li', nome).should('contain', 'Pendente').find('button').should('not.exist');
-        },
-      );
+        cy.contains('[role="status"]', 'Como Familiar, pode consultar as tomas, mas não as confirmar.');
+        cy.contains('li', nome).should('contain', 'Pendente').find('button').should('not.exist');
+      });
     });
   });
 
-  it('TS-W-F006-08 numa ficha arquivada ainda se confirma a toma que ficou por confirmar (RF-120, RF-064)', () => {
+  it('TS-W-F006-08 [duplo] numa ficha arquivada ainda se confirma a toma que ficou por confirmar (RF-120, RF-064)', () => {
     const nome = medicamento('TS-W-F006-08');
-    fichaComToma('f006-arquivada', nome, { data: dataLisboa(0), hora: horaCerta(), grau: 'Leve' }).then(
-      ({ cuidador, fichaId }) => {
+    tomaDeHoje('f006-arquivada', nome).then(({ cuidador, fichaId }) => {
+      tomasNaApi(cuidador.token, fichaId, dataLisboa(0), dataLisboa(0)).then((tomas) => {
+        const toma = tomas.find((t) => t.medicamento === nome)!;
+        // O arquivo (real) remove as tomas futuras por confirmar; só ficam as que já passaram, que uma ficha acabada de
+        // criar não tem. Duplos da OP-32 (a toma que ficou por confirmar antes do arquivo) e da OP-33 (a confirmação).
         arquivarNaApi(cuidador.token, fichaId);
+        cy.intercept('GET', '/api/v1/fichas/*/tomas*', (req) => {
+          req.continue((res) => {
+            const outras = (res.body as TomaApi[]).filter((t) => t.id !== toma.id);
+            res.body = [...outras, toma];
+          });
+        }).as('tomas');
+        cy.intercept('POST', `/api/v1/tomas/${toma.id}/confirmacao`, {
+          statusCode: 200,
+          body: {
+            ...toma,
+            estado: 'Confirmada',
+            confirmadaPor: { id: '00000000-0000-0000-0000-000000000001', nome: 'Ana Fictícia' },
+            confirmadaEm: toma.previstaEm.replace(/T\d{2}:\d{2}/, 'T23:58'),
+          },
+        }).as('confirmar');
+
         entrar(cuidador.conta);
-        abrirCalendario(fichaId);
+        cy.visit(`/fichas/${fichaId}/medicacao?vista=calendario`);
+        cy.wait('@tomas');
 
         cy.contains('[role="status"]', 'Ficha arquivada:');
         cy.contains('li', nome).within(() => cy.contains('button', 'Confirmar toma').click());
+        cy.wait('@confirmar');
         cy.contains('[role="status"]', 'Toma confirmada.');
-      },
-    );
+        cy.contains('li', nome).should('contain', 'Confirmada por Ana Fictícia em');
+      });
+    });
   });
 });

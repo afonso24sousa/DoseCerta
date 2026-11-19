@@ -15,11 +15,11 @@
 | Versão | Alterações |
 |---|---|
 | v01 | Primeira versão: cenários de sistema da F001 (RF-010 a RF-017), automatizados com `integration_test` em emulador Android |
-| v02 | Cenários de F002 e F003 (I070), com a fonte de ficheiros falsa; F004 a F006 especificadas, a implementar quando a I065, a I067 e a I069 entrarem; rastreabilidade de todos os requisitos de F002 a F006; secção 6 (cenários pendentes e desvios ao plano) |
+| v02 | Cenários de F002 e F003 (I070), com a fonte de ficheiros falsa; F004 a F006 com justificação por requisito (secção 6.1), porque o código mobile dessas funcionalidades não está na `main`; rastreabilidade de todos os requisitos de F002 a F006; secção 6 (justificações e desvios ao plano) |
 
 ## 1. Âmbito
 
-Esta especificação descreve os cenários de sistema da aplicação mobile, segundo o plano de testes (secções 4.1 e 5). A v01 cobriu a F001. A v02 acrescenta a F002 Fichas de utentes e a F003 Ficha própria (ecrãs E05 a E11) e especifica a F004 a F006, cujos cenários são implementados quando a I065, a I067 e a I069 entrarem na `main` (secção 6). Os cenários são os mesmos do frontend web (`m4-especificacao-testes-sistema-frontend-web-v02.md`), adaptados à aplicação.
+Esta especificação descreve os cenários de sistema da aplicação mobile, segundo o plano de testes (secções 4.1 e 5). A v01 cobriu a F001. A v02 acrescenta a F002 Fichas de utentes e a F003 Ficha própria (ecrãs E05 a E11) e justifica, requisito a requisito, a F004 a F006 (secção 6.1): os ecrãs mobile dessas funcionalidades (I065, I067 e I069) ainda não estão na `main`, onde correm os cenários da frontend-mobile-ci. Os cenários são os mesmos do frontend web (`m4-especificacao-testes-sistema-frontend-web-v02.md`), adaptados à aplicação.
 
 ## 2. Execução
 
@@ -68,9 +68,7 @@ Esta especificação descreve os cenários de sistema da aplicação mobile, seg
 | TS-M-F002-08 | RF-028 Consultar ficha; RF-048 Restringir o Familiar a consulta (E08, E10) | Familiar associado pela API (OP-19, OP-21) | Ficha «Helena Fictícia»; Familiar «Filipe Fictício» | 1. O Familiar abre a ficha. 2. Menu «Documentos» | E08 sem «Editar» nem «Arquivar ou eliminar»; E10 sem «Carregar» |
 | TS-M-F003-01 | RF-030 Criar ficha própria (UC-05; E06, E07) | Conta sem ficha própria | Ficha «Ana Fictícia» | 1. «Gerir a minha própria saúde» e a identificação; «Seguinte». 2. «Criar ficha» | E07 sem o passo do Cuidador principal; OP-07 mostra a ficha como própria e o titular como principal |
 | TS-M-F003-02 | RF-031 Limitar a uma ficha própria (E06) | Ficha própria criada pela API | — | 1. Abrir E06 | «Já tem uma ficha própria. Só pode ter uma.» |
-| TS-M-F004-01 a 06 | RF-040, RF-042 a RF-049, RF-130 a RF-134 (E12 a E14): convidar e convite repetido; aceitar e Familiar só consulta; recusar e reconvidar; promover, despromover e remover; transferir o principal; principal sem substituto | — | — | — | **A implementar quando a I065 entrar** (ecrãs E12 a E14 da aplicação mobile). Os cenários seguem os da especificação web v02 (TS-W-F004-01 a 11) |
-| TS-M-F005-01 a 05 | RF-050 a RF-057 (E15 a E17): registar com fim e contínuo; validações; receita inválida; editar em curso; terminar; Familiar só consulta | — | — | — | **A implementar quando a I067 entrar.** Seguem os da especificação web v02 (TS-W-F005-01 a 09) |
-| TS-M-F006-01 a 08 | RF-063 a RF-065, RF-067, RF-048, RF-120 (calendário de tomas da I069: separador «Calendário de tomas» de E15, `/fichas/:fichaId/medicacao?vista=calendario`); RF-061 e RF-062 (sincronização OP-34 e aviso local, só mobile) | — | — | — | **A implementar quando a I069 entrar.** Os mesmos casos de TS-W-F006-01 a 08 (especificação web v02, secção 6.2), com os textos do contrato de interface da F006: «Confirmar toma» num toque, «Toma confirmada.» e «Toma confirmada com atraso.» numa `SnackBar`, recusas no `BannerErro` com a lista recarregada, estados com ícone e texto. Os avisos locais verificam-se com um serviço de avisos falso (secção 6.3) |
+| TS-M-F004 a TS-M-F006 | RF-026, RF-027, RF-032 a RF-034, RF-040 a RF-049, RF-130 a RF-134 (F004); RF-050 a RF-057 (F005); RF-061 a RF-068 (F006) | — | — | — | Sem cenários de sistema mobile nesta versão: justificação por requisito na secção 6.1 |
 
 ## 5. Rastreabilidade
 
@@ -83,36 +81,44 @@ Esta especificação descreve os cenários de sistema da aplicação mobile, seg
 | RF-023 Recusar a operação quando o documento não é guardado | Não se provoca no backend real; coberto pelos testes de widgets da I060 (`fichas_e06_e07_test.dart`, E09 e E10, com o servidor falso) e, no frontend web, por TS-W-F002-07 |
 | RF-024 Criador como Cuidador principal | TS-M-F002-01 |
 | RF-025 Convidar outra pessoa para Cuidador principal | TS-M-F002-02 |
-| RF-026, RF-027 | A implementar com a F004 mobile (I065); no frontend web, TS-W-F004-05 e TS-W-F004-06 |
+| RF-026, RF-027 | Justificação J1 (secção 6.1) |
 | RF-028 Consultar ficha | TS-M-F002-01, TS-M-F002-08 |
 | RF-029 Editar ficha | TS-M-F002-04 |
 | RF-030 Criar ficha própria | TS-M-F003-01 |
 | RF-031 Limitar a uma ficha própria | TS-M-F003-02 |
-| RF-032 a RF-034 | A proteção do titular aparece em E12, da I065: a implementar com a F004 mobile; no frontend web, TS-W-F003-03 |
-| RF-040, RF-042 a RF-049 | TS-M-F004-01 a 06 (a implementar quando a I065 entrar) |
+| RF-032 a RF-034 | Justificação J1 (secção 6.1) |
+| RF-040, RF-042 a RF-049 | Justificação J1 (secção 6.1) |
 | RF-041, RF-135, RF-136 | Regras do servidor, testadas no backend (plano mobile, secção 4.2); só a apresentação, com a F004 mobile |
-| RF-050 a RF-057 | TS-M-F005-01 a 05 (a implementar quando a I067 entrar) |
-| RF-061, RF-062, RF-063 a RF-065, RF-067 | TS-M-F006-01 a 08 (a implementar quando a I069 entrar) |
+| RF-050 a RF-057 | Justificação J2 (secção 6.1) |
+| RF-061 a RF-068 | Justificação J3 (secção 6.1) |
 | RF-120 Arquivar ficha | TS-M-F002-06 |
 | RF-121 Reativar ficha | TS-M-F002-06 |
 | RF-122 Suspender tarefas, avisos e notificações | A suspensão é regra do servidor, testada no backend; a ficha só de consulta verifica-se em TS-M-F002-06 |
 | RF-123 Eliminar ficha sem registos | TS-M-F002-07 (recusa com histórico); a eliminação sem histórico fica coberta pelo teste de widgets `fichas_e11_test.dart` e, no frontend web, por TS-W-F002-11 |
 | RF-124 Informar falha ao consultar documento | Não se provoca no backend real; coberto pelo teste de widgets `fichas_e10_test.dart` e, no frontend web, por TS-W-F002-08 |
-| RF-130 a RF-134 | TS-M-F004-01 a 06 (a implementar quando a I065 entrar) |
+| RF-130 a RF-134 | Justificação J1 (secção 6.1) |
 | RNF-008 Formatos e tamanho dos documentos | TS-M-F002-05 |
 | RNF-028 Mensagens de erro de validação | TS-M-F002-03 |
 
-Todos os requisitos de F001 a F006 da secção 4.1 do plano mobile têm cenário, cenário pendente ou justificação (critério CS-M04).
+Todos os requisitos de F001 a F006 da secção 4.1 do plano mobile têm cenário ou justificação (critério CS-M04).
 
-## 6. Cenários pendentes e desvios ao plano
+## 6. Justificações e desvios ao plano
 
-### 6.1 Cenários pendentes
+### 6.1 F004 a F006: justificação por requisito
 
-| Cenários | Motivo | Quando |
-|---|---|---|
-| TS-M-F004-01 a 06 | Os ecrãs E12 a E14 da aplicação mobile são da I065, que ainda não está na `main` | Quando a I065 entrar; decisão a registar pelo grupo |
-| TS-M-F005-01 a 05 | Os ecrãs E15 a E17 da aplicação mobile são da I067, que ainda não está na `main` | Quando a I067 entrar |
-| TS-M-F006-01 a 08 | O calendário, a confirmação de tomas e os avisos locais da aplicação mobile são da I069, que ainda não está na `main` | Quando a I069 entrar, com os textos do contrato de interface da F006 |
+Os cenários de sistema mobile correm na frontend-mobile-ci sobre o código da branch, que parte da `main`. Os ecrãs mobile da F004 (I065, PR #124), da F005 (I067, PR #123) e da F006 (I069, PR #126) ainda não estão na `main`: estão em revisão, em branches separadas. Escrever aqui os cenários obrigava a juntar essas três branches, ainda não revistas, à da I070, e a I070 passaria a depender do merge delas. Por isso, nesta versão, cada requisito fica coberto da forma seguinte, que juntas verificam o mesmo comportamento de ponta a ponta:
+
+1. **Cenário de sistema web contra o backend real** (especificação web v02): o servidor, os códigos de erro e o contrato de cada operação são os mesmos para os dois frontends.
+2. **Testes de widgets da aplicação mobile**, na Issue que implementa o ecrã, com o repositório falso: verificam no ecrã mobile os textos, as ações por papel, as recusas e a recarga.
+3. **Regras do servidor** cobertas pelos testes do backend (plano mobile, secção 4.2).
+
+| Ref. | Requisitos | Cenários web (backend real) | Testes de widgets mobile | Servidor |
+|---|---|---|---|---|
+| J1 | F004: RF-026, RF-027 (convite para Cuidador principal); RF-032 a RF-034 (titular da ficha própria); RF-040, RF-042 a RF-049 (convidar, convites recebidos, aceitar, recusar, Familiar só consulta); RF-130 a RF-134 (promover, despromover, remover, transferir o principal, principal sem substituto) | TS-W-F003-03, TS-W-F004-01 a 12 | I065: `test/features/pessoas_e12_test.dart` (E12), `pessoas_e13_test.dart` (E13), `pessoas_e14_test.dart` (E14), `fichas_e08_test.dart` (ligações em E08) e `test/data/repositorios_pessoas_convites_test.dart` (OP-18 a OP-26) | RF-041, RF-135, RF-136 (e-mail e notificação do convite) |
+| J2 | F005: RF-050 a RF-057 (registar, validações, receita, receita não guardada, consultar, atualizar, terminar, histórico) | TS-W-F005-01 a 10 | I067: `test/features/medicacao_e15_test.dart`, `medicacao_e16_test.dart`, `medicacao_e17_test.dart`, `medicacao_acessibilidade_test.dart` (RNF-025, RNF-026) e `test/data/repositorios_tratamentos_test.dart` (OP-27 a OP-31) | Geração das tomas (RF-060) |
+| J3 | F006: RF-063 a RF-065, RF-067, RF-068 (calendário, confirmar, autor e momento, com atraso, não confirmada); RF-061, RF-062 (sincronização OP-34 e aviso local, só mobile) | TS-W-F006-01 a 08 | I069: `test/features/tomas_e15_calendario_test.dart` (calendário e confirmação), `test/avisos_locais/avisos_locais_test.dart` e `observador_avisos_locais_test.dart` (sincronização, agendamento e cancelamento dos avisos), `test/data/repositorios_tomas_test.dart` (OP-32 a OP-34) | RF-066 (tolerâncias), RF-068 (processo periódico) |
+
+Os cenários TS-M-F004 a TS-M-F006, com os mesmos casos dos cenários web e os textos do contrato de interface da F006, ficam propostos para o Backlog Refinement do Sprint 09, para serem implementados depois do merge da I065, da I067 e da I069 (por exemplo, com a I079).
 
 ### 6.2 Seletores de ficheiros (desvio ao plano)
 
@@ -120,4 +126,4 @@ O `integration_test` não opera a câmara, a galeria nem o seletor de ficheiros 
 
 ### 6.3 Avisos locais (I069)
 
-Um aviso agendado no sistema operativo não se verifica de forma fiável no emulador. Quando a I069 entrar, os cenários da F006 substituem o serviço de avisos locais por um falso, pelo provedor, e verificam o agendamento (hora e texto) e o cancelamento.
+Um aviso agendado no sistema operativo não se verifica de forma fiável no emulador. Quando os cenários da F006 forem implementados, substituem o serviço de avisos locais por um falso, pelo provedor, e verificam o agendamento (hora e texto) e o cancelamento.
