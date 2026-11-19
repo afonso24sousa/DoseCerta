@@ -49,8 +49,9 @@ void main() {
       await esperarPor(tester, find.textContaining('receita-ficticia.pdf'));
       await tocar(tester, find.text('Criar ficha'));
 
-      await esperarPor(tester, find.text('Ficha'));
-      expect(find.text('Maria Fictícia Santos'), findsWidgets);
+      // O título «Ficha» aparece antes de E08 carregar os dados: espera-se pelo nome da ficha criada.
+      await esperarPor(tester, find.text('Maria Fictícia Santos'));
+      expect(find.text('Ficha'), findsWidgets);
       expect(fonte.pedidas, [OrigemFicheiro.galeria]);
     },
   );
