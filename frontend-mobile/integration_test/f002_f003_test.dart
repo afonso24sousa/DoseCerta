@@ -1,5 +1,11 @@
 // Testes de sistema da F002 e da F003 na aplicação mobile (I070, QG-07), contra a API real indicada em
 // `--dart-define=URL_API`. Especificação: m4-especificacao-testes-sistema-frontend-mobile-v02.md.
+//
+// Cada cenário tem um limite de 3 minutos: um bloqueio falha só esse cenário, com a indicação do passo, em vez de
+// esgotar os 25 minutos do QG-07.
+@Timeout(Duration(minutes: 3))
+library;
+
 import 'dart:convert';
 import 'dart:typed_data';
 
