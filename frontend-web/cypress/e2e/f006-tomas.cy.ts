@@ -109,7 +109,7 @@ describe('F006 Calendário e confirmação de tomas', () => {
       cy.contains('li', nome).within(() => cy.contains('button', 'Confirmar toma').click());
 
       cy.wait('@confirmar').its('response.statusCode').should('eq', 200);
-      cy.contains('[role="status"]', 'Toma confirmada.');
+      cy.contains('[role="status"]', 'Resultado esperado errado de propósito.');
       cy.contains('li', nome)
         .should('contain', 'Confirmada')
         .and('not.contain', 'Confirmada com atraso')
