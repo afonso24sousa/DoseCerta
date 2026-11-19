@@ -3,11 +3,11 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:dosecerta/main.dart' as app;
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+
+import 'apoio.dart' as apoio;
 
 const urlApi = String.fromEnvironment('URL_API');
 
@@ -68,10 +68,12 @@ Future<void> fecharAviso(WidgetTester tester) async {
   expect(aviso, findsNothing);
 }
 
-/// Arranca a aplicação sem sessão guardada, para cada cenário ser independente.
+/// Arranca a aplicação sem sessão guardada, para cada cenário ser independente. A sessão fica em memória
+/// (`ArmazenamentoMemoria`, em `apoio.dart`), no lugar do armazenamento seguro do Android, que bloqueia de vez em
+/// quando no emulador da pipeline (I070).
 Future<void> arrancarSemSessao(WidgetTester tester) async {
-  await const FlutterSecureStorage().deleteAll();
-  await app.main();
+  apoio.ArmazenamentoMemoria.valores.clear();
+  await apoio.abrirAplicacao(tester);
   await esperarPor(tester, find.text('Início de sessão'));
 }
 
@@ -232,7 +234,8 @@ void main() {
       );
       await esperarPor(tester, find.text('Início de sessão'));
 
-      await app.main();
+      // Reabre a aplicação com o que ficou guardado: a sessão terminada não pode ser restaurada.
+      await apoio.abrirAplicacao(tester);
       await esperarPor(tester, find.text('Início de sessão'));
       expect(find.byType(NavigationBar), findsNothing);
     },

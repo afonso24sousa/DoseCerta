@@ -32,7 +32,7 @@ Esta especificação descreve os cenários de sistema da aplicação mobile, seg
 | Backend | API real (`DoseCerta.Api`) e SQL Server 2022 criados e destruídos em cada execução da frontend-mobile-ci |
 | Localização dos elementos | Rótulo do campo (`InputDecoration.labelText`), texto e tipo do botão, dica da entrada da barra inferior; nunca a posição |
 | Esperas | Espera ativa pelo elemento (`esperarPor`, no máximo 30 segundos); sem esperas fixas |
-| Independência | Cada cenário apaga a sessão guardada (`FlutterSecureStorage.deleteAll`) e arranca a aplicação de novo |
+| Independência | Cada cenário apaga a sessão guardada e arranca a aplicação de novo. A sessão fica num armazenamento em memória (`ArmazenamentoMemoria`, em `apoio.dart`), entregue ao `InicializadorApp` no lugar do `FlutterSecureStorage`: no emulador da pipeline, o armazenamento seguro do Android bloqueava de vez em quando no arranque de um cenário e encravava o QG-07 (execução 23 do PR #112; PR #121). O código de produção não muda; a gravação e a leitura da sessão ficam cobertas pelos testes da I058 (`test/core/sessao_test.dart`) |
 | Comando local | `flutter test integration_test --dart-define=URL_API=http://10.0.2.2:5180`, com emulador e API ativos |
 | Quality gate | QG-07: 100% dos cenários passam. A falha de um cenário termina a pipeline sem sucesso |
 
