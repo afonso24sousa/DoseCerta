@@ -46,7 +46,7 @@ void main() {
       await tocar(tester, find.text('Carregar: Receita médica'));
       await esperarPor(tester, find.text('Galeria'));
       await tocar(tester, find.text('Galeria'));
-      await esperarPor(tester, find.textContaining('receita-ficticia.pdf'));
+      await esperarPor(tester, find.textContaining('resultado-esperado-errado.pdf'));
       await tocar(tester, find.text('Criar ficha'));
 
       await esperarPor(tester, find.text('Ficha'));
