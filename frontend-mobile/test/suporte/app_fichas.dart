@@ -11,6 +11,7 @@ import 'package:go_router/go_router.dart';
 
 import 'falsos.dart';
 import 'falsos_fichas.dart';
+import 'falsos_tratamentos.dart';
 
 /// Aplicação de teste com as rotas reais do ramo Fichas (sem a barra inferior), a começar em [inicio].
 class AppFichas {
@@ -29,6 +30,7 @@ class AppFichas {
   final DocumentosRepositorioFalso documentos = DocumentosRepositorioFalso();
   final FonteFicheirosFalsa fonte = FonteFicheirosFalsa();
   final AbridorDocumentosFalso abridor = AbridorDocumentosFalso();
+  final TratamentosRepositorioFalso tratamentos = TratamentosRepositorioFalso();
 
   /// Caminho atual.
   String get local => router.routerDelegate.currentConfiguration.uri.path;
@@ -40,6 +42,7 @@ class AppFichas {
         fichasRepositorioProvider.overrideWithValue(fichas),
         dominiosRepositorioProvider.overrideWithValue(dominios),
         documentosRepositorioProvider.overrideWithValue(documentos),
+        tratamentosRepositorioProvider.overrideWithValue(tratamentos),
         abridorDocumentosProvider.overrideWithValue(abridor),
         selecionadorFicheirosProvider.overrideWithValue(
           SelecionadorFicheiros(fonte),

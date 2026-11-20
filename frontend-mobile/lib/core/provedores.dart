@@ -6,6 +6,7 @@ import '../data/conta_repositorio.dart';
 import '../data/documentos_repositorio.dart';
 import '../data/dominios_repositorio.dart';
 import '../data/fichas_repositorio.dart';
+import '../data/tratamentos_repositorio.dart';
 import 'api_client.dart';
 import 'auth_interceptor.dart';
 import 'configuracao_api.dart';
@@ -68,4 +69,9 @@ final fichasRepositorioProvider = Provider<FichasRepositorio>(
 /// Repositório dos documentos (OP-15 a OP-17).
 final documentosRepositorioProvider = Provider<DocumentosRepositorio>(
   (ref) => DocumentosRepositorio(ref.watch(apiClientProvider)),
+);
+
+/// Repositório dos tratamentos (OP-27 a OP-31).
+final tratamentosRepositorioProvider = Provider<TratamentosRepositorio>(
+  (ref) => TratamentosRepositorio(ref.watch(apiClientProvider)),
 );
