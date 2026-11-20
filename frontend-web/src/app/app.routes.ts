@@ -54,8 +54,8 @@ export const routes: Routes = [
       {
         path: 'convites',
         title: 'Convites · DoseCerta',
-        data: { titulo: 'Convites' },
-        loadComponent: emConstrucao,
+        loadComponent: () =>
+          import('./features/pessoas/convites-recebidos.page').then((m) => m.ConvitesRecebidosPage),
       },
       {
         path: 'notificacoes',
