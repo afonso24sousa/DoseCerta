@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { ConvitesApi } from '../../api/convites.api';
 import { FichasApi } from '../../api/fichas.api';
 import { MensagensErroService } from '../../core/mensagens-erro.service';
 import { EstadoFicha, FichaResumoDto } from '../../models/fichas.models';
@@ -13,7 +14,8 @@ type FiltroEstado = EstadoFicha | 'Todas';
 
 /**
  * Lista das fichas do Utilizador (OP-07; RF-028, RF-120, RF-121), com o filtro Ativas, Arquivadas ou Todas, a indicação
- * da ficha própria, do papel do Utilizador e do estado de cada ficha, e o acesso à criação de uma ficha.
+ * da ficha própria, do papel do Utilizador e do estado de cada ficha, o acesso à criação de uma ficha e o número de
+ * convites recebidos, com a ligação para E14 (OP-20; RF-042, RF-044).
  */
 @Component({
   selector: 'app-lista-fichas-page',
@@ -27,6 +29,13 @@ type FiltroEstado = EstadoFicha | 'Todas';
 
     @if (resultado() === eliminada) {
       <p class="banner banner--sucesso" role="status">Ficha eliminada.</p>
+    } @else if (resultado() === semAcesso) {
+      <p class="banner banner--aviso" role="status">A ficha não existe ou não tem acesso a ela.</p>
+    }
+    @if (convitesPendentes() > 0) {
+      <p class="banner banner--aviso">
+        <a routerLink="/convites">Convites recebidos ({{ convitesPendentes() }})</a>
+      </p>
     }
     <app-banner-erro [mensagem]="erro()" />
 
@@ -87,12 +96,14 @@ type FiltroEstado = EstadoFicha | 'Todas';
 })
 export class ListaFichasPage implements OnInit {
   private readonly fichasApi = inject(FichasApi);
+  private readonly convitesApi = inject(ConvitesApi);
   private readonly mensagens = inject(MensagensErroService);
 
   /** Parâmetro `resultado` da rota, depois de eliminar uma ficha. */
   readonly resultado = input<string | undefined>();
 
   protected readonly eliminada = ResultadoFicha.eliminada;
+  protected readonly semAcesso = ResultadoFicha.semAcesso;
   protected readonly filtros: readonly { valor: FiltroEstado; rotulo: string }[] = [
     { valor: 'Ativa', rotulo: 'Ativas' },
     { valor: 'Arquivada', rotulo: 'Arquivadas' },
@@ -103,9 +114,15 @@ export class ListaFichasPage implements OnInit {
   protected readonly fichas = signal<FichaResumoDto[]>([]);
   protected readonly aCarregar = signal(true);
   protected readonly erro = signal<string | null>(null);
+  protected readonly convitesPendentes = signal(0);
 
   ngOnInit(): void {
     this.carregar();
+    // OP-20: só o número; uma falha aqui não impede a lista das fichas.
+    this.convitesApi.listarRecebidos().subscribe({
+      next: (convites) => this.convitesPendentes.set(convites.length),
+      error: () => this.convitesPendentes.set(0),
+    });
   }
 
   protected filtrar(filtro: FiltroEstado): void {

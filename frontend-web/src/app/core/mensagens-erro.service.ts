@@ -3,7 +3,7 @@ import { ProblemaApi } from '../models/problema-api';
 import { CODIGO_SEM_LIGACAO } from './ligacao.service';
 
 /**
- * Mensagens em português europeu para os códigos de erro de OP-01 a OP-17 (documentação da API, secções 5.1 e 5.2). Os
+ * Mensagens em português europeu para os códigos de erro de OP-01 a OP-31 (documentação da API, secções 5.1 a 5.4). Os
  * códigos sem mensagem própria usam a mensagem enviada pelo servidor.
  */
 @Injectable({ providedIn: 'root' })
@@ -30,6 +30,23 @@ export class MensagensErroService {
       'Não foi possível guardar o documento e nada foi gravado. Os dados preenchidos mantêm-se: tente novamente.',
     DOCUMENTO_NAO_ENCONTRADO: 'O documento não existe ou não tem acesso a ele.',
     DOCUMENTO_INDISPONIVEL: 'Não foi possível obter o ficheiro neste momento. Tente novamente.',
+    CONVITE_PENDENTE_EXISTE: 'Já existe um convite pendente para este e-mail nesta ficha.',
+    PESSOA_JA_ASSOCIADA: 'Esta pessoa já está associada à ficha.',
+    CONVITE_NAO_ENCONTRADO: 'O convite já não existe ou não lhe é dirigido.',
+    CONVITE_JA_RESPONDIDO: 'O convite já foi aceite ou recusado.',
+    PESSOA_NAO_ENCONTRADA: 'A pessoa já não está associada à ficha.',
+    CUIDADOR_PRINCIPAL_PROTEGIDO:
+      'Na ficha própria o titular é sempre o Cuidador principal: não pode ser despromovido, removido nem substituído.',
+    CUIDADOR_PRINCIPAL_SEM_SUBSTITUTO:
+      'Indique outro Cuidador para assumir o papel antes de despromover ou remover o Cuidador principal.',
+    FICHA_SEM_CUIDADOR:
+      'A ficha tem de ficar com pelo menos um Cuidador. Promova primeiro um Familiar ou convide um novo Cuidador.',
+    RECURSO_NAO_ENCONTRADO: 'O registo não existe ou não tem acesso a ele.',
+    TRATAMENTO_TERMINADO:
+      'O tratamento já terminou e não pode ser alterado; continua disponível para consulta.',
+    TRATAMENTO_JA_TERMINADO: 'O tratamento já está terminado.',
+    DESTINATARIO_NAO_E_CUIDADOR:
+      'Só um Cuidador pode passar a Cuidador principal. Promova a pessoa a Cuidador ou convide-a como Cuidador primeiro.',
   };
 
   /**
