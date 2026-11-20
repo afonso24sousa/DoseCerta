@@ -1,6 +1,7 @@
 import 'package:dosecerta/core/app_router.dart';
 import 'package:dosecerta/core/mensagens_erro.dart';
 import 'package:dosecerta/core/sem_ligacao_erro.dart';
+import 'package:dosecerta/features/pessoas/pessoas_ficha_page.dart';
 import 'package:dosecerta/models/estado_ficha.dart';
 import 'package:dosecerta/models/papel.dart';
 import 'package:dosecerta/models/problema_api.dart';
@@ -144,7 +145,8 @@ void main() {
       await tester.pumpAndSettle();
       await tocar(tester, find.widgetWithText(ChoiceChip, 'Pessoas'));
       expect(app.local, AppRouter.pessoasFicha('f-1'));
-      expect(find.text('Página provisória'), findsOneWidget);
+      // E12 implementado na I065 (substitui a página provisória da I058).
+      expect(find.byType(PessoasFichaPage), findsOneWidget);
     });
 
     testWidgets(

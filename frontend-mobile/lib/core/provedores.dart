@@ -3,9 +3,11 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../data/auth_repositorio.dart';
 import '../data/conta_repositorio.dart';
+import '../data/convites_repositorio.dart';
 import '../data/documentos_repositorio.dart';
 import '../data/dominios_repositorio.dart';
 import '../data/fichas_repositorio.dart';
+import '../data/pessoas_repositorio.dart';
 import '../data/tratamentos_repositorio.dart';
 import 'api_client.dart';
 import 'auth_interceptor.dart';
@@ -74,4 +76,14 @@ final documentosRepositorioProvider = Provider<DocumentosRepositorio>(
 /// Repositório dos tratamentos (OP-27 a OP-31).
 final tratamentosRepositorioProvider = Provider<TratamentosRepositorio>(
   (ref) => TratamentosRepositorio(ref.watch(apiClientProvider)),
+);
+
+/// Repositório das pessoas da ficha (OP-18, OP-23 a OP-26).
+final pessoasRepositorioProvider = Provider<PessoasRepositorio>(
+  (ref) => PessoasRepositorio(ref.watch(apiClientProvider)),
+);
+
+/// Repositório dos convites (OP-19 a OP-22).
+final convitesRepositorioProvider = Provider<ConvitesRepositorio>(
+  (ref) => ConvitesRepositorio(ref.watch(apiClientProvider)),
 );
