@@ -10,6 +10,13 @@
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" tools:node="remove"/>
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" tools:node="remove"/>
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" tools:node="remove"/>
+    <!-- Avisos locais das tomas (I069; RF-062, RNF-041). O POST_NOTIFICATIONS e o VIBRATE vêm do
+         flutter_local_notifications: o primeiro é pedido ao Utilizador só quando toca em «Ativar avisos»; o segundo
+         deixa o aviso vibrar com o ecrã bloqueado. O SCHEDULE_EXACT_ALARM permite o alarme exato (desvio máximo de
+         60 segundos); no Android 14 e seguintes o Utilizador autoriza-o nas definições. O RECEIVE_BOOT_COMPLETED volta
+         a agendar os avisos depois de o telemóvel reiniciar. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <application
         android:label="DoseCerta"
         android:networkSecurityConfig="@xml/network_security_config"
@@ -37,6 +44,15 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- Recetores do flutter_local_notifications: mostram o aviso à hora prevista e voltam a agendá-lo depois de
+             reiniciar o telemóvel ou de atualizar a aplicação (I069). -->
+        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+            </intent-filter>
+        </receiver>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

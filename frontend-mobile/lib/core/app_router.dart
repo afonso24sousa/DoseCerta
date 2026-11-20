@@ -15,6 +15,7 @@ import '../features/fichas/nova_ficha_documentos_page.dart';
 import '../features/medicacao/formulario_tratamento_page.dart';
 import '../features/medicacao/medicacao_ficha_page.dart';
 import '../features/medicacao/tratamento_page.dart';
+import '../features/medicacao/vista_medicacao.dart';
 import '../features/navegacao/estrutura_navegacao.dart';
 import '../features/navegacao/pagina_provisoria.dart';
 import '../models/conta_criada_dto.dart';
@@ -59,6 +60,10 @@ class AppRouter {
 
   /// E15 Medicação da ficha.
   static String medicacaoFicha(String fichaId) => '/fichas/$fichaId/medicacao';
+
+  /// E15 Medicação da ficha, aberto no separador «Calendário de tomas» (I069).
+  static String calendarioTomas(String fichaId) =>
+      '/fichas/$fichaId/medicacao?vista=calendario';
 
   /// E16 Registar tratamento.
   static String novoTratamento(String fichaId) =>
@@ -214,8 +219,10 @@ class AppRouter {
   static GoRoute rotasMedicacao() {
     return GoRoute(
       path: 'medicacao',
-      builder: (context, estado) =>
-          MedicacaoFichaPage(fichaId: estado.pathParameters['fichaId']!),
+      builder: (context, estado) => MedicacaoFichaPage(
+        fichaId: estado.pathParameters['fichaId']!,
+        vista: VistaMedicacao.daRota(estado.uri.queryParameters['vista']),
+      ),
       routes: [
         GoRoute(
           path: 'novo',
