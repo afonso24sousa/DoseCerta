@@ -8,11 +8,13 @@ import '../../models/ficha_resumo_dto.dart';
 import '../../shared/apresentacao_papel.dart';
 import '../../shared/banner_erro.dart';
 import '../../shared/nova_ficha_rascunho.dart';
+import '../pessoas/convites_recebidos_controller.dart';
 import 'lista_fichas_controller.dart';
 
 /// Ecrã E05 Fichas (protótipo de baixa fidelidade v02, página 32): as fichas a que o Utilizador está associado,
-/// com o seu papel em cada uma, nos separadores Ativas e Arquivadas, e o botão «Nova ficha». A lista volta a ser
-/// pedida ao abrir e ao puxar para baixo.
+/// com o seu papel em cada uma, nos separadores Ativas e Arquivadas, o botão «Nova ficha» e a ligação «Convites
+/// recebidos (N)», que abre E14 (RF-042). As fichas e os convites voltam a ser pedidos ao abrir e ao puxar para
+/// baixo.
 class ListaFichasPage extends ConsumerStatefulWidget {
   /// Cria o ecrã.
   const ListaFichasPage({super.key});
@@ -25,21 +27,28 @@ class _ListaFichasPageState extends ConsumerState<ListaFichasPage> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(
-      () => ref.read(listaFichasControllerProvider.notifier).carregar(),
-    );
+    Future.microtask(_carregar);
+  }
+
+  /// Pede as fichas (OP-07) e os convites pendentes (OP-20), para indicar quantos há (RF-042).
+  Future<void> _carregar() async {
+    await Future.wait([
+      ref.read(listaFichasControllerProvider.notifier).carregar(),
+      ref.read(convitesRecebidosControllerProvider.notifier).carregar(),
+    ]);
   }
 
   @override
   Widget build(BuildContext context) {
     final estado = ref.watch(listaFichasControllerProvider);
     final controlador = ref.read(listaFichasControllerProvider.notifier);
+    final convites = ref.watch(convitesRecebidosControllerProvider);
     final fichas = estado.fichasVisiveis;
     return Scaffold(
       appBar: AppBar(title: const Text('Fichas')),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: controlador.carregar,
+          onRefresh: _carregar,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(16),
@@ -92,6 +101,16 @@ class _ListaFichasPageState extends ConsumerState<ListaFichasPage> {
                 },
                 icon: const Icon(Icons.add),
                 label: const Text('Nova ficha'),
+              ),
+              const SizedBox(height: 8),
+              TextButton.icon(
+                onPressed: () => context.push(AppRouter.convites),
+                icon: const Icon(Icons.mail_outline),
+                label: Text(
+                  convites.carregada
+                      ? 'Convites recebidos (${convites.convites.length})'
+                      : 'Convites recebidos',
+                ),
               ),
             ],
           ),
