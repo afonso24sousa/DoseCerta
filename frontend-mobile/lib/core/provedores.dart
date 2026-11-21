@@ -15,6 +15,7 @@ import '../data/documentos_repositorio.dart';
 import '../data/dominios_repositorio.dart';
 import '../data/fichas_repositorio.dart';
 import '../data/lista_diaria_repositorio.dart';
+import '../data/notificacoes_repositorio.dart';
 import '../data/pessoas_repositorio.dart';
 import '../data/registos_repositorio.dart';
 import '../data/tomas_repositorio.dart';
@@ -149,4 +150,9 @@ final sincronizadorCalendarioProvider = Provider<SincronizadorCalendario>(
     avisos: ref.watch(avisosLocaisServiceProvider),
     relogio: ref.watch(relogioProvider),
   ),
+);
+
+/// Repositório do histórico de notificações (OP-51).
+final notificacoesRepositorioProvider = Provider<NotificacoesRepositorio>(
+  (ref) => NotificacoesRepositorio(ref.watch(apiClientProvider)),
 );

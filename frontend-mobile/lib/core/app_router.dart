@@ -20,6 +20,7 @@ import '../features/medicacao/tratamento_page.dart';
 import '../features/medicacao/vista_medicacao.dart';
 import '../features/navegacao/estrutura_navegacao.dart';
 import '../features/navegacao/pagina_provisoria.dart';
+import '../features/notificacoes/notificacoes_page.dart';
 import '../features/pessoas/convidar_pessoa_page.dart';
 import '../features/pessoas/convites_recebidos_page.dart';
 import '../features/pessoas/pessoas_ficha_page.dart';
@@ -109,7 +110,7 @@ class AppRouter {
   /// E21 Agenda (provisória).
   static const String agenda = '/agenda';
 
-  /// E25 Notificações (provisória).
+  /// E25 Notificações.
   static const String notificacoes = '/notificacoes';
 
   /// E03 Conta.
@@ -168,10 +169,7 @@ class AppRouter {
               agenda,
               const PaginaProvisoria(titulo: 'Agenda', ecra: 'E21'),
             ),
-            _ramo(
-              notificacoes,
-              const PaginaProvisoria(titulo: 'Notificações', ecra: 'E25'),
-            ),
+            _ramo(notificacoes, const NotificacoesPage()),
             _ramo(conta, const ContaPage()),
           ],
         ),
