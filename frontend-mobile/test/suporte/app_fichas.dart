@@ -1,5 +1,6 @@
 import 'package:dosecerta/core/app_router.dart';
 import 'package:dosecerta/core/provedores.dart';
+import 'package:dosecerta/core/sessao_store.dart';
 import 'package:dosecerta/shared/abridor_documentos.dart';
 import 'package:dosecerta/shared/selecionador_ficheiros.dart';
 import 'package:dosecerta/shared/tema_dosecerta.dart';
@@ -11,13 +12,16 @@ import 'package:go_router/go_router.dart';
 
 import 'falsos.dart';
 import 'falsos_fichas.dart';
+import 'falsos_pessoas.dart';
+import 'falsos_tratamentos.dart';
 
-/// Aplicação de teste com as rotas reais do ramo Fichas (sem a barra inferior), a começar em [inicio].
+/// Aplicação de teste com as rotas reais do ramo Fichas, incluindo E14 (sem a barra inferior), a começar em
+/// [inicio].
 class AppFichas {
   AppFichas({String inicio = AppRouter.fichas, this.outras = const []})
     : router = GoRouter(
         initialLocation: inicio,
-        routes: [AppRouter.rotasFichas()],
+        routes: [AppRouter.rotasFichas(), AppRouter.rotaConvites()],
       );
 
   final GoRouter router;
@@ -29,6 +33,12 @@ class AppFichas {
   final DocumentosRepositorioFalso documentos = DocumentosRepositorioFalso();
   final FonteFicheirosFalsa fonte = FonteFicheirosFalsa();
   final AbridorDocumentosFalso abridor = AbridorDocumentosFalso();
+  final TratamentosRepositorioFalso tratamentos = TratamentosRepositorioFalso();
+  final ConvitesRepositorioFalso convites = ConvitesRepositorioFalso();
+  final PessoasRepositorioFalso pessoas = PessoasRepositorioFalso();
+
+  /// Identificador do Utilizador da sessão de teste.
+  static const String utilizadorId = 'u-eu';
 
   /// Caminho atual.
   String get local => router.routerDelegate.currentConfiguration.uri.path;
@@ -40,6 +50,16 @@ class AppFichas {
         fichasRepositorioProvider.overrideWithValue(fichas),
         dominiosRepositorioProvider.overrideWithValue(dominios),
         documentosRepositorioProvider.overrideWithValue(documentos),
+        tratamentosRepositorioProvider.overrideWithValue(tratamentos),
+        convitesRepositorioProvider.overrideWithValue(convites),
+        pessoasRepositorioProvider.overrideWithValue(pessoas),
+        sessaoInicialProvider.overrideWithValue(
+          SessaoGuardada(
+            token: 't',
+            expiraEm: DateTime(2026, 11, 10),
+            utilizadorId: utilizadorId,
+          ),
+        ),
         abridorDocumentosProvider.overrideWithValue(abridor),
         selecionadorFicheirosProvider.overrideWithValue(
           SelecionadorFicheiros(fonte),

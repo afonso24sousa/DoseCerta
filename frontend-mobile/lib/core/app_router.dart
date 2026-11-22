@@ -12,8 +12,14 @@ import '../features/fichas/ficha_page.dart';
 import '../features/fichas/lista_fichas_page.dart';
 import '../features/fichas/nova_ficha_dados_page.dart';
 import '../features/fichas/nova_ficha_documentos_page.dart';
+import '../features/medicacao/formulario_tratamento_page.dart';
+import '../features/medicacao/medicacao_ficha_page.dart';
+import '../features/medicacao/tratamento_page.dart';
 import '../features/navegacao/estrutura_navegacao.dart';
 import '../features/navegacao/pagina_provisoria.dart';
+import '../features/pessoas/convidar_pessoa_page.dart';
+import '../features/pessoas/convites_recebidos_page.dart';
+import '../features/pessoas/pessoas_ficha_page.dart';
 import '../models/conta_criada_dto.dart';
 import 'provedores.dart';
 import 'sessao_controller.dart';
@@ -54,14 +60,33 @@ class AppRouter {
   /// E11 Arquivar, reativar ou eliminar ficha.
   static String estadoFicha(String fichaId) => '/fichas/$fichaId/estado';
 
-  /// E15 Medicação da ficha (provisória).
+  /// E15 Medicação da ficha.
   static String medicacaoFicha(String fichaId) => '/fichas/$fichaId/medicacao';
 
-  /// E12 Pessoas da ficha (provisória).
+  /// E16 Registar tratamento.
+  static String novoTratamento(String fichaId) =>
+      '/fichas/$fichaId/medicacao/novo';
+
+  /// E17 Detalhe do tratamento.
+  static String tratamento(String fichaId, String tratamentoId) =>
+      '/fichas/$fichaId/medicacao/$tratamentoId';
+
+  /// E16 Editar tratamento.
+  static String editarTratamento(String fichaId, String tratamentoId) =>
+      '/fichas/$fichaId/medicacao/$tratamentoId/editar';
+
+  /// E12 Pessoas da ficha.
   static String pessoasFicha(String fichaId) => '/fichas/$fichaId/pessoas';
+
+  /// E13 Convidar pessoa.
+  static String convidarPessoa(String fichaId) =>
+      '/fichas/$fichaId/pessoas/convidar';
 
   /// E23 Ocorrências e notas (provisória).
   static String registosFicha(String fichaId) => '/fichas/$fichaId/registos';
+
+  /// E14 Convites recebidos.
+  static const String convites = '/convites';
 
   /// E21 Agenda (provisória).
   static const String agenda = '/agenda';
@@ -126,7 +151,7 @@ class AppRouter {
                 ecra: 'E04',
               ),
             ),
-            StatefulShellBranch(routes: [rotasFichas()]),
+            StatefulShellBranch(routes: [rotasFichas(), rotaConvites()]),
             _ramo(
               agenda,
               const PaginaProvisoria(titulo: 'Agenda', ecra: 'E21'),
@@ -169,8 +194,20 @@ class AppRouter {
           builder: (context, estado) =>
               FichaPage(fichaId: estado.pathParameters['fichaId']!),
           routes: [
-            _provisoria('medicacao', 'Medicação da ficha', 'E15'),
-            _provisoria('pessoas', 'Pessoas da ficha', 'E12'),
+            rotasMedicacao(),
+            GoRoute(
+              path: 'pessoas',
+              builder: (context, estado) =>
+                  PessoasFichaPage(fichaId: estado.pathParameters['fichaId']!),
+              routes: [
+                GoRoute(
+                  path: 'convidar',
+                  builder: (context, estado) => ConvidarPessoaPage(
+                    fichaId: estado.pathParameters['fichaId']!,
+                  ),
+                ),
+              ],
+            ),
             _provisoria('registos', 'Ocorrências e notas', 'E23'),
             GoRoute(
               path: 'editar',
@@ -191,6 +228,49 @@ class AppRouter {
           ],
         ),
       ],
+    );
+  }
+
+  /// Rotas da medicação da ficha (E15 a E17). `novo` vem antes de `:tratamentoId`, para não ser lido como um
+  /// identificador de tratamento.
+  static GoRoute rotasMedicacao() {
+    return GoRoute(
+      path: 'medicacao',
+      builder: (context, estado) =>
+          MedicacaoFichaPage(fichaId: estado.pathParameters['fichaId']!),
+      routes: [
+        GoRoute(
+          path: 'novo',
+          builder: (context, estado) => FormularioTratamentoPage(
+            fichaId: estado.pathParameters['fichaId']!,
+          ),
+        ),
+        GoRoute(
+          path: ':tratamentoId',
+          builder: (context, estado) => TratamentoPage(
+            fichaId: estado.pathParameters['fichaId']!,
+            tratamentoId: estado.pathParameters['tratamentoId']!,
+          ),
+          routes: [
+            GoRoute(
+              path: 'editar',
+              builder: (context, estado) => FormularioTratamentoPage(
+                fichaId: estado.pathParameters['fichaId']!,
+                tratamentoId: estado.pathParameters['tratamentoId'],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// Rota de E14 (modelo de classes, secção 8). Fica no ramo Fichas, porque E14 abre-se a partir de E05 (protótipo
+  /// v02, página 36); E05 abre-a com `push`, para o ecrã ter a seta de voltar.
+  static GoRoute rotaConvites() {
+    return GoRoute(
+      path: convites,
+      builder: (context, estado) => const ConvitesRecebidosPage(),
     );
   }
 
