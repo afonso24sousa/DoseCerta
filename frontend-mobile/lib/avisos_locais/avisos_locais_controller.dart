@@ -87,8 +87,12 @@ class AvisosLocaisController extends Notifier<AvisosLocaisEstado> {
     await sincronizar();
   }
 
-  /// Lê o estado das autorizações.
+  /// Lê o estado das autorizações. Não faz nada se o controlador já tiver sido descartado (por exemplo, a aplicação
+  /// foi fechada durante um `await` anterior).
   Future<void> carregarEstado() async {
+    if (!ref.mounted) {
+      return;
+    }
     final permissao = ref.read(permissaoNotificacoesProvider);
     final notificacoes = await _semFalhar(permissao.estado);
     final alarmes = await _semFalhar(permissao.estadoAlarmesExatos);
@@ -101,8 +105,11 @@ class AvisosLocaisController extends Notifier<AvisosLocaisEstado> {
     );
   }
 
-  /// Sincroniza as tomas do Utilizador com sessão; sem sessão não faz nada.
+  /// Sincroniza as tomas do Utilizador com sessão; sem sessão, ou com o controlador já descartado, não faz nada.
   Future<void> sincronizar() async {
+    if (!ref.mounted) {
+      return;
+    }
     final sessao = ref.read(sessaoControllerProvider);
     final utilizadorId = sessao.utilizadorId;
     if (!sessao.autenticada || utilizadorId == null || state.aSincronizar) {

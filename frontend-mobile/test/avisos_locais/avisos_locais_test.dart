@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dosecerta/avisos_locais/aviso_local.dart';
 import 'package:dosecerta/avisos_locais/avisos_locais_controller.dart';
 import 'package:dosecerta/avisos_locais/avisos_locais_service.dart';
@@ -239,6 +241,21 @@ void main() {
       agendador = AgendadorAvisosFalso();
       permissao = PermissaoNotificacoesFalsa();
       auth = AuthRepositorioFalso();
+    });
+
+    test('se a aplicação for fechada enquanto lê as autorizações, não sincroniza nem falha (QG-07)', () async {
+      final espera = Completer<void>();
+      permissao.esperaEstado = espera.future;
+      final c = contentor(sessao: sessao);
+
+      c.read(avisosLocaisControllerProvider);
+      await pumpEventQueue();
+      // Nos testes de sistema, cada cenário volta a arrancar a aplicação e descarta o contentor anterior.
+      c.dispose();
+      espera.complete();
+      await pumpEventQueue();
+
+      expect(agendador.agendados, isEmpty);
     });
 
     test(

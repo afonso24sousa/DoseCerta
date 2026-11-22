@@ -179,8 +179,14 @@ class PermissaoNotificacoesFalsa implements PermissaoNotificacoes {
   /// Pedidos dos alarmes exatos.
   int pedidosAlarmes = 0;
 
+  /// Se existir, a leitura do estado das notificações só termina quando este futuro terminar.
+  Future<void>? esperaEstado;
+
   @override
-  Future<bool?> estado() async => notificacoes;
+  Future<bool?> estado() async {
+    await esperaEstado;
+    return notificacoes;
+  }
 
   @override
   Future<bool?> pedir() async {
