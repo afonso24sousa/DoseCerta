@@ -96,7 +96,10 @@ const CODIGOS_RECARREGAR = new Set([
         }
         <span class="etiqueta">O meu papel: {{ papel() }}</span>
       </div>
-      <p><a [routerLink]="['/fichas', f.id, 'pessoas']">Pessoas da ficha</a></p>
+      <p class="acoes">
+        <a [routerLink]="['/fichas', f.id, 'medicacao']">Medicação</a>
+        <a [routerLink]="['/fichas', f.id, 'pessoas']">Pessoas da ficha</a>
+      </p>
 
       @if (f.estado === 'Arquivada') {
         <p class="banner banner--aviso" role="status">

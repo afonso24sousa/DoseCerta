@@ -3,7 +3,7 @@ import { ProblemaApi } from '../models/problema-api';
 import { CODIGO_SEM_LIGACAO } from './ligacao.service';
 
 /**
- * Mensagens em português europeu para os códigos de erro de OP-01 a OP-26 (documentação da API, secções 5.1 a 5.3). Os
+ * Mensagens em português europeu para os códigos de erro de OP-01 a OP-31 (documentação da API, secções 5.1 a 5.4). Os
  * códigos sem mensagem própria usam a mensagem enviada pelo servidor.
  */
 @Injectable({ providedIn: 'root' })
@@ -41,6 +41,10 @@ export class MensagensErroService {
       'Indique outro Cuidador para assumir o papel antes de despromover ou remover o Cuidador principal.',
     FICHA_SEM_CUIDADOR:
       'A ficha tem de ficar com pelo menos um Cuidador. Promova primeiro um Familiar ou convide um novo Cuidador.',
+    RECURSO_NAO_ENCONTRADO: 'O registo não existe ou não tem acesso a ele.',
+    TRATAMENTO_TERMINADO:
+      'O tratamento já terminou e não pode ser alterado; continua disponível para consulta.',
+    TRATAMENTO_JA_TERMINADO: 'O tratamento já está terminado.',
     DESTINATARIO_NAO_E_CUIDADOR:
       'Só um Cuidador pode passar a Cuidador principal. Promova a pessoa a Cuidador ou convide-a como Cuidador primeiro.',
   };
