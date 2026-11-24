@@ -4,7 +4,11 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:dosecerta/avisos_locais/agendador_avisos.dart';
+import 'package:dosecerta/avisos_locais/aviso_local.dart';
+import 'package:dosecerta/avisos_locais/permissao_notificacoes.dart';
 import 'package:dosecerta/core/inicializador_app.dart';
+import 'package:dosecerta/core/provedores.dart';
 import 'package:dosecerta/core/sessao_store.dart';
 import 'package:dosecerta/main.dart';
 import 'package:dosecerta/shared/origem_ficheiro.dart';
@@ -276,6 +280,39 @@ class ArmazenamentoMemoria implements FlutterSecureStorage {
   }
 }
 
+/// Autorizações de notificações e de alarmes exatos sempre concedidas, sem janelas do sistema.
+class PermissaoNotificacoesAutorizada implements PermissaoNotificacoes {
+  /// Cria as autorizações concedidas.
+  const PermissaoNotificacoesAutorizada();
+
+  @override
+  Future<bool?> estado() async => true;
+
+  @override
+  Future<bool?> pedir() async => true;
+
+  @override
+  Future<bool?> estadoAlarmesExatos() async => true;
+
+  @override
+  Future<bool?> pedirAlarmesExatos() async => true;
+}
+
+/// Agendador que não agenda nada no sistema operativo.
+class AgendadorSemAvisos implements AgendadorAvisos {
+  /// Cria o agendador.
+  const AgendadorSemAvisos();
+
+  @override
+  Future<void> agendar(AvisoLocal aviso) async {}
+
+  @override
+  Future<void> cancelar(int idAviso) async {}
+
+  @override
+  Future<void> cancelarTodos() async {}
+}
+
 /// Abre a aplicação com a sessão que estiver no [ArmazenamentoMemoria] e, se for indicada, a [fonte] de ficheiros
 /// falsa no lugar dos seletores nativos. Cada abertura cria um `ProviderScope` novo, como um arranque a frio.
 Future<void> abrirAplicacao(WidgetTester tester, {FonteFicticia? fonte}) async {
@@ -287,6 +324,13 @@ Future<void> abrirAplicacao(WidgetTester tester, {FonteFicticia? fonte}) async {
       key: UniqueKey(),
       overrides: [
         ...substituicoes,
+        // No emulador da pipeline as notificações não estão autorizadas: sem isto, o aviso das autorizações da I069
+        // ocupa o topo de todos os ecrãs e os botões do fundo das listas deixam de ser construídos. Os avisos locais
+        // são verificados nos testes da I069 (DD06 e especificação mobile v02, secção 6.3).
+        permissaoNotificacoesProvider.overrideWithValue(
+          const PermissaoNotificacoesAutorizada(),
+        ),
+        agendadorAvisosProvider.overrideWithValue(const AgendadorSemAvisos()),
         if (fonte != null)
           selecionadorFicheirosProvider.overrideWithValue(
             SelecionadorFicheiros(fonte),
