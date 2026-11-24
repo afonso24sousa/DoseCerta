@@ -53,17 +53,17 @@ class FormatadorDataHora {
     );
   }
 
-  /// Converte a data e a hora de Lisboa [dataHora] (os campos do [DateTime], sem fuso) num instante ISO 8601 com o
-  /// desvio de Lisboa, o formato dos instantes enviados à API (por exemplo `2026-10-07T15:05:00+01:00`). O desvio
-  /// é o da hora de verão ou de inverno nesse dia.
-  static String instanteDeLisboa(DateTime dataHora) {
+  /// Converte o [dia] às [hora]:[minuto] de Lisboa num instante ISO 8601 com o desvio de Lisboa, o formato dos
+  /// instantes enviados à API (por exemplo `2026-10-07T15:05:00+01:00`). O desvio é o da hora de verão ou de inverno
+  /// nesse dia.
+  static String instanteDeLisboa(DateTime dia, int hora, int minuto) {
     final local = tz.TZDateTime(
       _fusoLisboa,
-      dataHora.year,
-      dataHora.month,
-      dataHora.day,
-      dataHora.hour,
-      dataHora.minute,
+      dia.year,
+      dia.month,
+      dia.day,
+      hora,
+      minuto,
     );
     final desvio = local.timeZoneOffset;
     final sinal = desvio.isNegative ? '-' : '+';
@@ -72,9 +72,10 @@ class FormatadorDataHora {
       2,
       '0',
     );
-    final hora = local.hour.toString().padLeft(2, '0');
-    final minuto = local.minute.toString().padLeft(2, '0');
-    return '${paraIso(local)}T$hora:$minuto:00$sinal$horasDesvio:$minutosDesvio';
+    final horaTexto = local.hour.toString().padLeft(2, '0');
+    final minutoTexto = local.minute.toString().padLeft(2, '0');
+    return '${paraIso(local)}T$horaTexto:$minutoTexto:00'
+        '$sinal$horasDesvio:$minutosDesvio';
   }
 
   static tz.Location get _fusoLisboa => _lisboa ??= () {
