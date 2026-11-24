@@ -12,6 +12,8 @@ import '../features/fichas/ficha_page.dart';
 import '../features/fichas/lista_fichas_page.dart';
 import '../features/fichas/nova_ficha_dados_page.dart';
 import '../features/fichas/nova_ficha_documentos_page.dart';
+import '../features/lista_diaria/avisos_locais_page.dart';
+import '../features/lista_diaria/lista_diaria_page.dart';
 import '../features/medicacao/formulario_tratamento_page.dart';
 import '../features/medicacao/medicacao_ficha_page.dart';
 import '../features/medicacao/tratamento_page.dart';
@@ -36,8 +38,11 @@ class AppRouter {
   /// E02 Início de sessão.
   static const String entrar = '/entrar';
 
-  /// E04 Lista de tarefas diária (provisória).
+  /// E04 Lista de tarefas diária.
   static const String hoje = '/hoje';
+
+  /// E26 Calendário sincronizado e avisos locais, aberto a partir do E04.
+  static const String avisosLocais = '/hoje/avisos-locais';
 
   /// E05 Fichas.
   static const String fichas = '/fichas';
@@ -149,13 +154,7 @@ class AppRouter {
         StatefulShellRoute.indexedStack(
           builder: (context, estado, shell) => EstruturaNavegacao(shell: shell),
           branches: [
-            _ramo(
-              hoje,
-              const PaginaProvisoria(
-                titulo: 'Lista de tarefas diária',
-                ecra: 'E04',
-              ),
-            ),
+            StatefulShellBranch(routes: [rotaHoje()]),
             StatefulShellBranch(routes: [rotasFichas(), rotaConvites()]),
             _ramo(
               agenda,
@@ -238,6 +237,20 @@ class AppRouter {
 
   /// Rotas da medicação da ficha (E15 a E17). `novo` vem antes de `:tratamentoId`, para não ser lido como um
   /// identificador de tratamento.
+  /// Rota do E04 Lista de tarefas diária, com o E26 por baixo.
+  static GoRoute rotaHoje() {
+    return GoRoute(
+      path: hoje,
+      builder: (context, estado) => const ListaDiariaPage(),
+      routes: [
+        GoRoute(
+          path: 'avisos-locais',
+          builder: (context, estado) => const AvisosLocaisPage(),
+        ),
+      ],
+    );
+  }
+
   static GoRoute rotasMedicacao() {
     return GoRoute(
       path: 'medicacao',

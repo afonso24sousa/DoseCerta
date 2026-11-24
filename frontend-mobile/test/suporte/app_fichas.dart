@@ -15,13 +15,17 @@ import 'falsos_fichas.dart';
 import 'falsos_pessoas.dart';
 import 'falsos_tratamentos.dart';
 
-/// Aplicação de teste com as rotas reais do ramo Fichas, incluindo E14 (sem a barra inferior), a começar em
-/// [inicio].
+/// Aplicação de teste com as rotas reais dos ramos Hoje (E04, E26) e Fichas, incluindo E14 (sem a barra inferior), a
+/// começar em [inicio].
 class AppFichas {
   AppFichas({String inicio = AppRouter.fichas, this.outras = const []})
     : router = GoRouter(
         initialLocation: inicio,
-        routes: [AppRouter.rotasFichas(), AppRouter.rotaConvites()],
+        routes: [
+          AppRouter.rotaHoje(),
+          AppRouter.rotasFichas(),
+          AppRouter.rotaConvites(),
+        ],
       );
 
   final GoRouter router;
