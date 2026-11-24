@@ -49,11 +49,11 @@ void main() {
       'a data e hora de Lisboa vão para a API com o desvio do dia (F009)',
       () {
         expect(
-          FormatadorDataHora.instanteDeLisboa(DateTime(2026, 10, 7, 15, 5)),
+          FormatadorDataHora.instanteDeLisboa(DateTime(2026, 10, 7), 15, 5),
           '2026-10-07T15:05:00+01:00',
         );
         expect(
-          FormatadorDataHora.instanteDeLisboa(DateTime(2026, 11, 24, 9, 0)),
+          FormatadorDataHora.instanteDeLisboa(DateTime(2026, 11, 24), 9, 0),
           '2026-11-24T09:00:00+00:00',
         );
       },
