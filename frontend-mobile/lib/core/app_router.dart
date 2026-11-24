@@ -2,6 +2,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/agenda/agenda_page.dart';
+import '../features/agenda/form_compromisso_page.dart';
 import '../features/autenticacao/inicio_sessao_page.dart';
 import '../features/autenticacao/registo_page.dart';
 import '../features/conta/conta_page.dart';
@@ -106,8 +108,16 @@ class AppRouter {
   /// E14 Convites recebidos.
   static const String convites = '/convites';
 
-  /// E21 Agenda (provisória).
+  /// E21 Agenda.
   static const String agenda = '/agenda';
+
+  /// E22 Registar compromisso.
+  static String novoCompromisso(String fichaId) =>
+      '/fichas/$fichaId/compromissos/novo';
+
+  /// E22 Editar compromisso.
+  static String editarCompromisso(String fichaId, String compromissoId) =>
+      '/fichas/$fichaId/compromissos/$compromissoId/editar';
 
   /// E25 Notificações (provisória).
   static const String notificacoes = '/notificacoes';
@@ -159,15 +169,13 @@ class AppRouter {
                 : null,
           ),
         ),
+        ...rotasCompromissos(),
         StatefulShellRoute.indexedStack(
           builder: (context, estado, shell) => EstruturaNavegacao(shell: shell),
           branches: [
             StatefulShellBranch(routes: [rotaHoje()]),
             StatefulShellBranch(routes: [rotasFichas(), rotaConvites()]),
-            _ramo(
-              agenda,
-              const PaginaProvisoria(titulo: 'Agenda', ecra: 'E21'),
-            ),
+            _ramo(agenda, const AgendaPage()),
             _ramo(
               notificacoes,
               const PaginaProvisoria(titulo: 'Notificações', ecra: 'E25'),
@@ -256,6 +264,25 @@ class AppRouter {
         ),
       ],
     );
+  }
+
+  /// Rotas de E22 (modelo de classes, secção 8). Ficam fora da barra inferior e antes do ramo Fichas, para E21 as
+  /// abrir com `push` por cima da agenda e voltar a ela com a seta de voltar.
+  static List<GoRoute> rotasCompromissos() {
+    return [
+      GoRoute(
+        path: '/fichas/:fichaId/compromissos/novo',
+        builder: (context, estado) =>
+            FormCompromissoPage(fichaId: estado.pathParameters['fichaId']!),
+      ),
+      GoRoute(
+        path: '/fichas/:fichaId/compromissos/:compromissoId/editar',
+        builder: (context, estado) => FormCompromissoPage(
+          fichaId: estado.pathParameters['fichaId']!,
+          compromissoId: estado.pathParameters['compromissoId'],
+        ),
+      ),
+    ];
   }
 
   /// Rotas da medicação da ficha (E15 a E17). `novo` vem antes de `:tratamentoId`, para não ser lido como um
