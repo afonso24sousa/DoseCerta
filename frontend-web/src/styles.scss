@@ -336,3 +336,28 @@ a.botao {
   background: var(--cor-aviso-fundo);
   border-radius: 4px;
 }
+
+/* I068 — calendário de tomas */
+.separadores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 1rem 0 0;
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.separador {
+  padding: 0.5rem 1rem;
+  font: inherit;
+  color: var(--cor-texto);
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+
+  &[aria-selected='true'] {
+    font-weight: 600;
+    color: var(--cor-primaria);
+    border-bottom-color: currentColor;
+  }
+}
