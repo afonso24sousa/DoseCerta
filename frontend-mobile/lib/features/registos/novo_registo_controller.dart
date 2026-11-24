@@ -66,13 +66,9 @@ class NovoRegistoController extends Notifier<NovoRegistoEstado> {
     final dia = FormatadorDataHora.lerData(data)!;
     final horaMinuto = ValidadorTratamento.normalizarHora(hora)!;
     final ocorridaEm = FormatadorDataHora.instanteDeLisboa(
-      DateTime(
-        dia.year,
-        dia.month,
-        dia.day,
-        int.parse(horaMinuto.substring(0, 2)),
-        int.parse(horaMinuto.substring(3)),
-      ),
+      dia,
+      int.parse(horaMinuto.substring(0, 2)),
+      int.parse(horaMinuto.substring(3)),
     );
     return _guardar(
       () => ref
