@@ -21,7 +21,10 @@ import '../features/navegacao/pagina_provisoria.dart';
 import '../features/pessoas/convidar_pessoa_page.dart';
 import '../features/pessoas/convites_recebidos_page.dart';
 import '../features/pessoas/pessoas_ficha_page.dart';
+import '../features/registos/novo_registo_page.dart';
+import '../features/registos/registos_page.dart';
 import '../models/conta_criada_dto.dart';
+import '../models/tipo_registo.dart';
 import 'provedores.dart';
 import 'sessao_controller.dart';
 
@@ -89,6 +92,11 @@ class AppRouter {
 
   /// E23 Ocorrências e notas (provisória).
   static String registosFicha(String fichaId) => '/fichas/$fichaId/registos';
+
+  /// E24 Nova ocorrência ou nota, com o [tipo] escolhido à partida (`?tipo=Nota`).
+  static String novoRegisto(String fichaId, {TipoRegisto? tipo}) =>
+      '/fichas/$fichaId/registos/novo'
+      '${tipo == null ? '' : '?tipo=${tipo.valor}'}';
 
   /// E14 Convites recebidos.
   static const String convites = '/convites';
@@ -213,7 +221,22 @@ class AppRouter {
                 ),
               ],
             ),
-            _provisoria('registos', 'Ocorrências e notas', 'E23'),
+            GoRoute(
+              path: 'registos',
+              builder: (context, estado) =>
+                  RegistosPage(fichaId: estado.pathParameters['fichaId']!),
+              routes: [
+                GoRoute(
+                  path: 'novo',
+                  builder: (context, estado) => NovoRegistoPage(
+                    fichaId: estado.pathParameters['fichaId']!,
+                    tipo: estado.uri.queryParameters['tipo'] == 'Nota'
+                        ? TipoRegisto.nota
+                        : TipoRegisto.ocorrencia,
+                  ),
+                ),
+              ],
+            ),
             GoRoute(
               path: 'editar',
               builder: (context, estado) =>
@@ -278,15 +301,6 @@ class AppRouter {
     return GoRoute(
       path: convites,
       builder: (context, estado) => const ConvitesRecebidosPage(),
-    );
-  }
-
-  /// Rota provisória de um separador da ficha implementado noutra Issue (como na DD11 da I058).
-  static GoRoute _provisoria(String caminho, String titulo, String ecra) {
-    return GoRoute(
-      path: caminho,
-      builder: (context, estado) =>
-          PaginaProvisoria(titulo: titulo, ecra: ecra),
     );
   }
 

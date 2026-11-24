@@ -13,6 +13,7 @@ import 'package:go_router/go_router.dart';
 import 'falsos.dart';
 import 'falsos_fichas.dart';
 import 'falsos_pessoas.dart';
+import 'falsos_registos.dart';
 import 'falsos_tratamentos.dart';
 
 /// Aplicação de teste com as rotas reais do ramo Fichas, incluindo E14 (sem a barra inferior), a começar em
@@ -36,6 +37,7 @@ class AppFichas {
   final TratamentosRepositorioFalso tratamentos = TratamentosRepositorioFalso();
   final ConvitesRepositorioFalso convites = ConvitesRepositorioFalso();
   final PessoasRepositorioFalso pessoas = PessoasRepositorioFalso();
+  final RegistosRepositorioFalso registos = RegistosRepositorioFalso();
 
   /// Identificador do Utilizador da sessão de teste.
   static const String utilizadorId = 'u-eu';
@@ -53,6 +55,7 @@ class AppFichas {
         tratamentosRepositorioProvider.overrideWithValue(tratamentos),
         convitesRepositorioProvider.overrideWithValue(convites),
         pessoasRepositorioProvider.overrideWithValue(pessoas),
+        registosRepositorioProvider.overrideWithValue(registos),
         sessaoInicialProvider.overrideWithValue(
           SessaoGuardada(
             token: 't',
