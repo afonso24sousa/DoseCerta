@@ -14,6 +14,7 @@ import '../data/convites_repositorio.dart';
 import '../data/documentos_repositorio.dart';
 import '../data/dominios_repositorio.dart';
 import '../data/fichas_repositorio.dart';
+import '../data/lista_diaria_repositorio.dart';
 import '../data/pessoas_repositorio.dart';
 import '../data/tomas_repositorio.dart';
 import '../data/tratamentos_repositorio.dart';
@@ -104,6 +105,11 @@ final tomasRepositorioProvider = Provider<TomasRepositorio>(
 /// Repositório do calendário de tomas para o dispositivo (OP-34).
 final calendarioRepositorioProvider = Provider<CalendarioRepositorio>(
   (ref) => CalendarioRepositorio(ref.watch(apiClientProvider)),
+);
+
+/// Repositório da lista de tarefas diária (OP-50).
+final listaDiariaRepositorioProvider = Provider<ListaDiariaRepositorio>(
+  (ref) => ListaDiariaRepositorio(ref.watch(apiClientProvider)),
 );
 
 /// Agendador dos avisos no sistema operativo (os testes substituem-no por um falso).
