@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dosecerta/core/api_client.dart';
 import 'package:dosecerta/data/registos_repositorio.dart';
 import 'package:dosecerta/models/nova_nota_dto.dart';
@@ -40,6 +42,10 @@ class RegistosRepositorioFalso implements RegistosRepositorio {
 
   /// Pedidos de consulta feitos, pelo tipo (`Ocorrencia` ou `Nota`).
   final List<String> consultas = [];
+
+  /// Esperas a aplicar às próximas consultas, pela ordem: cada consulta lê os registos ao chegar e só responde
+  /// quando a sua espera terminar (para simular respostas que chegam fora de ordem).
+  final List<Completer<void>> esperas = [];
 
   final List<NovaOcorrenciaDto> ocorrenciasEnviadas = [];
   final List<NovaNotaDto> notasEnviadas = [];
@@ -103,9 +109,13 @@ class RegistosRepositorioFalso implements RegistosRepositorio {
     List<RegistoDto> registos,
   ) async {
     consultas.add(tipo.valor);
+    final copia = List.of(registos);
+    if (esperas.isNotEmpty) {
+      await esperas.removeAt(0).future;
+    }
     if (erroListar != null) {
       throw erroListar!;
     }
-    return List.of(registos);
+    return copia;
   }
 }

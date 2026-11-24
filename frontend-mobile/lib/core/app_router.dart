@@ -90,7 +90,7 @@ class AppRouter {
   static String convidarPessoa(String fichaId) =>
       '/fichas/$fichaId/pessoas/convidar';
 
-  /// E23 Ocorrências e notas (provisória).
+  /// E23 Ocorrências e notas.
   static String registosFicha(String fichaId) => '/fichas/$fichaId/registos';
 
   /// E24 Nova ocorrência ou nota, com o [tipo] escolhido à partida (`?tipo=Nota`).

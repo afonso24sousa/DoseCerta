@@ -125,14 +125,58 @@ class NovoRegistoController extends Notifier<NovoRegistoEstado> {
         'Indique a data em que aconteceu, no formato dd/mm/aaaa.',
       );
     }
-    if (hora != null && ValidadorTratamento.normalizarHora(hora) == null) {
+    final horaMinuto = hora == null
+        ? null
+        : ValidadorTratamento.normalizarHora(hora);
+    if (hora != null && horaMinuto == null) {
       erros['hora'] = MensagensErro.comRotulo(
         rotulos['hora']!,
         'Indique a hora em que aconteceu, no formato hh:mm, por exemplo '
         '15:05.',
       );
     }
+    final dia = data == null ? null : FormatadorDataHora.lerData(data);
+    if (dia != null &&
+        horaMinuto != null &&
+        !_existeEmLisboa(
+          dia,
+          int.parse(horaMinuto.substring(0, 2)),
+          int.parse(horaMinuto.substring(3)),
+        )) {
+      erros['hora'] = MensagensErro.comRotulo(
+        rotulos['hora']!,
+        'Não existe nesse dia, porque às 01:00 os relógios passaram para as '
+        '02:00. Indique outra hora.',
+      );
+    }
     return erros;
+  }
+
+  /// Indica se a [hora]:[minuto] existe no [dia] em Lisboa. Na passagem para a hora de verão (último domingo de
+  /// março) os relógios saltam das 01:00 para as 02:00, e uma hora dessa hora seria enviada como outra, sem que o
+  /// registo possa depois ser corrigido (RF-090). Na passagem para a hora de inverno, a hora repetida (01:00 a 01:59)
+  /// é válida e fica com o desvio que o pacote `timezone` escolhe.
+  static bool _existeEmLisboa(DateTime dia, int hora, int minuto) {
+    final instante = DateTime.parse(
+      FormatadorDataHora.instanteDeLisboa(dia, hora, minuto),
+    );
+    final emLisboa = FormatadorDataHora.emLisboa(instante);
+    return emLisboa.hour == hora && emLisboa.minute == minuto;
+  }
+
+  /// Ao mudar de tipo, esquece os erros da data e da hora, que só existem na ocorrência. Os erros da descrição e o
+  /// erro geral continuam, porque se aplicam aos dois tipos.
+  void limparErrosDeDataHora() {
+    if (state.aGuardar) {
+      return;
+    }
+    state = NovoRegistoEstado(
+      erros: {
+        for (final erro in state.erros.entries)
+          if (erro.key != 'data' && erro.key != 'hora') erro.key: erro.value,
+      },
+      erroGeral: state.erroGeral,
+    );
   }
 
   Future<RegistoDto?> _guardar(Future<RegistoDto> Function() pedido) async {

@@ -81,6 +81,38 @@ void main() {
         );
       },
     );
+
+    test('na passagem para a hora de verão, a hora que não existe em Lisboa é recusada (RF-090)', () {
+      final erros = NovoRegistoController.validar(
+        descricao: 'Queda.',
+        data: '29/03/2026',
+        hora: '01:30',
+      );
+      expect(erros.keys, ['hora']);
+      expect(erros['hora'], contains('não existe nesse dia'));
+      expect(
+        NovoRegistoController.validar(
+          descricao: 'Queda.',
+          data: '29/03/2026',
+          hora: '02:00',
+        ),
+        isEmpty,
+      );
+    });
+
+    test(
+      'na passagem para a hora de inverno, a hora repetida é aceite (RF-090)',
+      () {
+        expect(
+          NovoRegistoController.validar(
+            descricao: 'Queda.',
+            data: '25/10/2026',
+            hora: '01:30',
+          ),
+          isEmpty,
+        );
+      },
+    );
   });
 
   group('E24 Nova ocorrência ou nota', () {
@@ -209,6 +241,92 @@ void main() {
           findsOneWidget,
         );
         expect(textoDe(tester, 'Descrição'), 'Queda.');
+      },
+    );
+
+    testWidgets(
+      'ao mudar para nota e voltar, os erros da data e da hora não reaparecem',
+      (tester) async {
+        await abrirNovo(tester);
+
+        await tester.enterText(campo('Descrição'), 'Queda.');
+        await tester.enterText(campo('Hora'), '9h');
+        await guardar(tester);
+        expect(find.textContaining('Hora: indique a hora'), findsOneWidget);
+
+        await tester.scrollUntilVisible(
+          find.text('Nota para os Cuidadores'),
+          -200,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.tap(find.text('Nota para os Cuidadores'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Ocorrência'));
+        await tester.pumpAndSettle();
+
+        expect(find.textContaining('Hora: indique a hora'), findsNothing);
+        expect(textoDe(tester, 'Hora'), '9h');
+        expect(textoDe(tester, 'Descrição'), 'Queda.');
+      },
+    );
+
+    for (final (codigo, estadoHttp, mensagem) in [
+      ('ACESSO_PROIBIDO', 403, 'o Familiar só consulta'),
+      ('FICHA_NAO_ENCONTRADA', 404, 'A ficha não existe'),
+    ]) {
+      testWidgets(
+        'a recusa $estadoHttp ao guardar mostra a mensagem respetiva e mantém o texto (RF-048, RNF-005)',
+        (tester) async {
+          app.registos.erroRegistar = ProblemaApi(
+            codigo: codigo,
+            mensagem: 'x',
+            estadoHttp: estadoHttp,
+          );
+          await abrirNovo(tester);
+
+          await tester.enterText(campo('Descrição'), 'Queda.');
+          await guardar(tester);
+
+          expect(find.textContaining(mensagem), findsOneWidget);
+          expect(textoDe(tester, 'Descrição'), 'Queda.');
+        },
+      );
+    }
+
+    testWidgets(
+      'o Familiar numa ficha arquivada vê a mensagem do papel, como o servidor (403 antes de 409)',
+      (tester) async {
+        app = AppFichas(inicio: AppRouter.novoRegisto('f-1'));
+        app.fichas.juntar(
+          fichaExemplo(
+            papel: Papel.familiar,
+            principal: false,
+            estado: EstadoFicha.arquivada,
+          ),
+        );
+        await tester.pumpWidget(app.widget());
+        await tester.pumpAndSettle();
+
+        expect(find.textContaining('o Familiar só consulta'), findsOneWidget);
+        expect(find.textContaining('Ficha arquivada'), findsNothing);
+        expect(find.text('Guardar'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'sem acesso à ficha (404), mostra a mensagem e não mostra o formulário (RNF-005)',
+      (tester) async {
+        app = AppFichas(inicio: AppRouter.novoRegisto('f-1'));
+        app.fichas.erroObter = const ProblemaApi(
+          codigo: 'FICHA_NAO_ENCONTRADA',
+          mensagem: 'x',
+          estadoHttp: 404,
+        );
+        await tester.pumpWidget(app.widget());
+        await tester.pumpAndSettle();
+
+        expect(find.textContaining('A ficha não existe'), findsOneWidget);
+        expect(find.text('Guardar'), findsNothing);
       },
     );
 

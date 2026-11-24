@@ -75,13 +75,18 @@ class RegistosController extends Notifier<RegistosEstado> {
   /// Identificador da ficha.
   final String fichaId;
 
+  /// Número do último pedido, para ignorar as respostas de pedidos anteriores que cheguem depois.
+  int _ultimoPedido = 0;
+
   @override
   RegistosEstado build() => const RegistosEstado();
 
   /// Obtém as ocorrências (OP-48) e, se o Utilizador for Cuidador da ficha, as notas (OP-49). O Familiar não
   /// pede as notas, que o servidor lhe recusaria com `403` (RF-095). Chamado ao abrir e ao atualizar o ecrã, para
-  /// mostrar os registos feitos entretanto por outros Cuidadores (RF-093).
+  /// mostrar os registos feitos entretanto por outros Cuidadores (RF-093). Se houver pedidos sobrepostos (por
+  /// exemplo, puxar para atualizar logo depois de voltar do E24), só a resposta do último conta.
   Future<void> carregar() async {
+    final pedido = ++_ultimoPedido;
     state = state.copiar(aCarregar: true);
     try {
       final acesso = await ref.read(fichaAcessoProvider(fichaId).future);
@@ -91,7 +96,7 @@ class RegistosController extends Notifier<RegistosEstado> {
         repositorio.listarOcorrencias(fichaId),
         if (comNotas) repositorio.listarNotas(fichaId),
       ]);
-      if (ref.mounted) {
+      if (ref.mounted && pedido == _ultimoPedido) {
         state = state.copiar(
           ocorrencias: listas.first,
           notas: comNotas ? listas.last : const [],
@@ -101,7 +106,7 @@ class RegistosController extends Notifier<RegistosEstado> {
         );
       }
     } on Exception catch (erro) {
-      if (ref.mounted) {
+      if (ref.mounted && pedido == _ultimoPedido) {
         state = state.copiar(erro: MensagensErro.traduzir(erro));
       }
     }
@@ -112,7 +117,11 @@ class RegistosController extends Notifier<RegistosEstado> {
     if (tipo == TipoRegisto.nota && !state.comNotas) {
       return;
     }
-    state = state.copiar(separador: tipo, erro: state.erro);
+    state = state.copiar(
+      separador: tipo,
+      aCarregar: state.aCarregar,
+      erro: state.erro,
+    );
   }
 }
 

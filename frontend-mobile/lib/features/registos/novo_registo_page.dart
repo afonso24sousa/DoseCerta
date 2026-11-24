@@ -71,7 +71,9 @@ class _NovoRegistoPageState extends ConsumerState<NovoRegistoPage> {
     final hora = await showTimePicker(
       context: context,
       initialTime: atual == null
-          ? TimeOfDay.now()
+          ? TimeOfDay.fromDateTime(
+              FormatadorDataHora.emLisboa(ref.read(relogioProvider).agora()),
+            )
           : TimeOfDay(
               hour: int.parse(atual.substring(0, 2)),
               minute: int.parse(atual.substring(3)),
@@ -111,124 +113,146 @@ class _NovoRegistoPageState extends ConsumerState<NovoRegistoPage> {
 
   @override
   Widget build(BuildContext context) {
-    final acesso = ref.watch(fichaAcessoProvider(widget.fichaId)).value;
+    final acesso = ref.watch(fichaAcessoProvider(widget.fichaId));
+    final ficha = acesso.value?.ficha;
     final estado = ref.watch(novoRegistoControllerProvider(widget.fichaId));
+
+    // A mesma ordem do E06: o servidor verifica primeiro o acesso e o papel (403) e só depois o arquivo (409).
+    final List<Widget> conteudo;
+    if (acesso.hasError) {
+      conteudo = [BannerErro(MensagensErro.traduzir(acesso.error!))];
+    } else if (ficha == null) {
+      conteudo = const [LinearProgressIndicator()];
+    } else if (!ficha.souCuidador) {
+      conteudo = [
+        BannerErro(
+          MensagensErro.catalogo['ACESSO_PROIBIDO']!,
+          informativo: true,
+        ),
+      ];
+    } else if (!ficha.ativa) {
+      conteudo = [
+        BannerErro(
+          MensagensErro.catalogo['FICHA_ARQUIVADA']!,
+          informativo: true,
+        ),
+      ];
+    } else {
+      conteudo = _formulario(estado);
+    }
+    return Scaffold(
+      appBar: AppBar(title: const Text('Novo registo')),
+      body: SafeArea(
+        child: ListView(padding: const EdgeInsets.all(16), children: conteudo),
+      ),
+    );
+  }
+
+  List<Widget> _formulario(NovoRegistoEstado estado) {
     final ativo = !estado.aGuardar;
     final ocorrencia = _tipo == TipoRegisto.ocorrencia;
     final hoje = FormatadorDataHora.diaDeLisboa(
       ref.read(relogioProvider).agora(),
     );
-    return Scaffold(
-      appBar: AppBar(title: const Text('Novo registo')),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
+    return [
+      RadioGroup<TipoRegisto>(
+        groupValue: _tipo,
+        onChanged: (tipo) {
+          if (ativo && tipo != null && tipo != _tipo) {
+            ref
+                .read(novoRegistoControllerProvider(widget.fichaId).notifier)
+                .limparErrosDeDataHora();
+            setState(() => _tipo = tipo);
+          }
+        },
+        child: Column(
           children: [
-            if (acesso != null && !acesso.podeRegistar)
-              BannerErro(
-                MensagensErro.catalogo[acesso.ativa
-                    ? 'ACESSO_PROIBIDO'
-                    : 'FICHA_ARQUIVADA']!,
-                informativo: true,
-              )
-            else ...[
-              RadioGroup<TipoRegisto>(
-                groupValue: _tipo,
-                onChanged: (tipo) {
-                  if (ativo && tipo != null) {
-                    setState(() => _tipo = tipo);
-                  }
-                },
-                child: const Column(
-                  children: [
-                    RadioListTile<TipoRegisto>(
-                      value: TipoRegisto.ocorrencia,
-                      title: Text('Ocorrência'),
-                      subtitle: Text(
-                        'Os outros Cuidadores e os Familiares da ficha veem-na '
-                        'e são notificados.',
-                      ),
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                    RadioListTile<TipoRegisto>(
-                      value: TipoRegisto.nota,
-                      title: Text('Nota para os Cuidadores'),
-                      subtitle: Text('Só os Cuidadores da ficha a veem.'),
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ],
-                ),
+            RadioListTile<TipoRegisto>(
+              value: TipoRegisto.ocorrencia,
+              enabled: ativo,
+              title: const Text('Ocorrência'),
+              subtitle: const Text(
+                'Os outros Cuidadores e os Familiares da ficha veem-na '
+                'e são notificados.',
               ),
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: TextField(
-                  controller: _descricao,
-                  enabled: ativo,
-                  minLines: 3,
-                  maxLines: null,
-                  maxLength: NovoRegistoController.maximoDescricao,
-                  keyboardType: TextInputType.multiline,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: InputDecoration(
-                    labelText: NovoRegistoController.rotulos['descricao'],
-                    alignLabelWithHint: true,
-                    errorText: estado.erros['descricao'],
-                  ),
-                ),
-              ),
-              if (ocorrencia) ...[
-                Semantics(
-                  header: true,
-                  child: Text(
-                    'Data e hora em que aconteceu',
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                CampoData(
-                  rotulo: NovoRegistoController.rotulos['data']!,
-                  controlador: _data,
-                  ultimaData: DateTime(hoje.year + 1, hoje.month, hoje.day),
-                  erro: estado.erros['data'],
-                  ativo: ativo,
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: TextField(
-                    controller: _hora,
-                    enabled: ativo,
-                    keyboardType: TextInputType.datetime,
-                    decoration: InputDecoration(
-                      labelText: NovoRegistoController.rotulos['hora'],
-                      hintText: 'hh:mm',
-                      helperText: 'Formato hh:mm',
-                      errorText: estado.erros['hora'],
-                      suffixIcon: IconButton(
-                        tooltip: 'Escolher a hora',
-                        icon: const Icon(Icons.schedule),
-                        onPressed: ativo ? _escolherHora : null,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-              if (estado.erroGeral != null) BannerErro(estado.erroGeral!),
-              const Text(NovoRegistoPage.avisoDefinitivo),
-              const SizedBox(height: 16),
-              if (estado.aGuardar)
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 8),
-                  child: LinearProgressIndicator(),
-                ),
-              FilledButton(
-                onPressed: ativo ? _guardar : null,
-                child: const Text('Guardar'),
-              ),
-            ],
+              contentPadding: EdgeInsets.zero,
+            ),
+            RadioListTile<TipoRegisto>(
+              value: TipoRegisto.nota,
+              enabled: ativo,
+              title: const Text('Nota para os Cuidadores'),
+              subtitle: const Text('Só os Cuidadores da ficha a veem.'),
+              contentPadding: EdgeInsets.zero,
+            ),
           ],
         ),
       ),
-    );
+      const SizedBox(height: 16),
+      Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: TextField(
+          controller: _descricao,
+          enabled: ativo,
+          minLines: 3,
+          maxLines: null,
+          maxLength: NovoRegistoController.maximoDescricao,
+          keyboardType: TextInputType.multiline,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: InputDecoration(
+            labelText: NovoRegistoController.rotulos['descricao'],
+            alignLabelWithHint: true,
+            errorText: estado.erros['descricao'],
+          ),
+        ),
+      ),
+      if (ocorrencia) ...[
+        Semantics(
+          header: true,
+          child: Text(
+            'Data e hora em que aconteceu',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+        ),
+        const SizedBox(height: 8),
+        CampoData(
+          rotulo: NovoRegistoController.rotulos['data']!,
+          controlador: _data,
+          ultimaData: DateTime(hoje.year + 1, hoje.month, hoje.day),
+          erro: estado.erros['data'],
+          ativo: ativo,
+        ),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: TextField(
+            controller: _hora,
+            enabled: ativo,
+            keyboardType: TextInputType.datetime,
+            decoration: InputDecoration(
+              labelText: NovoRegistoController.rotulos['hora'],
+              hintText: 'hh:mm',
+              helperText: 'Formato hh:mm',
+              errorText: estado.erros['hora'],
+              suffixIcon: IconButton(
+                tooltip: 'Escolher a hora',
+                icon: const Icon(Icons.schedule),
+                onPressed: ativo ? _escolherHora : null,
+              ),
+            ),
+          ),
+        ),
+      ],
+      if (estado.erroGeral != null) BannerErro(estado.erroGeral!),
+      const Text(NovoRegistoPage.avisoDefinitivo),
+      const SizedBox(height: 16),
+      if (estado.aGuardar)
+        const Padding(
+          padding: EdgeInsets.only(bottom: 8),
+          child: LinearProgressIndicator(),
+        ),
+      FilledButton(
+        onPressed: ativo ? _guardar : null,
+        child: const Text('Guardar'),
+      ),
+    ];
   }
 }
