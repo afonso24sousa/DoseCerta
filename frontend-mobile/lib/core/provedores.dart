@@ -92,6 +92,11 @@ final pessoasRepositorioProvider = Provider<PessoasRepositorio>(
   (ref) => PessoasRepositorio(ref.watch(apiClientProvider)),
 );
 
+/// Repositório das ocorrências e notas partilhadas (OP-46 a OP-49).
+final registosRepositorioProvider = Provider<RegistosRepositorio>(
+  (ref) => RegistosRepositorio(ref.watch(apiClientProvider)),
+);
+
 /// Repositório dos convites (OP-19 a OP-22).
 final convitesRepositorioProvider = Provider<ConvitesRepositorio>(
   (ref) => ConvitesRepositorio(ref.watch(apiClientProvider)),
@@ -105,11 +110,6 @@ final tomasRepositorioProvider = Provider<TomasRepositorio>(
 /// Repositório do calendário de tomas para o dispositivo (OP-34).
 final calendarioRepositorioProvider = Provider<CalendarioRepositorio>(
   (ref) => CalendarioRepositorio(ref.watch(apiClientProvider)),
-);
-
-/// Repositório das ocorrências e notas partilhadas (OP-46 a OP-49).
-final registosRepositorioProvider = Provider<RegistosRepositorio>(
-  (ref) => RegistosRepositorio(ref.watch(apiClientProvider)),
 );
 
 /// Agendador dos avisos no sistema operativo (os testes substituem-no por um falso).
