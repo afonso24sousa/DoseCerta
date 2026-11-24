@@ -366,6 +366,10 @@ Finder campo(String rotulo) => find.widgetWithText(TextField, rotulo);
 /// ecrã (por exemplo «Ficha arquivada.» sobre «Reativar ou eliminar»); as mensagens já foram verificadas antes do toque.
 Future<void> tocar(WidgetTester tester, Finder alvo) async {
   FocusManager.instance.primaryFocus?.unfocus();
+  // Espera que o teclado feche: enquanto fecha, o ecrã muda de tamanho e o toque pode cair fora do alvo.
+  for (var i = 0; i < 20 && tester.view.viewInsets.bottom > 0; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
   final mensageiro = find.byType(ScaffoldMessenger);
   if (mensageiro.evaluate().isNotEmpty) {
     tester
