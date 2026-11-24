@@ -34,5 +34,29 @@ void main() {
     test('a data da API é AAAA-MM-DD', () {
       expect(FormatadorDataHora.paraIso(DateTime(2026, 1, 5)), '2026-01-05');
     });
+
+    test(
+      'o momento atual em Lisboa vem ao minuto e no fuso de Lisboa (F009)',
+      () {
+        expect(
+          FormatadorDataHora.emLisboa(DateTime.utc(2026, 10, 7, 14, 5, 42)),
+          DateTime(2026, 10, 7, 15, 5),
+        );
+      },
+    );
+
+    test(
+      'a data e hora de Lisboa vão para a API com o desvio do dia (F009)',
+      () {
+        expect(
+          FormatadorDataHora.instanteDeLisboa(DateTime(2026, 10, 7, 15, 5)),
+          '2026-10-07T15:05:00+01:00',
+        );
+        expect(
+          FormatadorDataHora.instanteDeLisboa(DateTime(2026, 11, 24, 9, 0)),
+          '2026-11-24T09:00:00+00:00',
+        );
+      },
+    );
   });
 }
