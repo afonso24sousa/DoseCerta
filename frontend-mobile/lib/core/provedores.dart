@@ -102,14 +102,14 @@ final tomasRepositorioProvider = Provider<TomasRepositorio>(
   (ref) => TomasRepositorio(ref.watch(apiClientProvider)),
 );
 
-/// Repositório do calendário de tomas para o dispositivo (OP-34).
-final calendarioRepositorioProvider = Provider<CalendarioRepositorio>(
-  (ref) => CalendarioRepositorio(ref.watch(apiClientProvider)),
-);
-
 /// Repositório da lista de tarefas diária (OP-50).
 final listaDiariaRepositorioProvider = Provider<ListaDiariaRepositorio>(
   (ref) => ListaDiariaRepositorio(ref.watch(apiClientProvider)),
+);
+
+/// Repositório do calendário de tomas para o dispositivo (OP-34).
+final calendarioRepositorioProvider = Provider<CalendarioRepositorio>(
+  (ref) => CalendarioRepositorio(ref.watch(apiClientProvider)),
 );
 
 /// Agendador dos avisos no sistema operativo (os testes substituem-no por um falso).
