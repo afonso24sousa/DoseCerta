@@ -36,13 +36,51 @@ class FormatadorDataHora {
   /// Devolve o dia de Lisboa (sem hora) no [instante], que é o calendário do servidor. O telemóvel e a pipeline
   /// podem estar noutro fuso (por exemplo UTC), o que muda o dia perto da meia-noite.
   static DateTime diaDeLisboa(DateTime instante) {
-    final lisboa = _lisboa ??= () {
-      fusos.initializeTimeZones();
-      return tz.getLocation('Europe/Lisbon');
-    }();
-    final local = tz.TZDateTime.from(instante, lisboa);
+    final local = tz.TZDateTime.from(instante, _fusoLisboa);
     return DateTime(local.year, local.month, local.day);
   }
+
+  /// Devolve a data e a hora de Lisboa no [instante], ao minuto, por exemplo para propor o momento atual num
+  /// formulário (F009, RF-090).
+  static DateTime emLisboa(DateTime instante) {
+    final local = tz.TZDateTime.from(instante, _fusoLisboa);
+    return DateTime(
+      local.year,
+      local.month,
+      local.day,
+      local.hour,
+      local.minute,
+    );
+  }
+
+  /// Converte a data e a hora de Lisboa [dataHora] (os campos do [DateTime], sem fuso) num instante ISO 8601 com o
+  /// desvio de Lisboa, o formato dos instantes enviados à API (por exemplo `2026-10-07T15:05:00+01:00`). O desvio
+  /// é o da hora de verão ou de inverno nesse dia.
+  static String instanteDeLisboa(DateTime dataHora) {
+    final local = tz.TZDateTime(
+      _fusoLisboa,
+      dataHora.year,
+      dataHora.month,
+      dataHora.day,
+      dataHora.hour,
+      dataHora.minute,
+    );
+    final desvio = local.timeZoneOffset;
+    final sinal = desvio.isNegative ? '-' : '+';
+    final horasDesvio = desvio.inHours.abs().toString().padLeft(2, '0');
+    final minutosDesvio = (desvio.inMinutes.abs() % 60).toString().padLeft(
+      2,
+      '0',
+    );
+    final hora = local.hour.toString().padLeft(2, '0');
+    final minuto = local.minute.toString().padLeft(2, '0');
+    return '${paraIso(local)}T$hora:$minuto:00$sinal$horasDesvio:$minutosDesvio';
+  }
+
+  static tz.Location get _fusoLisboa => _lisboa ??= () {
+    fusos.initializeTimeZones();
+    return tz.getLocation('Europe/Lisbon');
+  }();
 
   /// Apresenta um [DateTime] como `AAAA-MM-DD`, o formato das datas da API.
   static String paraIso(DateTime data) {
