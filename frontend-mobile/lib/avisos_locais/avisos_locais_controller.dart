@@ -181,13 +181,16 @@ class AvisosLocaisController extends Notifier<AvisosLocaisEstado> {
   /// Fecha o aviso das autorizações até à próxima abertura da aplicação.
   void fecharAviso() => state = state.copiar(avisoFechado: true);
 
-  /// Cancela o aviso da toma [tomaId], depois de confirmada (protótipo, nota do E18).
+  /// Cancela o aviso da toma [tomaId], depois de confirmada (protótipo, nota do E18), e retira-a das tomas guardadas,
+  /// para as contagens do E26 ficarem certas logo.
   Future<void> cancelarAviso(String tomaId) async {
     try {
       await ref.read(avisosLocaisServiceProvider).cancelarAviso(tomaId);
+      await ref.read(tomasSincronizadasStoreProvider).retirar(tomaId);
     } on Object {
       // O aviso desaparece na sincronização seguinte, porque a OP-34 já não devolve a toma confirmada.
     }
+    await _lerSincronizadas();
   }
 
   static Future<bool?> _semFalhar(Future<bool?> Function() pedido) async {

@@ -9,6 +9,7 @@ import '../../core/provedores.dart';
 import '../../models/estado_toma.dart';
 import '../../models/item_lista_diaria_dto.dart';
 import '../../models/problema_api.dart';
+import '../../models/toma_dto.dart';
 import '../medicacao/lista_tomas_controller.dart';
 
 /// Dia mostrado na lista (protótipo, E04: «Ontem», «Hoje», «Amanhã»).
@@ -70,6 +71,7 @@ class ListaDiariaEstado {
 
   /// Copia o estado, alterando os valores indicados. Os erros e o indicador de leitura não indicados são limpos.
   ListaDiariaEstado copiar({
+    DateTime? hoje,
     DiaLista? dia,
     List<ItemListaDiariaDto>? itens,
     bool aCarregar = false,
@@ -78,7 +80,7 @@ class ListaDiariaEstado {
     String? erro,
   }) {
     return ListaDiariaEstado(
-      hoje: hoje,
+      hoje: hoje ?? this.hoje,
       dia: dia ?? this.dia,
       itens: itens ?? this.itens,
       aCarregar: aCarregar,
@@ -93,81 +95,102 @@ class ListaDiariaEstado {
 /// RF-102, RF-104, RF-105, RNF-010, RNF-011, RNF-021). O servidor escolhe os itens e decide o que é confirmável; o
 /// ecrã só mostra o resultado.
 class ListaDiariaController extends Notifier<ListaDiariaEstado> {
+  /// Número da última leitura pedida: só a resposta da última conta (por exemplo, ao mudar de dia ou ao puxar para
+  /// baixo duas vezes).
+  int _ultimaLeitura = 0;
+
+  /// Tomas confirmadas nesta sessão, com o número da última leitura pedida no momento da confirmação. Uma leitura
+  /// que começou antes da confirmação pode trazer a toma ainda pendente; nesse caso, vale a confirmação.
+  final Map<String, ({TomaDto toma, int leitura})> _confirmadas = {};
+
   @override
   ListaDiariaEstado build() {
-    final hoje = FormatadorDataHora.diaDeLisboa(
-      ref.read(relogioProvider).agora(),
-    );
     Future.microtask(carregar);
-    return ListaDiariaEstado(hoje: hoje, aCarregar: true);
+    return ListaDiariaEstado(hoje: _hojeEmLisboa(), aCarregar: true);
   }
 
+  DateTime _hojeEmLisboa() =>
+      FormatadorDataHora.diaDeLisboa(ref.read(relogioProvider).agora());
+
   /// OP-50: lê a lista do dia escolhido, num só pedido (RNF-010). Para hoje não envia a data: o servidor usa o dia
-  /// de Lisboa e junta as tomas de ontem ainda pendentes (RF-100, RNF-047).
-  Future<void> carregar() async {
-    state = state.copiar(aCarregar: true, erro: state.erro);
-    final dia = state.dia;
+  /// de Lisboa e junta as tomas de ontem ainda pendentes (RF-100, RNF-047). O dia de hoje é lido de novo em cada
+  /// leitura, para a lista não ficar no dia em que o ecrã abriu. Com [manterErro], a mensagem da última
+  /// confirmação continua visível (é o caso da leitura pedida por uma recusa).
+  Future<void> carregar({bool manterErro = true}) async {
+    final leitura = ++_ultimaLeitura;
+    state = state.copiar(
+      hoje: _hojeEmLisboa(),
+      aCarregar: true,
+      erro: manterErro ? state.erro : null,
+    );
     try {
       final itens = await ref
           .read(listaDiariaRepositorioProvider)
           .consultar(
-            data: dia == DiaLista.hoje
+            data: state.dia == DiaLista.hoje
                 ? null
                 : FormatadorDataHora.paraIso(state.data),
           );
-      if (!ref.mounted || state.dia != dia) {
+      if (!ref.mounted || leitura != _ultimaLeitura) {
         return;
       }
-      state = state.copiar(itens: itens, erro: state.erro);
+      _confirmadas.removeWhere((_, c) => c.leitura < leitura);
+      state = state.copiar(
+        itens: [for (final item in itens) _comConfirmacao(item)],
+        erro: state.erro,
+      );
     } on Object catch (e) {
-      if (!ref.mounted || state.dia != dia) {
+      if (!ref.mounted || leitura != _ultimaLeitura) {
         return;
       }
-      state = state.copiar(erroCarregar: MensagensErro.traduzir(e));
+      state = state.copiar(
+        erroCarregar: MensagensErro.traduzir(e),
+        erro: state.erro,
+      );
     }
   }
 
-  /// Ao puxar para baixo: lê a lista de novo, com as confirmações dos outros Cuidadores (RF-104), e sincroniza as
-  /// tomas das 48 horas seguintes para os avisos locais (RF-061).
+  /// Ao puxar para baixo ou ao voltar à aplicação: lê a lista de novo, com as confirmações dos outros Cuidadores
+  /// (RF-104), e sincroniza as tomas das 48 horas seguintes para os avisos locais (RF-061).
   Future<void> atualizar() async {
     unawaited(ref.read(avisosLocaisControllerProvider.notifier).sincronizar());
-    await carregar();
+    await carregar(manterErro: false);
   }
 
-  /// Mostra o [dia] escolhido.
+  /// Mostra o [dia] escolhido. As confirmações em curso continuam (o botão não volta a ficar ativo).
   Future<void> mudarDia(DiaLista dia) {
     if (dia == state.dia) {
       return Future.value();
     }
-    state = ListaDiariaEstado(hoje: state.hoje, dia: dia, aCarregar: true);
+    state = ListaDiariaEstado(
+      hoje: state.hoje,
+      dia: dia,
+      aCarregar: true,
+      aConfirmar: state.aConfirmar,
+    );
     return carregar();
   }
 
   /// OP-33: confirma a toma [tomaId] a partir da lista, sem abrir a ficha (RF-102), com um toque (RNF-021). Com
   /// sucesso, atualiza o item com a resposta, sem ler a lista de novo (RNF-011), cancela o aviso local da toma e
-  /// devolve o novo estado (RF-064, RF-067). Numa recusa (`409` ou `403`) mostra a mensagem e lê a lista de novo,
-  /// para mostrar o estado atual da toma (RF-105); devolve `null`.
+  /// devolve o novo estado (RF-064, RF-067). Numa recusa (`409`, `403` ou `404`) mostra a mensagem e lê a lista de
+  /// novo, para mostrar o estado atual da toma (RF-105); devolve `null`. Uma leitura em curso não é interrompida.
   Future<EstadoToma?> confirmar(String tomaId) async {
     if (state.aConfirmar.contains(tomaId)) {
       return null;
     }
-    state = state.copiar(aConfirmar: {...state.aConfirmar, tomaId});
+    state = _manterLeitura(aConfirmar: {...state.aConfirmar, tomaId});
     try {
       final toma = await ref.read(tomasRepositorioProvider).confirmar(tomaId);
       if (!ref.mounted) {
         return toma.estado;
       }
-      state = state.copiar(
-        itens: [
-          for (final item in state.itens ?? const <ItemListaDiariaDto>[])
-            item.eToma && item.id == tomaId
-                ? item.confirmado(
-                    estado: toma.estado,
-                    confirmadaPor: toma.confirmadaPor?.nome,
-                    confirmadaEm: toma.confirmadaEm,
-                  )
-                : item,
-        ],
+      _confirmadas[tomaId] = (toma: toma, leitura: _ultimaLeitura);
+      final itens = state.itens;
+      state = _manterLeitura(
+        itens: itens == null
+            ? null
+            : [for (final item in itens) _comConfirmacao(item)],
         aConfirmar: {...state.aConfirmar}..remove(tomaId),
       );
       unawaited(
@@ -178,15 +201,44 @@ class ListaDiariaController extends Notifier<ListaDiariaEstado> {
       if (!ref.mounted) {
         return null;
       }
-      state = state.copiar(
+      state = _manterLeitura(
         aConfirmar: {...state.aConfirmar}..remove(tomaId),
         erro: ListaTomasController.mensagemRecusa(e),
       );
-      if (e is ProblemaApi && (e.estadoHttp == 409 || e.estadoHttp == 403)) {
+      if (e is ProblemaApi &&
+          (e.estadoHttp == 409 || e.estadoHttp == 403 || e.estadoHttp == 404)) {
         await carregar();
       }
       return null;
     }
+  }
+
+  /// Copia o estado sem mexer na leitura em curso nem no seu erro.
+  ListaDiariaEstado _manterLeitura({
+    List<ItemListaDiariaDto>? itens,
+    required Set<String> aConfirmar,
+    String? erro,
+  }) {
+    return state.copiar(
+      itens: itens,
+      aCarregar: state.aCarregar,
+      erroCarregar: state.erroCarregar,
+      aConfirmar: aConfirmar,
+      erro: erro,
+    );
+  }
+
+  /// O [item] com a confirmação feita nesta sessão, se a lista ainda o trouxer por confirmar.
+  ItemListaDiariaDto _comConfirmacao(ItemListaDiariaDto item) {
+    final confirmada = _confirmadas[item.id]?.toma;
+    if (!item.eToma || confirmada == null || !item.confirmavel) {
+      return item;
+    }
+    return item.confirmado(
+      estado: confirmada.estado,
+      confirmadaPor: confirmada.confirmadaPor?.nome,
+      confirmadaEm: confirmada.confirmadaEm,
+    );
   }
 }
 

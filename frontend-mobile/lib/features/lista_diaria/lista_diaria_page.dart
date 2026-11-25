@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -45,6 +47,17 @@ class ListaDiariaPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // O separador «Hoje» fica aberto em segundo plano: ao voltar à aplicação, a lista é lida de novo, com o dia de
+    // hoje e as confirmações dos outros Cuidadores (RF-104). Os avisos são sincronizados pelo observador da I069.
+    return _AoVoltar(
+      aoVoltar: () => ref
+          .read(listaDiariaControllerProvider.notifier)
+          .carregar(manterErro: false),
+      child: _ecra(context, ref),
+    );
+  }
+
+  Widget _ecra(BuildContext context, WidgetRef ref) {
     final estado = ref.watch(listaDiariaControllerProvider);
     final controlador = ref.read(listaDiariaControllerProvider.notifier);
     final itens = estado.itens;
@@ -116,8 +129,40 @@ class ListaDiariaPage extends ConsumerWidget {
   }
 }
 
-/// Um item da lista: a hora (com «Ontem» nas tomas pendentes do dia anterior), o utente, o título e o estado por
-/// ícone e texto (RNF-027). Tocar no item abre a ficha.
+/// Chama [aoVoltar] quando a aplicação volta do segundo plano.
+class _AoVoltar extends StatefulWidget {
+  const _AoVoltar({required this.aoVoltar, required this.child});
+
+  final Future<void> Function() aoVoltar;
+  final Widget child;
+
+  @override
+  State<_AoVoltar> createState() => _AoVoltarState();
+}
+
+class _AoVoltarState extends State<_AoVoltar> {
+  late final AppLifecycleListener _ouvinte = AppLifecycleListener(
+    onResume: () => unawaited(widget.aoVoltar()),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _ouvinte;
+  }
+
+  @override
+  void dispose() {
+    _ouvinte.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
+
+/// Um item da lista: a hora (com a data completa nas tomas de outro dia, por exemplo as pendentes de ontem; DD03),
+/// o utente, o título e o estado por ícone e texto (RNF-027). Tocar no item abre a ficha.
 class _CartaoItem extends StatelessWidget {
   const _CartaoItem({
     required this.item,

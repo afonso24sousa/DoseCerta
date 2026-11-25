@@ -1,8 +1,10 @@
+import 'package:dosecerta/avisos_locais/avisos_locais_controller.dart';
 import 'package:dosecerta/avisos_locais/tomas_sincronizadas_store.dart';
 import 'package:dosecerta/core/app_router.dart';
 import 'package:dosecerta/core/provedores.dart';
 import 'package:dosecerta/core/sem_ligacao_erro.dart';
 import 'package:dosecerta/features/lista_diaria/avisos_locais_page.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../suporte/app_fichas.dart';
@@ -64,7 +66,7 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.text('Tomas das próximas 48 horas neste dispositivo: 3'),
+        find.text('Tomas sincronizadas neste dispositivo: 3'),
         findsOneWidget,
       );
       expect(
@@ -94,7 +96,7 @@ void main() {
     expect(calendario.pedidos, pedidos + 1);
     expect(find.text('Calendário sincronizado.'), findsOneWidget);
     expect(
-      find.text('Tomas das próximas 48 horas neste dispositivo: 1'),
+      find.text('Tomas sincronizadas neste dispositivo: 1'),
       findsOneWidget,
     );
     expect(find.text('Avisos agendados neste dispositivo: 1'), findsOneWidget);
@@ -117,7 +119,7 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.text('Tomas das próximas 48 horas neste dispositivo: 1'),
+        find.text('Tomas sincronizadas neste dispositivo: 1'),
         findsOneWidget,
       );
     },
@@ -179,4 +181,33 @@ void main() {
     );
     expect(find.text(AvisosLocaisPage.falhou), findsOneWidget);
   });
+
+  testWidgets(
+    'uma toma confirmada sai logo das contagens, sem esperar pela sincronização seguinte',
+    (tester) async {
+      await abrir(tester);
+      expect(
+        find.text('Tomas sincronizadas neste dispositivo: 3'),
+        findsOneWidget,
+      );
+
+      final contentor = ProviderScope.containerOf(
+        tester.element(find.byType(AvisosLocaisPage)),
+      );
+      await contentor
+          .read(avisosLocaisControllerProvider.notifier)
+          .cancelarAviso('t-amanha');
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Tomas sincronizadas neste dispositivo: 2'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Avisos agendados neste dispositivo: 1'),
+        findsOneWidget,
+      );
+      expect(store.guardadas!.ultimaSincronizacao, DateTime(2026, 11, 9, 12));
+    },
+  );
 }

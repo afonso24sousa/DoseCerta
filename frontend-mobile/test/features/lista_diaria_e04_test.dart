@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:dosecerta/avisos_locais/aviso_local.dart';
 import 'package:dosecerta/core/app_router.dart';
 import 'package:dosecerta/core/provedores.dart';
 import 'package:dosecerta/core/sem_ligacao_erro.dart';
 import 'package:dosecerta/features/lista_diaria/lista_diaria_page.dart';
+import 'package:dosecerta/features/medicacao/lista_tomas_controller.dart';
 import 'package:dosecerta/models/estado_toma.dart';
 import 'package:dosecerta/models/problema_api.dart';
 import 'package:flutter/material.dart';
@@ -273,5 +276,207 @@ void main() {
     await tester.tap(find.text('Consulta de rotina'));
     await tester.pumpAndSettle();
     expect(app.local, AppRouter.ficha('f-1'));
+  });
+
+  testWidgets('«Ontem» pede a data anterior no calendário de Lisboa', (
+    tester,
+  ) async {
+    await abrir(tester);
+    lista.itens = [];
+
+    await tester.tap(find.text('Ontem'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ontem, 08/11/2026'), findsOneWidget);
+    expect(lista.datas, [null, '2026-11-08']);
+    expect(find.text(ListaDiariaPage.semTarefas), findsOneWidget);
+  });
+
+  testWidgets(
+    'o «Confirmar» diz a toma e o utente ao leitor de ecrã (RNF-025)',
+    (tester) async {
+      await abrir(tester);
+
+      expect(
+        find.bySemanticsLabel(
+          'Confirmar Metformina 500 mg de Maria Fictícia Santos',
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+
+  for (final (codigo, estadoHttp) in [
+    ('ACESSO_PROIBIDO', 403),
+    ('TOMA_NAO_ENCONTRADA', 404),
+  ]) {
+    testWidgets(
+      'a recusa $estadoHttp ao confirmar mostra a mensagem e lê a lista de novo',
+      (tester) async {
+        final recusa = ProblemaApi(
+          codigo: codigo,
+          mensagem: 'Recusa $estadoHttp.',
+          estadoHttp: estadoHttp,
+        );
+        tomas.erroConfirmar = recusa;
+        await abrir(tester);
+
+        await tester.tap(confirmarEm('08:00 | Maria Fictícia Santos'));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text(ListaTomasController.mensagemRecusa(recusa)),
+          findsOneWidget,
+        );
+        expect(lista.datas, [null, null]);
+      },
+    );
+  }
+
+  testWidgets(
+    'sem ligação ao confirmar mostra a mensagem e a toma continua por confirmar',
+    (tester) async {
+      tomas.erroConfirmar = const SemLigacaoErro();
+      await abrir(tester);
+
+      await tester.tap(confirmarEm('08:00 | Maria Fictícia Santos'));
+      await tester.pumpAndSettle();
+
+      expect(find.text(SemLigacaoErro.mensagemPadrao), findsOneWidget);
+      expect(confirmarEm('08:00 | Maria Fictícia Santos'), findsOneWidget);
+      expect(lista.datas, [null]);
+    },
+  );
+
+  testWidgets('puxar para baixo depois da meia-noite passa para o novo dia', (
+    tester,
+  ) async {
+    await abrir(tester);
+    app.relogio.instante = DateTime(2026, 11, 10, 8);
+
+    await tester.fling(find.byType(ListView), const Offset(0, 800), 1000);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Hoje, 10/11/2026'), findsOneWidget);
+  });
+
+  testWidgets(
+    'ao voltar à aplicação lê a lista de novo, com o dia atual (RF-104)',
+    (tester) async {
+      await abrir(tester);
+      app.relogio.instante = DateTime(2026, 11, 10, 8);
+
+      for (final estado in [
+        AppLifecycleState.inactive,
+        AppLifecycleState.hidden,
+        AppLifecycleState.paused,
+        AppLifecycleState.hidden,
+        AppLifecycleState.inactive,
+        AppLifecycleState.resumed,
+      ]) {
+        tester.binding.handleAppLifecycleStateChanged(estado);
+      }
+      await tester.pumpAndSettle();
+
+      expect(lista.datas, [null, null]);
+      expect(find.text('Hoje, 10/11/2026'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'uma confirmação que termina durante a leitura de outro dia não apaga o estado da leitura',
+    (tester) async {
+      final respostaConfirmar = Completer<void>();
+      tomas.espera = respostaConfirmar.future;
+      await abrir(tester);
+
+      await tester.tap(confirmarEm('08:00 | Maria Fictícia Santos'));
+      await tester.pump();
+      final leitura = Completer<void>();
+      lista
+        ..espera = leitura
+        ..erro = const SemLigacaoErro();
+      await tester.tap(find.text('Amanhã'));
+      await tester.pump();
+
+      respostaConfirmar.complete();
+      await tester.pump();
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      expect(find.text(ListaDiariaPage.semTarefas), findsNothing);
+
+      leitura.complete();
+      await tester.pumpAndSettle();
+      expect(find.text(SemLigacaoErro.mensagemPadrao), findsOneWidget);
+      expect(find.text('Tentar novamente'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'mudar de dia e voltar não volta a ativar uma confirmação em curso',
+    (tester) async {
+      final respostaConfirmar = Completer<void>();
+      tomas.espera = respostaConfirmar.future;
+      await abrir(tester);
+
+      await tester.tap(confirmarEm('08:00 | Maria Fictícia Santos'));
+      await tester.pump();
+      await tester.tap(find.text('Amanhã'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Hoje'));
+      await tester.pumpAndSettle();
+
+      final botao = tester.widget<FilledButton>(
+        confirmarEm('08:00 | Maria Fictícia Santos'),
+      );
+      expect(botao.onPressed, isNull);
+      respostaConfirmar.complete();
+      await tester.pumpAndSettle();
+    },
+  );
+
+  testWidgets(
+    'uma leitura antiga que chega depois da confirmação não a desfaz',
+    (tester) async {
+      await abrir(tester);
+      final leitura = Completer<void>();
+      lista.espera = leitura;
+
+      await tester.fling(find.byType(ListView), const Offset(0, 800), 1000);
+      // O RefreshIndicator só lança a leitura depois da animação.
+      for (var i = 0; i < 50 && lista.datas.length < 2; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      expect(lista.datas, [null, null]);
+      await tester.tap(confirmarEm('08:00 | Maria Fictícia Santos'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      leitura.complete();
+      await tester.pumpAndSettle();
+
+      expect(confirmarEm('08:00 | Maria Fictícia Santos'), findsNothing);
+      expect(
+        find.descendant(
+          of: cartao('08:00 | Maria Fictícia Santos'),
+          matching: find.textContaining('Confirmada por'),
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets('puxar para baixo apaga a mensagem da última confirmação', (
+    tester,
+  ) async {
+    tomas.erroConfirmar = const SemLigacaoErro();
+    await abrir(tester);
+    await tester.tap(confirmarEm('08:00 | Maria Fictícia Santos'));
+    await tester.pumpAndSettle();
+    expect(find.text(SemLigacaoErro.mensagemPadrao), findsOneWidget);
+
+    await tester.fling(find.byType(ListView), const Offset(0, 800), 1000);
+    await tester.pumpAndSettle();
+
+    expect(find.text(SemLigacaoErro.mensagemPadrao), findsNothing);
   });
 }

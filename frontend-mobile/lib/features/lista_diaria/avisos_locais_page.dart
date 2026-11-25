@@ -113,7 +113,7 @@ class _AvisosLocaisPageState extends ConsumerState<AvisosLocaisPage> {
                         '${ultima.hour.toString().padLeft(2, '0')}:'
                         '${ultima.minute.toString().padLeft(2, '0')}',
             ),
-            _Linha('Tomas das próximas 48 horas neste dispositivo: $tomas'),
+            _Linha('Tomas sincronizadas neste dispositivo: $tomas'),
             _Linha('Avisos agendados neste dispositivo: $agendados'),
             _Linha(
               'Notificações do sistema: '

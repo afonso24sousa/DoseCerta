@@ -32,6 +32,9 @@ class AppFichas {
 
   /// Substituições a mais (por exemplo, o selecionador de ficheiros).
   final List<Override> outras;
+
+  /// Relógio da aplicação (09/11/2026 às 12:00); os testes podem avançá-lo.
+  final RelogioFixo relogio = RelogioFixo(DateTime(2026, 11, 9, 12));
   final FichasRepositorioFalso fichas = FichasRepositorioFalso();
   final DominiosRepositorioFalso dominios = DominiosRepositorioFalso();
   final DocumentosRepositorioFalso documentos = DocumentosRepositorioFalso();
@@ -68,9 +71,7 @@ class AppFichas {
         selecionadorFicheirosProvider.overrideWithValue(
           SelecionadorFicheiros(fonte),
         ),
-        relogioProvider.overrideWithValue(
-          RelogioFixo(DateTime(2026, 11, 9, 12)),
-        ),
+        relogioProvider.overrideWithValue(relogio),
         ...outras,
       ],
       child: MaterialApp.router(

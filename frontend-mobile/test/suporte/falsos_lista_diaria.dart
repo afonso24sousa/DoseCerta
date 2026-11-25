@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dosecerta/core/api_client.dart';
 import 'package:dosecerta/data/lista_diaria_repositorio.dart';
 import 'package:dosecerta/models/estado_toma.dart';
@@ -57,16 +59,26 @@ class ListaDiariaRepositorioFalso implements ListaDiariaRepositorio {
   /// Datas pedidas (`null` quando o pedido não leva a data).
   final List<String?> datas = [];
 
+  /// Espera da próxima consulta: a consulta lê os itens ao chegar e só responde quando a espera terminar (para
+  /// simular uma resposta que chega depois de outra operação).
+  Completer<void>? espera;
+
   @override
   ApiClient get api => throw UnimplementedError();
 
   @override
   Future<List<ItemListaDiariaDto>> consultar({String? data}) async {
     datas.add(data);
+    final copia = List.of(itens);
+    final aguardar = espera;
+    espera = null;
+    if (aguardar != null) {
+      await aguardar.future;
+    }
     final e = erro;
     if (e != null) {
       throw e;
     }
-    return List.of(itens);
+    return copia;
   }
 }

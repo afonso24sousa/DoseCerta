@@ -237,20 +237,6 @@ class AppRouter {
 
   /// Rotas da medicação da ficha (E15 a E17). `novo` vem antes de `:tratamentoId`, para não ser lido como um
   /// identificador de tratamento.
-  /// Rota do E04 Lista de tarefas diária, com o E26 por baixo.
-  static GoRoute rotaHoje() {
-    return GoRoute(
-      path: hoje,
-      builder: (context, estado) => const ListaDiariaPage(),
-      routes: [
-        GoRoute(
-          path: 'avisos-locais',
-          builder: (context, estado) => const AvisosLocaisPage(),
-        ),
-      ],
-    );
-  }
-
   static GoRoute rotasMedicacao() {
     return GoRoute(
       path: 'medicacao',
@@ -280,6 +266,20 @@ class AppRouter {
               ),
             ),
           ],
+        ),
+      ],
+    );
+  }
+
+  /// Rota do E04 Lista de tarefas diária, com o E26 por baixo.
+  static GoRoute rotaHoje() {
+    return GoRoute(
+      path: hoje,
+      builder: (context, estado) => const ListaDiariaPage(),
+      routes: [
+        GoRoute(
+          path: 'avisos-locais',
+          builder: (context, estado) => const AvisosLocaisPage(),
         ),
       ],
     );
