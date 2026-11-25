@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 import { cuidadorGuard, fichaAtivaGuard, fichaGuard } from '../../core/guardas';
 
 /**
- * Rotas das fichas de utentes (F002 e F003), das pessoas da ficha (F004) e da medicação (F005), dentro do
+ * Rotas das fichas de utentes (F002 e F003), das pessoas da ficha (F004) da medicação (F005) e dos compromissos (F008), dentro do
  * `ShellComponent`. Os parâmetros `fichaId`, `tratamentoId` e `resultado` chegam às páginas como entradas
  * (`withComponentInputBinding`). E12, E15 e E17 exigem a ficha acessível; E13 e E16 exigem também o papel Cuidador e a
  * ficha ativa (modelo de classes do frontend web v02, secções 6.1 e 7.1).
@@ -63,5 +63,17 @@ export const FICHAS_ROUTES: Routes = [
     title: 'Editar tratamento · DoseCerta',
     canActivate: [fichaGuard, cuidadorGuard, fichaAtivaGuard],
     loadComponent: () => import('../medicacao/form-tratamento.page').then((m) => m.FormTratamentoPage),
+  },
+  {
+    path: ':fichaId/compromissos/novo',
+    title: 'Novo compromisso · DoseCerta',
+    canActivate: [fichaGuard, cuidadorGuard, fichaAtivaGuard],
+    loadComponent: () => import('../agenda/form-compromisso.page').then((m) => m.FormCompromissoPage),
+  },
+  {
+    path: ':fichaId/compromissos/:compromissoId/editar',
+    title: 'Editar compromisso · DoseCerta',
+    canActivate: [fichaGuard, cuidadorGuard, fichaAtivaGuard],
+    loadComponent: () => import('../agenda/form-compromisso.page').then((m) => m.FormCompromissoPage),
   },
 ];
