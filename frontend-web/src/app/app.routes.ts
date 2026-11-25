@@ -60,8 +60,8 @@ export const routes: Routes = [
       {
         path: 'notificacoes',
         title: 'Notificações · DoseCerta',
-        data: { titulo: 'Notificações' },
-        loadComponent: emConstrucao,
+        loadComponent: () =>
+          import('./features/notificacoes/notificacoes.page').then((m) => m.NotificacoesPage),
       },
     ],
   },
