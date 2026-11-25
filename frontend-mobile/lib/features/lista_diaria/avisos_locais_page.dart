@@ -10,7 +10,8 @@ import '../../shared/banner_erro.dart';
 /// Ecrã E26 Calendário sincronizado e avisos locais (protótipo de baixa fidelidade v02, página 41), só no mobile:
 /// a data e hora da última sincronização, as tomas das 48 horas seguintes guardadas no dispositivo, os avisos
 /// agendados e o estado das autorizações de notificações e de alarmes exatos, com «Sincronizar agora» e o pedido das
-/// autorizações em falta (RF-061, RF-062, RF-069, RNF-033, RNF-041).
+/// autorizações em falta (RF-061, RF-062, RF-069, RNF-033, RNF-041). A barra superior diz «Avisos locais»: o nome
+/// completo do ecrã ficava cortado na barra, mesmo com a letra a 100% (RNF-026).
 class AvisosLocaisPage extends ConsumerStatefulWidget {
   /// Cria o ecrã.
   const AvisosLocaisPage({super.key});
@@ -90,9 +91,7 @@ class _AvisosLocaisPageState extends ConsumerState<AvisosLocaisPage> {
     final faltaAlarmes =
         !faltaNotificacoes && estado.alarmesExatosAutorizados == false;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Calendário sincronizado e avisos locais'),
-      ),
+      appBar: AppBar(title: const Text('Avisos locais')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
