@@ -1,5 +1,5 @@
 /**
- * Preparação dos dados dos cenários de F002 a F005 pela API (documentação da API v04), sempre com dados fictícios e
+ * Preparação dos dados dos cenários de F002 a F011 pela API (documentação da API v04), sempre com dados fictícios e
  * e-mails únicos por execução: cada cenário cria as suas contas, fichas, convites e tratamentos e não depende de outro.
  */
 import { ContaFicticia, criarContaNaApi, iniciarSessao, novaConta } from './e2e';
@@ -146,6 +146,59 @@ export function tratamentoNaApi(
 /** Arquiva a ficha pela API (OP-12). */
 export function arquivarNaApi(token: string, fichaId: string): void {
   pedidoApi(token, 'POST', `/fichas/${fichaId}/arquivo`).its('status').should('be.oneOf', [200, 204]);
+}
+
+/** Compromisso devolvido por OP-41 a OP-43 (só os campos usados nos cenários). */
+export interface CompromissoApi {
+  id: string;
+  dataHora: string;
+  local: string;
+  motivo: string;
+  antecedenciaAvisoMinutos: number;
+}
+
+/** Regista um compromisso pela API (OP-41) e devolve-o. */
+export function compromissoNaApi(
+  token: string,
+  fichaId: string,
+  dados: { dataHora: string; local?: string; motivo: string; antecedenciaAvisoMinutos?: number },
+): Cypress.Chainable<CompromissoApi> {
+  return pedidoApi<CompromissoApi>(token, 'POST', `/fichas/${fichaId}/compromissos`, {
+    local: 'Centro de Saúde Fictício',
+    antecedenciaAvisoMinutos: 1440,
+    ...dados,
+  }).its('body');
+}
+
+/** Compromissos da ficha (OP-42). */
+export function compromissosNaApi(token: string, fichaId: string): Cypress.Chainable<CompromissoApi[]> {
+  return pedidoApi<CompromissoApi[]>(token, 'GET', `/fichas/${fichaId}/compromissos`).its('body');
+}
+
+/** Regista uma ocorrência pela API (OP-46), que notifica os outros Cuidadores e os Familiares (RF-115). */
+export function ocorrenciaNaApi(token: string, fichaId: string, descricao: string, ocorridaEm: string): void {
+  pedidoApi(token, 'POST', `/fichas/${fichaId}/ocorrencias`, { descricao, ocorridaEm })
+    .its('status')
+    .should('eq', 201);
+}
+
+/** Instante com o desvio de Lisboa do próprio dia, como o servidor o devolve (por exemplo `…T10:30:00+00:00`). */
+export function instanteLisboa(data: string, hora: string): string {
+  const [ano, mes, dia] = data.split('-').map(Number);
+  const [h, m] = hora.split(':').map(Number);
+  const comoUtc = Date.UTC(ano, mes - 1, dia, h, m);
+  const partes = Object.fromEntries(
+    PARTES_LISBOA.formatToParts(new Date(comoUtc)).map((p) => [p.type, p.value]),
+  );
+  const emLisboa = Date.UTC(
+    Number(partes['year']),
+    Number(partes['month']) - 1,
+    Number(partes['day']),
+    Number(partes['hour']),
+    Number(partes['minute']),
+  );
+  const desvio = Math.round((emLisboa - comoUtc) / 3_600_000);
+  return `${data}T${hora}:00+0${desvio}:00`;
 }
 
 /** Toma devolvida por OP-32 e OP-33 (só os campos usados nos cenários). */
