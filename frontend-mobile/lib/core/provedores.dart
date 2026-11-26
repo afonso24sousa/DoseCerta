@@ -15,6 +15,7 @@ import '../data/documentos_repositorio.dart';
 import '../data/dominios_repositorio.dart';
 import '../data/fichas_repositorio.dart';
 import '../data/pessoas_repositorio.dart';
+import '../data/registos_repositorio.dart';
 import '../data/tomas_repositorio.dart';
 import '../data/tratamentos_repositorio.dart';
 import 'api_client.dart';
@@ -89,6 +90,11 @@ final tratamentosRepositorioProvider = Provider<TratamentosRepositorio>(
 /// Repositório das pessoas da ficha (OP-18, OP-23 a OP-26).
 final pessoasRepositorioProvider = Provider<PessoasRepositorio>(
   (ref) => PessoasRepositorio(ref.watch(apiClientProvider)),
+);
+
+/// Repositório das ocorrências e notas partilhadas (OP-46 a OP-49).
+final registosRepositorioProvider = Provider<RegistosRepositorio>(
+  (ref) => RegistosRepositorio(ref.watch(apiClientProvider)),
 );
 
 /// Repositório dos convites (OP-19 a OP-22).
