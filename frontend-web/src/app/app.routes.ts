@@ -38,8 +38,8 @@ export const routes: Routes = [
       {
         path: 'hoje',
         title: 'Lista diária · DoseCerta',
-        data: { titulo: 'Lista diária' },
-        loadComponent: emConstrucao,
+        loadComponent: () =>
+          import('./features/lista-diaria/lista-diaria.page').then((m) => m.ListaDiariaPage),
       },
       {
         path: 'fichas',
