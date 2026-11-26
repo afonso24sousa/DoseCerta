@@ -43,7 +43,8 @@ h2 {
   gap: 0.25rem;
   margin-bottom: 1rem;
 
-  input {
+  input,
+  textarea {
     padding: 0.5rem;
     font: inherit;
     border: 1px solid var(--cor-borda);
@@ -51,7 +52,8 @@ h2 {
   }
 }
 
-.campo--erro input {
+.campo--erro input,
+.campo--erro textarea {
   border-color: var(--cor-erro);
 }
 
@@ -360,4 +362,29 @@ a.botao {
     color: var(--cor-primaria);
     border-bottom-color: currentColor;
   }
+}
+
+/* Ocorrências e notas da ficha (E23, I073): a descrição mantém as quebras de linha escritas pelo autor. */
+.lista-registos {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lista-registos__item {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--cor-borda);
+
+  p {
+    margin: 0 0 0.5rem;
+  }
+
+  .ajuda {
+    margin: 0;
+  }
+}
+
+.lista-registos__descricao {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }

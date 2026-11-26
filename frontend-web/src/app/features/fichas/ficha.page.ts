@@ -98,6 +98,7 @@ const CODIGOS_RECARREGAR = new Set([
       </div>
       <p class="acoes">
         <a [routerLink]="['/fichas', f.id, 'medicacao']">Medicação</a>
+        <a [routerLink]="['/fichas', f.id, 'registos']">Ocorrências e notas</a>
         <a [routerLink]="['/fichas', f.id, 'pessoas']">Pessoas da ficha</a>
       </p>
 
