@@ -1,5 +1,6 @@
 import { Component, OnChanges, computed, inject, input, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TratamentosApi } from '../../api/tratamentos.api';
 import { FichaContextoService } from '../../core/ficha-contexto.service';
 import { MensagensErroService } from '../../core/mensagens-erro.service';
@@ -8,10 +9,9 @@ import { ProblemaApi } from '../../models/problema-api';
 import { EstadoTratamento, TratamentoDto } from '../../models/tratamentos.models';
 import { BannerErroComponent } from '../../shared/banner-erro.component';
 import { ResultadoMedicacao, textoGrau, textoHorarios, textoPeriodo } from './apresentacao-tratamento';
+import { ListaTomasComponent } from './lista-tomas.component';
 
-/**
- * Vista de E15: os tratamentos (I066) ou o calendário de tomas da ficha (OP-32, RF-063), que a I068 acrescenta.
- */
+/** Vista de E15: os tratamentos (I066) ou o calendário de tomas da ficha (OP-32, RF-063; I068). */
 export type VistaMedicacao = 'tratamentos' | 'calendario';
 
 /** Mensagens de sucesso vindas da rota. */
@@ -28,7 +28,7 @@ const RESULTADOS: Readonly<Record<string, string>> = {
 @Component({
   selector: 'app-lista-tratamentos-page',
   standalone: true,
-  imports: [RouterLink, BannerErroComponent],
+  imports: [RouterLink, BannerErroComponent, ListaTomasComponent],
   template: `
     <p><a [routerLink]="['/fichas', fichaId()]">Voltar à ficha</a></p>
 
@@ -53,10 +53,24 @@ const RESULTADOS: Readonly<Record<string, string>> = {
       }
     }
 
-    <!--
-      I068: vista «Calendário de tomas» (OP-32, RF-063). O separador «Calendário de tomas» e o ListaTomasComponent
-      entram aqui, comandados pelo signal vista ('tratamentos' | 'calendario'); a I066 só mostra os tratamentos.
-    -->
+    <!-- Separadores «Tratamentos» e «Calendário de tomas» (I068), comandados pelo signal vista e por ?vista= da rota. -->
+    <div class="separadores" role="tablist" aria-label="Medicação">
+      @for (s of separadores; track s.valor) {
+        <button
+          type="button"
+          role="tab"
+          class="separador"
+          [attr.aria-selected]="vista() === s.valor"
+          (click)="mudarVista(s.valor)"
+        >
+          {{ s.rotulo }}
+        </button>
+      }
+    </div>
+
+    @if (vista() === 'calendario') {
+      <app-lista-tomas [fichaId]="fichaId()" />
+    }
     @if (vista() === 'tratamentos') {
       <section class="cartao cartao--largo">
         <h2 class="so-leitor">Tratamentos</h2>
@@ -128,6 +142,14 @@ export class ListaTratamentosPage implements OnChanges {
   /** Parâmetro `resultado` da rota, depois de registar. */
   readonly resultado = input<string | undefined>();
 
+  private readonly router = inject(Router);
+  private readonly rota = inject(ActivatedRoute);
+
+  protected readonly separadores: readonly { valor: VistaMedicacao; rotulo: string }[] = [
+    { valor: 'tratamentos', rotulo: 'Tratamentos' },
+    { valor: 'calendario', rotulo: 'Calendário de tomas' },
+  ];
+
   protected readonly filtros: readonly { valor: EstadoTratamento; rotulo: string }[] = [
     { valor: 'EmCurso', rotulo: 'Em curso' },
     { valor: 'Terminado', rotulo: 'Terminados' },
@@ -136,7 +158,7 @@ export class ListaTratamentosPage implements OnChanges {
   protected readonly grau = textoGrau;
   protected readonly periodo = textoPeriodo;
 
-  /** Vista atual; a I068 acrescenta 'calendario'. */
+  /** Vista atual: os tratamentos ou o calendário de tomas. */
   readonly vista = signal<VistaMedicacao>('tratamentos');
 
   protected readonly ficha = signal<FichaDto | null>(null);
@@ -152,6 +174,16 @@ export class ListaTratamentosPage implements OnChanges {
     return !!ficha && ficha.meuPapel === 'Cuidador' && ficha.estado === 'Ativa';
   });
 
+  constructor() {
+    // Parâmetro `vista` da rota: `?vista=calendario` abre o calendário de tomas; sem ele, os tratamentos. Lido aqui,
+    // e não como entrada, porque o nome coincide com o signal vista.
+    this.rota.queryParamMap
+      .pipe(takeUntilDestroyed())
+      .subscribe((parametros) =>
+        this.vista.set(parametros.get('vista') === 'calendario' ? 'calendario' : 'tratamentos'),
+      );
+  }
+
   ngOnChanges(): void {
     this.erro.set(null);
     this.sucesso.set(RESULTADOS[this.resultado() ?? ''] ?? null);
@@ -162,6 +194,18 @@ export class ListaTratamentosPage implements OnChanges {
       error: (problema: ProblemaApi) => this.erro.set(this.mensagens.mensagem(problema)),
     });
     this.carregar();
+  }
+
+  /** Muda de separador e atualiza `?vista=` na rota, sem acrescentar uma entrada ao histórico. */
+  protected mudarVista(vista: VistaMedicacao): void {
+    this.vista.set(vista);
+    this.sucesso.set(null);
+    void this.router.navigate([], {
+      relativeTo: this.rota,
+      queryParams: { vista: vista === 'calendario' ? 'calendario' : null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   protected filtrar(filtro: EstadoTratamento): void {

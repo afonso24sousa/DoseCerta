@@ -18,8 +18,10 @@ export function novaConta(prefixo: string): ContaFicticia {
 
 /** Campo do formulário pelo rótulo exato (`<label for>`). */
 export function campo(rotulo: string): Cypress.Chainable<JQuery<HTMLElement>> {
+  // O rótulo é texto literal: os parênteses de «Receita médica (opcional)» não são da expressão regular.
+  const literal = rotulo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return cy
-    .contains('label', new RegExp(`^${rotulo}$`))
+    .contains('label', new RegExp(`^\\s*${literal}\\s*$`))
     .invoke('attr', 'for')
     .then((id) => cy.get(`#${id}`));
 }
