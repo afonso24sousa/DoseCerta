@@ -16,6 +16,7 @@ class CampoData extends StatelessWidget {
     this.erro,
     this.ativo = true,
     this.ajuda = 'Formato dd/mm/aaaa',
+    this.aoMudar,
   });
 
   /// Rótulo do campo (por exemplo «Data de nascimento»). Curto, para não ser cortado com a letra aumentada
@@ -39,6 +40,9 @@ class CampoData extends StatelessWidget {
 
   /// Indica se o campo aceita edição.
   final bool ativo;
+
+  /// Chamado a cada alteração do texto.
+  final ValueChanged<String>? aoMudar;
 
   /// Valor do campo no formato da API, ou `null` se não for uma data válida.
   String? get valorIso => FormatadorDataHora.paraIsoData(controlador.text);
@@ -72,6 +76,7 @@ class CampoData extends StatelessWidget {
         enabled: ativo,
         keyboardType: TextInputType.datetime,
         textInputAction: TextInputAction.next,
+        onChanged: aoMudar,
         decoration: InputDecoration(
           labelText: rotulo,
           hintText: 'dd/mm/aaaa',

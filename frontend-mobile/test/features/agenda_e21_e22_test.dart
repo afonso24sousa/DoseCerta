@@ -170,6 +170,40 @@ void main() {
     expect(find.widgetWithText(AppBar, 'Editar compromisso'), findsOneWidget);
   });
 
+  testWidgets(
+    'E22 avisa quando o momento da notificação passou mas o compromisso é futuro',
+    (tester) async {
+      await abrir(tester);
+      await tester.tap(find.text('Registar compromisso'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Data'),
+        '24/11/2026',
+      );
+      await tester.enterText(find.widgetWithText(TextField, 'Hora'), '18:00');
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          'O momento do aviso já passou: a notificação é criada logo ao guardar.',
+        ),
+        findsOneWidget,
+      );
+
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Data'),
+        '24/11/2026',
+      );
+      await tester.enterText(find.widgetWithText(TextField, 'Hora'), '10:00');
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          'O momento do aviso já passou: a notificação é criada logo ao guardar.',
+        ),
+        findsNothing,
+      );
+    },
+  );
+
   testWidgets('E22 remove o compromisso depois de confirmar', (tester) async {
     await abrir(tester);
     await tester.tap(find.text('Consulta de rotina'));

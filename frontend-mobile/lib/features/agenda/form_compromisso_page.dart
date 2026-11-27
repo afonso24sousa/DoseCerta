@@ -6,6 +6,7 @@ import '../../core/app_router.dart';
 import '../../core/ficha_acesso_provider.dart';
 import '../../core/formatador_data_hora.dart';
 import '../../core/mensagens_erro.dart';
+import '../../core/provedores.dart';
 import '../../models/compromisso_dto.dart';
 import '../../models/dados_compromisso_dto.dart';
 import '../../shared/banner_erro.dart';
@@ -53,6 +54,26 @@ class _FormCompromissoPageState extends ConsumerState<FormCompromissoPage> {
       (fichaId: widget.fichaId, compromissoId: widget.compromissoId);
 
   bool get _edicao => widget.compromissoId != null;
+
+  bool get _avisoJaPassou {
+    final data = FormatadorDataHora.lerData(_data.text);
+    final hora = RegExp(r'^([01]?\d|2[0-3]):([0-5]\d)$')
+        .firstMatch(_hora.text.trim());
+    if (data == null || hora == null) {
+      return false;
+    }
+
+    final compromisso = DateTime.parse(
+      FormatadorDataHora.instanteDeLisboa(
+        data,
+        int.parse(hora.group(1)!),
+        int.parse(hora.group(2)!),
+      ),
+    );
+    final agora = ref.read(relogioProvider).agora();
+    return compromisso.isAfter(agora) &&
+        compromisso.subtract(Duration(minutes: _antecedencia)).isBefore(agora);
+  }
 
   @override
   void initState() {
@@ -205,6 +226,7 @@ class _FormCompromissoPageState extends ConsumerState<FormCompromissoPage> {
           ultimaData: DateTime(2100, 12, 31),
           erro: estado.erros['data'],
           ativo: ativo,
+          aoMudar: (_) => setState(() {}),
         ),
         Padding(
           padding: const EdgeInsets.only(bottom: 16),
@@ -213,6 +235,7 @@ class _FormCompromissoPageState extends ConsumerState<FormCompromissoPage> {
             enabled: ativo,
             keyboardType: TextInputType.datetime,
             textInputAction: TextInputAction.next,
+            onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
               labelText: 'Hora',
               hintText: 'hh:mm',
@@ -259,6 +282,11 @@ class _FormCompromissoPageState extends ConsumerState<FormCompromissoPage> {
               ? (valor) => setState(() => _antecedencia = valor!)
               : null,
         ),
+        if (_avisoJaPassou)
+          const BannerErro(
+            'O momento do aviso já passou: a notificação é criada logo ao guardar.',
+            informativo: true,
+          ),
         const SizedBox(height: 24),
         if (podeAlterar) ...[
           FilledButton(
