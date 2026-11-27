@@ -53,7 +53,7 @@ export function diaDaSemana(dia: string): string {
 }
 
 /**
- * E26 Lista de tarefas diária (OP-50, OP-33; UC-30, UC-22): numa só lista, as tomas e os compromissos do dia de todas
+ * E04 Lista de tarefas diária (OP-50, OP-33; UC-30, UC-22): numa só lista, as tomas e os compromissos do dia de todas
  * as fichas ativas em que o Utilizador é Cuidador, por hora, cada um com o nome do utente (RF-100, RF-101). Hoje inclui
  * também as tomas de ontem que continuam por confirmar. Uma toma confirmável confirma-se aqui com um só clique, sem
  * abrir a ficha (RF-102, RNF-021); uma toma confirmada por outro Cuidador aparece com o autor e o momento ao abrir ou
@@ -121,7 +121,7 @@ export function diaDaSemana(dia: string): string {
                   </svg>
                   {{ estados[item.estado].texto }}
                 </span>
-                @if (doutroDia(item)) {
+                @if (doutroDia(item) && item.estado === 'Pendente') {
                   <span class="etiqueta">De ontem, por confirmar</span>
                 }
               } @else {
