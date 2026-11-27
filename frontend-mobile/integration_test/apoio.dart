@@ -15,6 +15,7 @@ import 'package:dosecerta/shared/origem_ficheiro.dart';
 import 'package:dosecerta/shared/selecionador_ficheiros.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
@@ -315,7 +316,14 @@ class AgendadorSemAvisos implements AgendadorAvisos {
 
 /// Abre a aplicação com a sessão que estiver no [ArmazenamentoMemoria] e, se for indicada, a [fonte] de ficheiros
 /// falsa no lugar dos seletores nativos. Cada abertura cria um `ProviderScope` novo, como um arranque a frio.
-Future<void> abrirAplicacao(WidgetTester tester, {FonteFicticia? fonte}) async {
+///
+/// As [outras] substituições (por exemplo um repositório com respostas fixas, nos cenários «[duplo]» da F011) são
+/// aplicadas no fim.
+Future<void> abrirAplicacao(
+  WidgetTester tester, {
+  FonteFicticia? fonte,
+  List<Override> outras = const [],
+}) async {
   final substituicoes = await InicializadorApp(
     armazenamento: SessaoStore(ArmazenamentoMemoria()),
   ).iniciar();
@@ -335,16 +343,22 @@ Future<void> abrirAplicacao(WidgetTester tester, {FonteFicticia? fonte}) async {
           selecionadorFicheirosProvider.overrideWithValue(
             SelecionadorFicheiros(fonte),
           ),
+        ...outras,
       ],
       child: const DoseCertaApp(),
     ),
   );
 }
 
-/// Arranca a aplicação sem sessão guardada, com a [fonte] de ficheiros falsa no lugar dos seletores nativos.
-Future<void> arrancar(WidgetTester tester, FonteFicticia fonte) async {
+/// Arranca a aplicação sem sessão guardada, com a [fonte] de ficheiros falsa no lugar dos seletores nativos e as
+/// [outras] substituições.
+Future<void> arrancar(
+  WidgetTester tester,
+  FonteFicticia fonte, {
+  List<Override> outras = const [],
+}) async {
   ArmazenamentoMemoria.valores.clear();
-  await abrirAplicacao(tester, fonte: fonte);
+  await abrirAplicacao(tester, fonte: fonte, outras: outras);
   await esperarPor(tester, find.text('Início de sessão'));
 }
 
@@ -410,4 +424,193 @@ Future<void> abrirFicha(WidgetTester tester, String nome) async {
   await esperarPor(tester, find.text(nome));
   await tocar(tester, find.text(nome));
   await esperarPor(tester, find.text('Ficha'));
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// F008 a F011 (I079)
+// ---------------------------------------------------------------------------------------------------------------
+
+String _dois(int n) => n.toString().padLeft(2, '0');
+
+/// Data `AAAA-MM-DD` e hora `hh:mm` de Lisboa daqui a [minutos] (negativo: há [minutos]).
+({String data, String hora}) momentoLisboa(int minutos) {
+  final t = agoraLisboa().add(Duration(minutes: minutos));
+  return (
+    data: '${t.year}-${_dois(t.month)}-${_dois(t.day)}',
+    hora: '${_dois(t.hour)}:${_dois(t.minute)}',
+  );
+}
+
+/// Instante ISO 8601 do dia [data] (`AAAA-MM-DD`) à [hora] (`hh:mm`) de Lisboa, com o desvio de Lisboa desse dia
+/// (`+00:00` no inverno, `+01:00` no verão), como a aplicação o envia à API.
+String instanteLisboa(String data, String hora) {
+  final d = DateTime.parse(data);
+  final h = int.parse(hora.substring(0, 2));
+  final m = int.parse(hora.substring(3, 5));
+  // Na hora de verão, o instante UTC é uma hora antes da hora de Lisboa.
+  final utcSeVerao = DateTime.utc(d.year, d.month, d.day, h - 1, m);
+  final verao =
+      !utcSeVerao.isBefore(_ultimoDomingo(d.year, 3)) &&
+      utcSeVerao.isBefore(_ultimoDomingo(d.year, 10));
+  return '${data}T$hora:00+0${verao ? 1 : 0}:00';
+}
+
+/// Data `AAAA-MM-DD` apresentada como no ecrã, `dd/mm/aaaa` (RNF-029).
+String dataNoEcra(String data) =>
+    '${data.substring(8, 10)}/${data.substring(5, 7)}/${data.substring(0, 4)}';
+
+/// Regista pela API (OP-27) um tratamento com tomas só no dia [data] (`AAAA-MM-DD`), à [hora]. Devolve o id.
+Future<String> tratamentoDoDiaNaApi(
+  ContaApi conta,
+  String fichaId, {
+  required String medicamento,
+  required String data,
+  required String hora,
+  String grau = 'Leve',
+}) async {
+  final resposta = await pedido(
+    'POST',
+    '/fichas/$fichaId/tratamentos',
+    token: conta.token,
+    corpo: {
+      'medicamento': medicamento,
+      'dose': '500 mg',
+      'grauImportancia': grau,
+      'dataInicio': data,
+      'dataFim': data,
+      'horarios': [hora],
+    },
+  );
+  expect(resposta.estado, 201);
+  return resposta.objeto['id']! as String;
+}
+
+/// Regista um compromisso pela API (OP-41) e devolve-o.
+Future<Map<String, Object?>> compromissoNaApi(
+  ContaApi conta,
+  String fichaId, {
+  required String dataHora,
+  required String motivo,
+  String local = 'Centro de Saúde Fictício',
+  int antecedenciaAvisoMinutos = 1440,
+}) async {
+  final resposta = await pedido(
+    'POST',
+    '/fichas/$fichaId/compromissos',
+    token: conta.token,
+    corpo: {
+      'dataHora': dataHora,
+      'local': local,
+      'motivo': motivo,
+      'antecedenciaAvisoMinutos': antecedenciaAvisoMinutos,
+    },
+  );
+  expect(resposta.estado, 201);
+  return resposta.objeto;
+}
+
+/// Compromissos da ficha (OP-42).
+Future<List<Map<String, Object?>>> compromissosNaApi(
+  ContaApi conta,
+  String fichaId,
+) async {
+  final resposta = await pedido(
+    'GET',
+    '/fichas/$fichaId/compromissos',
+    token: conta.token,
+  );
+  expect(resposta.estado, 200);
+  return resposta.lista.cast<Map<String, Object?>>();
+}
+
+/// Regista uma ocorrência pela API (OP-46), que notifica os outros Cuidadores e os Familiares (RF-115).
+Future<void> ocorrenciaNaApi(
+  ContaApi conta,
+  String fichaId,
+  String descricao,
+  String ocorridaEm,
+) async {
+  final resposta = await pedido(
+    'POST',
+    '/fichas/$fichaId/ocorrencias',
+    token: conta.token,
+    corpo: {'descricao': descricao, 'ocorridaEm': ocorridaEm},
+  );
+  expect(resposta.estado, 201);
+}
+
+/// Regista uma nota para os Cuidadores pela API.
+Future<void> notaNaApi(ContaApi conta, String fichaId, String descricao) async {
+  final resposta = await pedido(
+    'POST',
+    '/fichas/$fichaId/notas',
+    token: conta.token,
+    corpo: {'descricao': descricao},
+  );
+  expect(resposta.estado, 201);
+}
+
+/// Convida o [email] para a ficha com o [papel] (OP-19), sem aceitar.
+Future<void> convidarNaApi(
+  ContaApi cuidador,
+  String fichaId,
+  String email,
+  String papel,
+) async {
+  final convite = await pedido(
+    'POST',
+    '/fichas/$fichaId/convites',
+    token: cuidador.token,
+    corpo: {'email': email, 'papel': papel, 'paraPrincipal': false},
+  );
+  expect(convite.estado, 201);
+}
+
+/// Confirma pela API (OP-33) a toma da ficha do dia [data] do [medicamento] (OP-32).
+Future<void> confirmarTomaNaApi(
+  ContaApi conta,
+  String fichaId,
+  String data,
+  String medicamento,
+) async {
+  final tomas = await pedido(
+    'GET',
+    '/fichas/$fichaId/tomas?de=$data&ate=$data',
+    token: conta.token,
+  );
+  final toma = tomas.lista.cast<Map<String, Object?>>().singleWhere(
+    (t) => t['medicamento'] == medicamento,
+  );
+  final resposta = await pedido(
+    'POST',
+    '/tomas/${toma['id']}/confirmacao',
+    token: conta.token,
+  );
+  expect(resposta.estado, 200);
+}
+
+/// Espera, sem tempo fixo, que a [conta] tenha pelo menos [n] notificações (OP-51). O aviso de um compromisso é
+/// criado pelo processo periódico do servidor, até 60 segundos depois (RNF-040): até 30 consultas, de 3 em 3 s.
+Future<void> esperarNotificacoes(ContaApi conta, int n) async {
+  var recebidas = 0;
+  for (var tentativa = 0; tentativa < 30; tentativa++) {
+    final resposta = await pedido('GET', '/notificacoes', token: conta.token);
+    recebidas = resposta.lista.length;
+    if (recebidas >= n) {
+      return;
+    }
+    await Future<void>.delayed(const Duration(seconds: 3));
+  }
+  expect(recebidas, greaterThanOrEqualTo(n), reason: 'notificações recebidas');
+}
+
+/// Puxa a lista para baixo, para a atualizar (`RefreshIndicator`), e espera que a atualização termine.
+Future<void> puxarParaAtualizar(WidgetTester tester) async {
+  await tester.fling(find.byType(ListView).first, const Offset(0, 400), 1000);
+  for (var i = 0; i < 25; i++) {
+    await tester.pump(const Duration(milliseconds: 200));
+    if (find.byType(RefreshProgressIndicator).evaluate().isEmpty) {
+      return;
+    }
+  }
 }
