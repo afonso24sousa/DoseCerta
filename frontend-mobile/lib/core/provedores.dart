@@ -7,8 +7,10 @@ import '../avisos_locais/avisos_locais_service.dart';
 import '../avisos_locais/permissao_notificacoes.dart';
 import '../avisos_locais/sincronizador_calendario.dart';
 import '../avisos_locais/tomas_sincronizadas_store.dart';
+import '../data/agenda_repositorio.dart';
 import '../data/auth_repositorio.dart';
 import '../data/calendario_repositorio.dart';
+import '../data/compromissos_repositorio.dart';
 import '../data/conta_repositorio.dart';
 import '../data/convites_repositorio.dart';
 import '../data/documentos_repositorio.dart';
@@ -116,6 +118,16 @@ final listaDiariaRepositorioProvider = Provider<ListaDiariaRepositorio>(
 /// Repositório do calendário de tomas para o dispositivo (OP-34).
 final calendarioRepositorioProvider = Provider<CalendarioRepositorio>(
   (ref) => CalendarioRepositorio(ref.watch(apiClientProvider)),
+);
+
+/// Repositório dos compromissos (OP-41 a OP-44).
+final compromissosRepositorioProvider = Provider<CompromissosRepositorio>(
+  (ref) => CompromissosRepositorio(ref.watch(apiClientProvider)),
+);
+
+/// Repositório da agenda (OP-45).
+final agendaRepositorioProvider = Provider<AgendaRepositorio>(
+  (ref) => AgendaRepositorio(ref.watch(apiClientProvider)),
 );
 
 /// Agendador dos avisos no sistema operativo (os testes substituem-no por um falso).
