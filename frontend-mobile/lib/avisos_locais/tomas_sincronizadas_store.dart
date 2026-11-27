@@ -73,6 +73,19 @@ class TomasSincronizadasStore {
     );
   }
 
+  /// Retira a toma [tomaId] das tomas guardadas, depois de confirmada, sem mudar o instante da sincronização: a
+  /// toma deixa de contar no E26 sem esperar pela sincronização seguinte.
+  Future<void> retirar(String tomaId) async {
+    final atuais = await ler();
+    if (atuais == null || atuais.tomas.every((toma) => toma.tomaId != tomaId)) {
+      return;
+    }
+    await guardar(atuais.utilizadorId, [
+      for (final toma in atuais.tomas)
+        if (toma.tomaId != tomaId) toma,
+    ], atuais.ultimaSincronizacao);
+  }
+
   /// Apaga as tomas sincronizadas (ao terminar a sessão).
   Future<void> limpar() async {
     final preferencias = await SharedPreferences.getInstance();
