@@ -13,21 +13,29 @@ import 'package:go_router/go_router.dart';
 import 'falsos.dart';
 import 'falsos_fichas.dart';
 import 'falsos_pessoas.dart';
+import 'falsos_registos.dart';
 import 'falsos_tratamentos.dart';
 
-/// Aplicação de teste com as rotas reais do ramo Fichas, incluindo E14 (sem a barra inferior), a começar em
-/// [inicio].
+/// Aplicação de teste com as rotas reais dos ramos Hoje (E04, E26) e Fichas, incluindo E14 (sem a barra inferior), a
+/// começar em [inicio].
 class AppFichas {
   AppFichas({String inicio = AppRouter.fichas, this.outras = const []})
     : router = GoRouter(
         initialLocation: inicio,
-        routes: [AppRouter.rotasFichas(), AppRouter.rotaConvites()],
+        routes: [
+          AppRouter.rotaHoje(),
+          AppRouter.rotasFichas(),
+          AppRouter.rotaConvites(),
+        ],
       );
 
   final GoRouter router;
 
   /// Substituições a mais (por exemplo, o selecionador de ficheiros).
   final List<Override> outras;
+
+  /// Relógio da aplicação (09/11/2026 às 12:00); os testes podem avançá-lo.
+  final RelogioFixo relogio = RelogioFixo(DateTime(2026, 11, 9, 12));
   final FichasRepositorioFalso fichas = FichasRepositorioFalso();
   final DominiosRepositorioFalso dominios = DominiosRepositorioFalso();
   final DocumentosRepositorioFalso documentos = DocumentosRepositorioFalso();
@@ -36,6 +44,7 @@ class AppFichas {
   final TratamentosRepositorioFalso tratamentos = TratamentosRepositorioFalso();
   final ConvitesRepositorioFalso convites = ConvitesRepositorioFalso();
   final PessoasRepositorioFalso pessoas = PessoasRepositorioFalso();
+  final RegistosRepositorioFalso registos = RegistosRepositorioFalso();
 
   /// Identificador do Utilizador da sessão de teste.
   static const String utilizadorId = 'u-eu';
@@ -53,6 +62,7 @@ class AppFichas {
         tratamentosRepositorioProvider.overrideWithValue(tratamentos),
         convitesRepositorioProvider.overrideWithValue(convites),
         pessoasRepositorioProvider.overrideWithValue(pessoas),
+        registosRepositorioProvider.overrideWithValue(registos),
         sessaoInicialProvider.overrideWithValue(
           SessaoGuardada(
             token: 't',
@@ -64,9 +74,7 @@ class AppFichas {
         selecionadorFicheirosProvider.overrideWithValue(
           SelecionadorFicheiros(fonte),
         ),
-        relogioProvider.overrideWithValue(
-          RelogioFixo(DateTime(2026, 11, 9, 12)),
-        ),
+        relogioProvider.overrideWithValue(relogio),
         ...outras,
       ],
       child: MaterialApp.router(

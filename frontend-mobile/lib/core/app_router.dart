@@ -12,6 +12,8 @@ import '../features/fichas/ficha_page.dart';
 import '../features/fichas/lista_fichas_page.dart';
 import '../features/fichas/nova_ficha_dados_page.dart';
 import '../features/fichas/nova_ficha_documentos_page.dart';
+import '../features/lista_diaria/avisos_locais_page.dart';
+import '../features/lista_diaria/lista_diaria_page.dart';
 import '../features/medicacao/formulario_tratamento_page.dart';
 import '../features/medicacao/medicacao_ficha_page.dart';
 import '../features/medicacao/tratamento_page.dart';
@@ -21,7 +23,10 @@ import '../features/navegacao/pagina_provisoria.dart';
 import '../features/pessoas/convidar_pessoa_page.dart';
 import '../features/pessoas/convites_recebidos_page.dart';
 import '../features/pessoas/pessoas_ficha_page.dart';
+import '../features/registos/novo_registo_page.dart';
+import '../features/registos/registos_page.dart';
 import '../models/conta_criada_dto.dart';
+import '../models/tipo_registo.dart';
 import 'provedores.dart';
 import 'sessao_controller.dart';
 
@@ -36,8 +41,11 @@ class AppRouter {
   /// E02 Início de sessão.
   static const String entrar = '/entrar';
 
-  /// E04 Lista de tarefas diária (provisória).
+  /// E04 Lista de tarefas diária.
   static const String hoje = '/hoje';
+
+  /// E26 Calendário sincronizado e avisos locais, aberto a partir do E04.
+  static const String avisosLocais = '/hoje/avisos-locais';
 
   /// E05 Fichas.
   static const String fichas = '/fichas';
@@ -87,8 +95,13 @@ class AppRouter {
   static String convidarPessoa(String fichaId) =>
       '/fichas/$fichaId/pessoas/convidar';
 
-  /// E23 Ocorrências e notas (provisória).
+  /// E23 Ocorrências e notas.
   static String registosFicha(String fichaId) => '/fichas/$fichaId/registos';
+
+  /// E24 Nova ocorrência ou nota, com o [tipo] escolhido à partida (`?tipo=Nota`).
+  static String novoRegisto(String fichaId, {TipoRegisto? tipo}) =>
+      '/fichas/$fichaId/registos/novo'
+      '${tipo == null ? '' : '?tipo=${tipo.valor}'}';
 
   /// E14 Convites recebidos.
   static const String convites = '/convites';
@@ -149,13 +162,7 @@ class AppRouter {
         StatefulShellRoute.indexedStack(
           builder: (context, estado, shell) => EstruturaNavegacao(shell: shell),
           branches: [
-            _ramo(
-              hoje,
-              const PaginaProvisoria(
-                titulo: 'Lista de tarefas diária',
-                ecra: 'E04',
-              ),
-            ),
+            StatefulShellBranch(routes: [rotaHoje()]),
             StatefulShellBranch(routes: [rotasFichas(), rotaConvites()]),
             _ramo(
               agenda,
@@ -213,7 +220,22 @@ class AppRouter {
                 ),
               ],
             ),
-            _provisoria('registos', 'Ocorrências e notas', 'E23'),
+            GoRoute(
+              path: 'registos',
+              builder: (context, estado) =>
+                  RegistosPage(fichaId: estado.pathParameters['fichaId']!),
+              routes: [
+                GoRoute(
+                  path: 'novo',
+                  builder: (context, estado) => NovoRegistoPage(
+                    fichaId: estado.pathParameters['fichaId']!,
+                    tipo: estado.uri.queryParameters['tipo'] == 'Nota'
+                        ? TipoRegisto.nota
+                        : TipoRegisto.ocorrencia,
+                  ),
+                ),
+              ],
+            ),
             GoRoute(
               path: 'editar',
               builder: (context, estado) =>
@@ -272,21 +294,26 @@ class AppRouter {
     );
   }
 
+  /// Rota do E04 Lista de tarefas diária, com o E26 por baixo.
+  static GoRoute rotaHoje() {
+    return GoRoute(
+      path: hoje,
+      builder: (context, estado) => const ListaDiariaPage(),
+      routes: [
+        GoRoute(
+          path: 'avisos-locais',
+          builder: (context, estado) => const AvisosLocaisPage(),
+        ),
+      ],
+    );
+  }
+
   /// Rota de E14 (modelo de classes, secção 8). Fica no ramo Fichas, porque E14 abre-se a partir de E05 (protótipo
   /// v02, página 36); E05 abre-a com `push`, para o ecrã ter a seta de voltar.
   static GoRoute rotaConvites() {
     return GoRoute(
       path: convites,
       builder: (context, estado) => const ConvitesRecebidosPage(),
-    );
-  }
-
-  /// Rota provisória de um separador da ficha implementado noutra Issue (como na DD11 da I058).
-  static GoRoute _provisoria(String caminho, String titulo, String ecra) {
-    return GoRoute(
-      path: caminho,
-      builder: (context, estado) =>
-          PaginaProvisoria(titulo: titulo, ecra: ecra),
     );
   }
 
