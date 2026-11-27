@@ -57,6 +57,7 @@ const RESULTADOS: Readonly<Record<string, string>> = {
           Como Familiar, pode consultar as ocorrências da ficha. As notas são só para os Cuidadores.
         </p>
       }
+      <p class="ajuda">Os registos não se alteram nem se eliminam.</p>
     }
 
     @if (eCuidador()) {
@@ -165,6 +166,7 @@ export class RegistosFichaPage implements OnChanges {
       },
       error: (problema: ProblemaApi) => {
         this.aCarregar.set(false);
+        this.falhou.set(true);
         this.erro.set(this.mensagens.mensagem(problema));
       },
     });
