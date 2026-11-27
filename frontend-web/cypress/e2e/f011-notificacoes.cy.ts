@@ -80,24 +80,33 @@ describe('F011 Histórico de notificações', () => {
           cy.contains('a', 'Notificações').click();
           cy.location('pathname').should('eq', '/notificacoes');
           cy.get('.notificacao').should('have.length', 3);
-          cy.get('.notificacao')
-            .eq(0)
-            .should('contain', 'Compromisso próximo')
-            .and('contain', 'Consulta de rotina');
-          cy.get('.notificacao')
-            .eq(1)
-            .should('contain', 'Nova ocorrência')
-            .and('contain', 'Ana Fictícia registou uma ocorrência');
-          cy.get('.notificacao')
-            .eq(2)
-            .should('contain', 'Convite recebido')
-            .and('contain', 'Ver os convites');
+          cy.contains('.notificacao', 'Compromisso próximo').should('contain', 'Consulta de rotina');
+          cy.contains('.notificacao', 'Nova ocorrência').should(
+            'contain',
+            'Ana Fictícia registou uma ocorrência',
+          );
+          cy.contains('.notificacao', 'Convite recebido').should('contain', 'Ver os convites');
+          // O aviso do compromisso fica com a hora do ciclo do processo periódico, que pode ter começado antes da
+          // ocorrência: a ordem esperada é a dos momentos devolvidos pela OP-51, do mais recente para o mais antigo.
+          const titulos: Record<string, string> = {
+            ConviteRecebido: 'Convite recebido',
+            NovaOcorrencia: 'Nova ocorrência',
+            ProximoCompromisso: 'Compromisso próximo',
+          };
+          pedidoApi<NotificacaoApi[]>(rui.token, 'GET', '/notificacoes').then(({ body }) => {
+            const ordem = [...body]
+              .sort((a, b) => Date.parse(b.criadaEm) - Date.parse(a.criadaEm))
+              .map((n) => titulos[n.tipo]);
+            ordem.forEach((titulo, i) => cy.get('.notificacao').eq(i).should('contain', titulo));
+          });
           cy.get('.notificacao').each(($n) => {
             expect($n.text()).to.contain('Maria Fictícia Santos');
             expect($n.text()).to.match(/\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}/);
             expect($n.text()).to.match(/E-mail (enviado|pendente \(reenvio em curso\)|não entregue)/);
           });
-          cy.get('.notificacao').eq(0).find('a').should('have.attr', 'href', `/fichas/${fichaId}`);
+          cy.contains('.notificacao', 'Nova ocorrência')
+            .find('a')
+            .should('have.attr', 'href', `/fichas/${fichaId}`);
         });
       });
     });
