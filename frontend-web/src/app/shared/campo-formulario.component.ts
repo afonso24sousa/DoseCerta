@@ -33,7 +33,7 @@ let sequencia = 0;
 export class CampoFormularioComponent {
   readonly rotulo = input.required<string>();
   readonly controlo = input.required<FormControl<string>>();
-  readonly tipo = input<'text' | 'email' | 'password' | 'date' | 'tel'>('text');
+  readonly tipo = input<'text' | 'email' | 'password' | 'date' | 'time' | 'tel'>('text');
   readonly autocomplete = input<string | null>(null);
   /** Valor mínimo do campo de data (atributo `min`). */
   readonly minimo = input<string | null>(null);

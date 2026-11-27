@@ -48,8 +48,7 @@ export const routes: Routes = [
       {
         path: 'agenda',
         title: 'Agenda · DoseCerta',
-        data: { titulo: 'Agenda' },
-        loadComponent: emConstrucao,
+        loadComponent: () => import('./features/agenda/agenda.page').then((m) => m.AgendaPage),
       },
       {
         path: 'convites',
