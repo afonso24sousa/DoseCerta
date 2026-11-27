@@ -365,10 +365,12 @@ Finder campo(String rotulo) => find.widgetWithText(TextField, rotulo);
 /// Toca no alvo depois de o mostrar. Fecha antes a `SnackBar` que estiver visível, que pode tapar o alvo no fundo do
 /// ecrã (por exemplo «Ficha arquivada.» sobre «Reativar ou eliminar»); as mensagens já foram verificadas antes do toque.
 Future<void> tocar(WidgetTester tester, Finder alvo) async {
+  final campoComFoco = tester
+      .widgetList<EditableText>(find.byType(EditableText))
+      .any((campo) => campo.focusNode.hasFocus);
   FocusManager.instance.primaryFocus?.unfocus();
-  // Espera que o teclado feche: enquanto fecha, o ecrã muda de tamanho e o toque pode cair fora do alvo.
-  for (var i = 0; i < 20 && tester.view.viewInsets.bottom > 0; i++) {
-    await tester.pump(const Duration(milliseconds: 100));
+  if (campoComFoco) {
+    await _esperarTecladoFechado(tester);
   }
   final mensageiro = find.byType(ScaffoldMessenger);
   if (mensageiro.evaluate().isNotEmpty) {
@@ -381,6 +383,17 @@ Future<void> tocar(WidgetTester tester, Finder alvo) async {
   await tester.pump();
   await tester.tap(alvo.first);
   await tester.pump();
+}
+
+/// Espera que o teclado fique fechado em 5 verificações seguidas (máximo de 5 segundos). Num emulador lento, o
+/// teclado pedido pelo último `enterText` pode só abrir depois de o foco sair do campo: esperar apenas enquanto está
+/// aberto deixava o toque partir antes de ele abrir, e o ecrã encolhia por baixo do alvo (QG-07 do PR #138).
+Future<void> _esperarTecladoFechado(WidgetTester tester) async {
+  var fechadoSeguido = 0;
+  for (var i = 0; i < 50 && fechadoSeguido < 5; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+    fechadoSeguido = tester.view.viewInsets.bottom > 0 ? 0 : fechadoSeguido + 1;
+  }
 }
 
 /// Inicia sessão em E02 e espera pela barra inferior.

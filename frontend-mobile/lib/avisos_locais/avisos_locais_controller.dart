@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/provedores.dart';
 import '../core/sessao_controller.dart';
 import 'sincronizador_calendario.dart';
+import 'tomas_sincronizadas_store.dart';
 
 /// Estado dos avisos locais: autorizações e última sincronização.
 class AvisosLocaisEstado {
@@ -15,6 +16,7 @@ class AvisosLocaisEstado {
     this.avisoFechado = false,
     this.aSincronizar = false,
     this.ultimoResultado,
+    this.sincronizadas,
   });
 
   /// Notificações autorizadas; `null` enquanto não se sabe.
@@ -31,6 +33,10 @@ class AvisosLocaisEstado {
 
   /// Resultado da última sincronização.
   final ResultadoSincronizacao? ultimoResultado;
+
+  /// Tomas guardadas neste dispositivo e instante da última sincronização bem-sucedida (E26; RF-061); `null` se
+  /// ainda não houve nenhuma.
+  final TomasSincronizadas? sincronizadas;
 
   /// Mostrar o aviso de notificações desativadas (RF-062).
   bool get mostrarNotificacoesDesativadas =>
@@ -58,6 +64,20 @@ class AvisosLocaisEstado {
       avisoFechado: avisoFechado ?? this.avisoFechado,
       aSincronizar: aSincronizar ?? this.aSincronizar,
       ultimoResultado: ultimoResultado ?? this.ultimoResultado,
+      // Mantém as tomas lidas; só `comSincronizadas` as muda.
+      sincronizadas: sincronizadas,
+    );
+  }
+
+  /// Devolve uma cópia com as [sincronizadas] lidas do dispositivo (podem ser `null`, depois de terminar a sessão).
+  AvisosLocaisEstado comSincronizadas(TomasSincronizadas? sincronizadas) {
+    return AvisosLocaisEstado(
+      notificacoesAutorizadas: notificacoesAutorizadas,
+      alarmesExatosAutorizados: alarmesExatosAutorizados,
+      avisoFechado: avisoFechado,
+      aSincronizar: aSincronizar,
+      ultimoResultado: ultimoResultado,
+      sincronizadas: sincronizadas,
     );
   }
 }
@@ -103,6 +123,20 @@ class AvisosLocaisController extends Notifier<AvisosLocaisEstado> {
       notificacoesAutorizadas: notificacoes,
       alarmesExatosAutorizados: alarmes,
     );
+    await _lerSincronizadas();
+  }
+
+  /// Lê do dispositivo as tomas guardadas e o instante da última sincronização, para o E26.
+  Future<void> _lerSincronizadas() async {
+    TomasSincronizadas? lidas;
+    try {
+      lidas = await ref.read(tomasSincronizadasStoreProvider).ler();
+    } on Object {
+      lidas = null;
+    }
+    if (ref.mounted) {
+      state = state.comSincronizadas(lidas);
+    }
   }
 
   /// Sincroniza as tomas do Utilizador com sessão; sem sessão, ou com o controlador já descartado, não faz nada.
@@ -123,6 +157,7 @@ class AvisosLocaisController extends Notifier<AvisosLocaisEstado> {
       return;
     }
     state = state.copiar(aSincronizar: false, ultimoResultado: resultado);
+    await _lerSincronizadas();
   }
 
   /// Pede as autorizações em falta, a pedido do Utilizador: primeiro as notificações e depois os alarmes exatos.
@@ -146,13 +181,16 @@ class AvisosLocaisController extends Notifier<AvisosLocaisEstado> {
   /// Fecha o aviso das autorizações até à próxima abertura da aplicação.
   void fecharAviso() => state = state.copiar(avisoFechado: true);
 
-  /// Cancela o aviso da toma [tomaId], depois de confirmada (protótipo, nota do E18).
+  /// Cancela o aviso da toma [tomaId], depois de confirmada (protótipo, nota do E18), e retira-a das tomas guardadas,
+  /// para as contagens do E26 ficarem certas logo.
   Future<void> cancelarAviso(String tomaId) async {
     try {
       await ref.read(avisosLocaisServiceProvider).cancelarAviso(tomaId);
+      await ref.read(tomasSincronizadasStoreProvider).retirar(tomaId);
     } on Object {
       // O aviso desaparece na sincronização seguinte, porque a OP-34 já não devolve a toma confirmada.
     }
+    await _lerSincronizadas();
   }
 
   static Future<bool?> _semFalhar(Future<bool?> Function() pedido) async {
