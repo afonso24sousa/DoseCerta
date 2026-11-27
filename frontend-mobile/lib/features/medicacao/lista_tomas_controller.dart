@@ -178,7 +178,7 @@ class ListaTomasController extends Notifier<ListaTomasEstado> {
       }
       state = state.copiar(
         aConfirmar: {...state.aConfirmar}..remove(tomaId),
-        erro: _mensagem(e),
+        erro: mensagemRecusa(e),
       );
       if (e is ProblemaApi && (e.estadoHttp == 409 || e.estadoHttp == 403)) {
         await carregar();
@@ -187,8 +187,9 @@ class ListaTomasController extends Notifier<ListaTomasEstado> {
     }
   }
 
-  static String _mensagem(Object erro) {
-    // A mensagem de TOMA_JA_CONFIRMADA vem do servidor, com quem confirmou e quando (RF-105).
+  /// Mensagem de uma recusa ou falha da OP-33, também usada na lista diária (E04). A de `TOMA_JA_CONFIRMADA` vem do
+  /// servidor, com quem confirmou e quando (RF-105).
+  static String mensagemRecusa(Object erro) {
     if (erro is ProblemaApi &&
         erro.codigo == 'TOMA_JA_CONFIRMADA' &&
         erro.mensagem.isNotEmpty) {

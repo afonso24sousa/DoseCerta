@@ -228,5 +228,20 @@ class TomasSincronizadasStoreEmMemoria implements TomasSincronizadasStore {
   }
 
   @override
+  Future<void> retirar(String tomaId) async {
+    final atuais = guardadas;
+    if (atuais != null) {
+      guardadas = TomasSincronizadas(
+        utilizadorId: atuais.utilizadorId,
+        tomas: [
+          for (final toma in atuais.tomas)
+            if (toma.tomaId != tomaId) toma,
+        ],
+        ultimaSincronizacao: atuais.ultimaSincronizacao,
+      );
+    }
+  }
+
+  @override
   Future<void> limpar() async => guardadas = null;
 }
