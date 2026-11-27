@@ -1,9 +1,10 @@
 import 'package:timezone/data/latest_10y.dart' as fusos;
 import 'package:timezone/timezone.dart' as tz;
 
-/// Apresenta as datas como `dd/mm/aaaa` e as horas como `hh:mm` e converte o que o Utilizador escreve para
-/// `AAAA-MM-DD`, o formato da API (RNF-029). Os instantes da API já vêm em hora de Lisboa, com o desvio, por isso a
-/// data e a hora apresentadas são as que vêm no texto, sem conversão para o fuso do telemóvel (F006).
+/// Apresenta as datas como `dd/mm/aaaa`, as horas como `hh:mm` e os instantes como `dd/mm/aaaa hh:mm`, e converte o
+/// que o Utilizador escreve para `AAAA-MM-DD`, o formato da API (RNF-029). Os instantes da API já vêm em hora de
+/// Lisboa, com o desvio, por isso a data e a hora apresentadas são as que vêm no texto, sem conversão para o fuso do
+/// telemóvel (F006).
 class FormatadorDataHora {
   const FormatadorDataHora._();
 
@@ -89,6 +90,10 @@ class FormatadorDataHora {
     final dia = data.day.toString().padLeft(2, '0');
     return '${data.year.toString().padLeft(4, '0')}-$mes-$dia';
   }
+
+  /// Apresenta um instante ISO 8601 da API como `dd/mm/aaaa hh:mm`, em hora de Lisboa.
+  static String apresentarDataHora(String iso) =>
+      '${apresentarData(iso)} ${apresentarHora(iso)}';
 
   /// Apresenta um [DateTime] como `dd/mm/aaaa`.
   static String deData(DateTime data) {
